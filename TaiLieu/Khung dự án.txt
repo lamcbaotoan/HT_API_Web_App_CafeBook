@@ -1,0 +1,81 @@
+Solution 'AppCafebookApi'/
+│
+├── AppCafebookApi/
+│   ├── Dependencies/
+│   ├── Assets/ # Tài Nguyên
+│   │   ├── Images/ # Hình Ảnh
+│   │   │   ├── default-avatar.png
+│   │   │   ├── default-book-cover.png
+│   │   │   ├── default-food-icon.png
+│   │   │   ├── logo.ico
+│   │   │   └── logo.png
+│   │   └── Fonts/ # Phông Chữ
+│   │       └── Font Awesome 6 Free-Solid-900.otf
+│   ├── Services/ # các dịch vụ
+│   ├── View/ # Các giao diện
+│   │   ├── quanly/ #Chức Năng QuanLy
+│   │   │   ├── pages/
+│   │   ├── nhanvien/ #Chức Năng Nhân Viên
+│   │   │   └── pages/
+│   │   └── common/ #Các cửa sổ Window
+│   ├── App.xaml
+│   ├── AssemblyInfo.cs
+│   └── logo.ico
+│
+├── CafebookApi/
+│   ├── Connected Services/
+│   ├── Dependencies/
+│   ├── Properties/
+│   │   └── LaunchSettings.json
+│   ├── Controllers/ # Các Controller
+│   │   ├── App/  # Controller cho Ứng Dụng WPF
+│   │   ├── Shared/ # Controller dùng chung
+│   │   └── Web/ # Controller cho Web
+│   ├── Data/ # Lớp Dữ Liệu
+│   ├── Services/ # Các Dịch Vụ
+│   ├── appsettings.json
+│   └── Program.cs
+│
+├── CafebookModel/
+│   ├── Dependencies/
+│   ├── Model/ # Các Mô Hình Dữ Liệu
+│   │   ├── Data/ # Lớp Dữ Liệu Chung
+│   │   ├── Entities/ # Các Thực Thể
+│   │   ├── ModelApi/ # Mô Hình cho API
+│   │   ├── ModelApp/ # Mô Hình cho Ứng Dụng WPF
+│   │   └── ModelWeb/ # Mô Hình cho Web
+│   ├── Services/ # Các Dịch Vụ
+│   └── Utils/ # Các Tiện Ích
+│
+└── WebCafebookApi/
+    ├── Connected Services/
+    ├── Dependencies/
+    ├── Properties/
+    │   └── LaunchSettings.json
+    ├── wwwroot/
+    │   ├── css/
+    │   │   └── site.css
+    │   ├── js/
+    │   │   └── site.js
+    │   ├── lib/
+    │   │   ├── bootstrap/
+    │   │   ├── jquery/
+    │   │   ├── jquery-validation/
+    │   │   └── jquery-validation-unobtrusive/
+    │   └── favicon.ico
+    ├── Data/ # Lớp Dữ Liệu
+    ├── Pages/ # Các Trang Razor
+    │   ├── account/    # Trang Tài Khoản
+    │   ├── employee/  # Trang Nhân Viên
+    │   ├── Shared/ # Các Thành Phần Chung
+    │   │   ├── _Layout.cshtml
+    │   │   ├── _LoginPartial.cshtml
+    │   │   └── _ValidationScriptsPartial.cshtml
+    │   ├── _ViewImports.cshtml
+    │   ├── _ViewStart.cshtml
+    │   ├── Error.cshtml
+    │   ├── Index.cshtml
+    │   └── Privacy.cshtml
+    ├── Services/ # Các Dịch Vụ
+    ├── appsettings.json
+    └── Program.cs

@@ -1,0 +1,275 @@
+# ⚙️ **YÊU CẦU PHÁT TRIỂN HỆ THỐNG NHÂN SỰ (HRM MODULE)**
+
+## 📂 Dự án: `AppCafebook`
+
+> Mục tiêu: Tách toàn bộ `NhanSuView` thành các trang riêng biệt tương ứng từng nghiệp vụ,
+> kết nối đồng bộ với CSDL và hệ thống phân quyền.
+> ❌ Không dùng `Service`, `ViewModel` – xử lý toàn bộ logic trong code-behind (.xaml.cs).
+
+---
+
+## 🧩 I. **Cấu trúc module Nhân Sự sau khi tách**
+
+| STT | Chức năng                                 | View (Page)                  | API (Controller)         |
+| --- | ----------------------------------------- | ---------------------------- | ------------------------ |
+| 1   | Quản lý Nhân viên                         | `QuanLyNhanVienView.xaml`    | `NhanVienController`     |
+| 2   | Quản lý Vai trò                           | `QuanLyVaiTroView.xaml`      | `VaiTroController`       |
+| 3   | Quản lý Quyền & Phân quyền chức năng      | `QuanLyPhanQuyenView.xaml`   | `PhanQuyenController`    |
+| 4   | Quản lý Ca làm việc                       | `QuanLyCaLamViecView.xaml`   | `CaLamViecController`    |
+| 5   | Quản lý Lịch làm việc                     | `QuanLyLichLamViecView.xaml` | `LichLamViecController`  |
+| 6   | Quản lý Đơn xin nghỉ                      | `QuanLyDonXinNghiView.xaml`  | `DonXinNghiController`   |
+| 7   | Quản lý Quy tắc lương                     | `QuanLyQuyTacLuongView.xaml` | `QuyTacLuongController`  |
+| 8   | Quản lý Thưởng/Phạt thủ công              | `QuanLyThuongPhatView.xaml`  | `ThuongPhatController`   |
+| 9   | Quản lý Bảng chấm công                    | `QuanLyChamCongView.xaml`    | `ChamCongController`     |
+| 10  | Quản lý Phiếu lương & Hệ thống tính lương | `QuanLyLuongView.xaml`       | `LuongController`        |
+| 11  | Cấu hình Nhân sự & Chính sách chung       | `CaiDatNhanSuView.xaml`      | `CaiDatNhanSuController` |
+
+---
+
+## 🧭 II. **Mô tả chi tiết từng chức năng**
+
+---
+
+### **1️⃣ Quản lý Nhân viên**
+
+📄 `QuanLyNhanVienView.xaml`
+📡 `NhanVienController`
+
+#### 🎯 Mục tiêu:
+
+* Quản lý danh sách nhân viên, trạng thái làm việc, vai trò, lương, mật khẩu.
+* Cấp, thu hồi tài khoản đăng nhập.
+
+#### 🧱 Chức năng:
+
+* Thêm / Sửa / Xóa thông tin nhân viên.
+* Cập nhật mật khẩu (để trống nếu không đổi).
+* Gán vai trò cho nhân viên.
+* Chọn trạng thái làm việc (đang làm / nghỉ việc).
+* Cập nhật mức lương theo giờ.
+
+#### 🔗 Liên kết:
+
+* Bảng `NhanVien` (FK: VaiTro).
+* Gọi từ các chức năng: `LichLamViec`, `ChamCong`, `Luong`.
+
+---
+
+### **2️⃣ Quản lý Vai trò (Roles)**
+
+📄 `QuanLyVaiTroView.xaml`
+📡 `VaiTroController`
+
+#### 🎯 Mục tiêu:
+
+* Định nghĩa vai trò (Admin, Quản lý, Nhân viên, Thu ngân, Barista, v.v.).
+* Phân quyền theo vai trò.
+
+#### 🧱 Chức năng:
+
+* Thêm / Sửa / Xóa vai trò.
+* Hiển thị danh sách vai trò hiện có.
+* Gán mô tả và nhóm chức năng mặc định.
+
+---
+
+### **3️⃣ Quản lý Quyền & Phân quyền chức năng**
+
+📄 `QuanLyPhanQuyenView.xaml`
+📡 `PhanQuyenController`
+
+#### 🎯 Mục tiêu:
+
+* Phân quyền chi tiết cho từng vai trò hoặc nhân viên.
+
+#### 🧱 Chức năng:
+
+* Quản lý danh sách quyền (Xem, Thêm, Sửa, Xóa, In, Báo cáo).
+* Gán quyền cho từng vai trò.
+* Cho phép gán ngoại lệ (quyền riêng cho 1 nhân viên cụ thể).
+* Xuất / nhập danh sách quyền từ file JSON.
+
+#### 🔗 Liên kết:
+
+* `VaiTro` ↔ `PhanQuyen`
+* `NhanVien` ↔ `VaiTro` ↔ `ChucNang`
+
+---
+
+### **4️⃣ Quản lý Ca làm việc**
+
+📄 `QuanLyCaLamViecView.xaml`
+📡 `CaLamViecController`
+
+#### 🎯 Mục tiêu:
+
+* Định nghĩa các ca làm mẫu trong ngày.
+
+#### 🧱 Chức năng:
+
+* Thêm / Sửa / Xóa ca làm việc (VD: Ca sáng 7:00–15:00).
+* Gán mô tả, ghi chú.
+* Tích hợp vào lịch làm việc tự động.
+
+#### 🔗 Liên kết:
+
+* `CaLamViec` ↔ `LichLamViec`
+
+---
+
+### **5️⃣ Quản lý Lịch làm việc**
+
+📄 `QuanLyLichLamViecView.xaml`
+📡 `LichLamViecController`
+
+#### 🎯 Mục tiêu:
+
+* Quản lý lịch làm việc hàng ngày của nhân viên.
+
+#### 🧱 Chức năng:
+
+* Hiển thị lịch theo ngày, tuần, tháng.
+* Thêm/Sửa ca làm việc cho từng nhân viên.
+* Chọn từ ca mẫu hoặc nhập tay.
+* Ghi nhận trạng thái: Đi làm / Nghỉ có phép / Nghỉ không phép.
+* Xuất lịch làm việc (Excel, PDF).
+
+#### 🔗 Liên kết:
+
+* `NhanVien`, `CaLamViec`, `DonXinNghi`.
+
+---
+
+### **6️⃣ Quản lý Đơn xin nghỉ**
+
+📄 `QuanLyDonXinNghiView.xaml`
+📡 `DonXinNghiController`
+
+#### 🎯 Mục tiêu:
+
+* Quản lý đơn nghỉ phép của nhân viên.
+
+#### 🧱 Chức năng:
+
+* Nhân viên gửi đơn xin nghỉ (chọn ngày, lý do).
+* Quản lý duyệt đơn (duyệt / từ chối / đang chờ).
+* Lưu lý do và người duyệt.
+* Tự động đánh dấu lịch làm việc thành “nghỉ có phép”.
+
+#### 🔗 Liên kết:
+
+* `NhanVien` ↔ `DonXinNghi` ↔ `LichLamViec`.
+
+---
+
+### **7️⃣ Quản lý Quy tắc lương**
+
+📄 `QuanLyQuyTacLuongView.xaml`
+📡 `QuyTacLuongController`
+
+#### 🎯 Mục tiêu:
+
+* Xác định công thức tính thưởng/phạt.
+
+#### 🧱 Chức năng:
+
+* Quản lý các quy tắc: Cố định, đi trễ, tăng ca, theo giờ.
+* Nhập điều kiện và giá trị áp dụng.
+* Phân loại: Thưởng / Phạt / Hệ số nhân.
+* Áp dụng cho `ChamCong` và `Luong`.
+
+---
+
+### **8️⃣ Quản lý Thưởng – Phạt thủ công**
+
+📄 `QuanLyThuongPhatView.xaml`
+📡 `ThuongPhatController`
+
+#### 🎯 Mục tiêu:
+
+* Thêm khoản thưởng/phạt riêng cho từng nhân viên trong kỳ.
+
+#### 🧱 Chức năng:
+
+* Thêm, sửa, xóa các khoản thủ công.
+* Ghi chú lý do và giá trị.
+* Tự động cộng/trừ vào lương kỳ đó.
+
+---
+
+### **9️⃣ Quản lý Chấm công**
+
+📄 `QuanLyChamCongView.xaml`
+📡 `ChamCongController`
+
+#### 🎯 Mục tiêu:
+
+* Ghi nhận giờ vào/ra, tính số giờ làm việc.
+
+#### 🧱 Chức năng:
+
+* Tự động tính tổng giờ làm (GioRa – GioVao).
+* Xem lịch sử chấm công theo ngày/tháng.
+* Hỗ trợ nhập thủ công hoặc từ máy chấm công.
+* Kết nối trực tiếp với `LuongController`.
+
+---
+
+### **🔟 Quản lý Phiếu Lương & Hệ thống tính lương**
+
+📄 `QuanLyLuongView.xaml`
+📡 `LuongController`
+
+#### 🎯 Mục tiêu:
+
+* Tính lương tự động dựa vào chấm công, quy tắc lương, thưởng/phạt.
+
+#### 🧱 Chức năng:
+
+* Tính lương theo kỳ (từ ngày – đến ngày).
+* Hiển thị tổng giờ, lương theo giờ, thưởng, phạt, thực lãnh.
+* Cho phép in phiếu lương / lưu lịch sử phiếu lương.
+* Lưu vào bảng `PhieuLuong`.
+
+---
+
+### **11️⃣ Cấu hình Nhân sự & Chính sách**
+
+📄 `CaiDatNhanSuView.xaml`
+📡 `CaiDatNhanSuController`
+
+#### 🎯 Mục tiêu:
+
+* Quản lý các chính sách nhân sự chung.
+
+#### 🧱 Chức năng:
+
+* Thiết lập số ngày phép/năm.
+* Thiết lập mức phạt đi trễ mặc định.
+* Cấu hình thời gian chốt lương hàng tháng.
+* Cho phép đặt giờ làm tiêu chuẩn/ngày.
+
+---
+
+## 🧮 III. **Gợi ý chức năng mở rộng thêm**
+
+| Mở rộng                                              | Mô tả                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------- |
+| **Quản lý Hồ sơ nhân viên (HoSoNhanVienView)**       | Quản lý hồ sơ, CMND/CCCD, hợp đồng, ngày bắt đầu, lưu file scan.     |
+| **Quản lý Đào tạo (DaoTaoView)**                     | Quản lý khóa đào tạo, nhân viên tham gia, chứng chỉ đạt được.        |
+| **Thống kê hiệu suất (ThongKeNhanSuView)**           | Báo cáo tổng hợp hiệu suất làm việc, số giờ, nghỉ phép, thưởng/phạt. |
+| **Kết nối chấm công vân tay / QR**                   | Đọc dữ liệu từ máy chấm công hoặc app di động.                       |
+| **Giao diện Duyệt đơn nghỉ nhanh (Manager Approve)** | Mở modal hoặc popup duyệt nhanh trong dashboard.                     |
+
+---
+
+## ⚙️ IV. **Quy định phát triển chung**
+
+* Mỗi Page có **DataGrid + Panel nhập liệu**.
+* Dữ liệu gọi qua `HttpClient` trực tiếp (GET/POST/PUT/DELETE).
+* Mỗi Controller thực hiện CRUD tương ứng.
+* Không dùng `MVVM` – xử lý trong `.xaml.cs`.
+* Tự động reload danh sách sau mỗi hành động.
+* UI giữ phong cách hiện tại (`WPF Material`, tông nâu-cà-phê, icon vector).
+
+---

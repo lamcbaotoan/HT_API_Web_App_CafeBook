@@ -1,0 +1,228 @@
+﻿<Page x:Class="AppCafebookApi.View.quanly.pages.CaiDatNhanSuView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:AppCafebookApi.View.quanly.pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="700" d:DesignWidth="1100"
+      Title="Cấu Hình Nhân Sự &amp; Chính Sách Lương"
+      FontFamily="Segoe UI"
+      Background="#FFF8E1"
+      Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
+        <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#66BB6A"/>
+        <SolidColorBrush x:Key="BorderGrayBrush" Color="#BDBDBD"/>
+        <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
+        
+        <Geometry x:Key="IconSave">M17,3H5C3.89,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V7L17,3M15,9H5V5H15V9M12,19C10.34,19 9,17.66 9,16C9,14.34 10.34,13 12,13C13.66,13 15,14.34 15,16C15,17.66 13.66,19 12,19Z</Geometry>
+        <Geometry x:Key="IconBack">M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z</Geometry>
+
+        <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="25"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="1" Color="#000" Opacity="0.08" BlurRadius="20"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="4" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource DarkBrownBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="BackButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="MaterialInput" TargetType="TextBox">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrownBrush}"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="SettingLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
+            <Setter Property="Margin" Value="0,15,0,5"/>
+        </Style>
+        <Style x:Key="SettingDescription" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Foreground" Value="{StaticResource TextGrayBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="2,2,0,0"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{StaticResource LightCreamBrush}" x:Name="MainPanel" Margin="10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Cấu Hình Nhân Sự &amp; Chính Sách Lương" Style="{StaticResource HeaderTextBlock}" Margin="10,10,0,0"/>
+
+            <Border Grid.Row="1" Margin="10,0,10,10" Style="{StaticResource CardBorder}" MaxWidth="800" HorizontalAlignment="Left">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="formCaiDat">
+
+                        <TextBlock Text="QUY TẮC GIỜ LÀM &amp; TĂNG CA" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" 
+                                    Foreground="{StaticResource PrimaryBrownBrush}" Padding="0,0,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Giờ làm chuẩn / ngày"/>
+                                <TextBox x:Name="txtGioLamChuan" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Số giờ làm việc chuẩn mỗi ngày (ví dụ: 8)"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Hệ số lương OT"/>
+                                <TextBox x:Name="txtHeSoOT" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Hệ số lương khi làm tăng ca (ví dụ: 1.5)"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="QUY TẮC PHẠT ĐI TRỄ" FontSize="14" FontWeight="Bold" Margin="0,25,0,10" 
+                                   Foreground="{StaticResource PrimaryBrownBrush}" Padding="0,0,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Số phút đi trễ cho phép"/>
+                                <TextBox x:Name="txtPhatDiTre_Phut" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Vượt quá ngưỡng này bắt đầu tính phạt (ví dụ: 5)"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Hệ số phạt đi trễ"/>
+                                <TextBox x:Name="txtPhatDiTre_HeSo" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Hệ số phạt (ví dụ: 1.0 = trễ 1 giờ phạt 1 giờ lương)"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="QUY TẮC THƯỞNG CHUYÊN CẦN" FontSize="14" FontWeight="Bold" Margin="0,25,0,10" 
+                                    Foreground="{StaticResource PrimaryBrownBrush}" Padding="0,0,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Số ngày công yêu cầu"/>
+                                <TextBox x:Name="txtChuyenCan_SoNgay" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Số ngày công yêu cầu để đạt thưởng (ví dụ: 26)"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Tiền thưởng chuyên cần (VND)"/>
+                                <TextBox x:Name="txtChuyenCan_TienThuong" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Số tiền thưởng (ví dụ: 500000)"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="CHÍNH SÁCH NGHỈ PHÉP" FontSize="14" FontWeight="Bold" Margin="0,25,0,10" 
+                                    Foreground="{StaticResource PrimaryBrownBrush}" Padding="0,0,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Style="{StaticResource SettingLabel}" Text="Số ngày phép mặc định / năm"/>
+                                <TextBox x:Name="txtPhepNam_MacDinh" Style="{StaticResource MaterialInput}"/>
+                                <TextBlock Style="{StaticResource SettingDescription}" Text="Số ngày nghỉ phép có lương mặc định (ví dụ: 12)"/>
+                            </StackPanel>
+                        </Grid>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,0,0,10">
+                <Button x:Name="btnQuayLai" 
+                        Style="{StaticResource BackButton}"
+                        HorizontalAlignment="Left"
+                        Click="BtnQuayLai_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconBack}" Fill="{StaticResource PrimaryBrownBrush}" Width="23" Height="23" Margin="0,0,5,0"/>
+                        <TextBlock Text="Quay lại" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="btnLuu" Grid.Column="5" Style="{StaticResource PrimaryButton}" 
+                        Background="{StaticResource SuccessBrush}" Click="BtnLuu_Click" 
+                        HorizontalAlignment="Left" Margin="20,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconSave}" Fill="White" Width="23" Height="23" Margin="0,0,8,0"/>
+                        <TextBlock Text="Lưu Cấu Hình" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Border x:Name="LoadingOverlay" Grid.Row="0" Grid.RowSpan="99" Background="#80FFFFFF" Visibility="Collapsed" Panel.ZIndex="100">
+            <TextBlock Text="Đang xử lý..." HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource DarkBrownBrush}"/>
+        </Border>
+    </Grid>
+</Page>

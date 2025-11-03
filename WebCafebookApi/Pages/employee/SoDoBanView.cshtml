@@ -1,0 +1,109 @@
+﻿@page "/Employee/SoDoBan"
+@model WebCafebookApi.Pages.employee.SoDoBanViewModel
+@{
+    ViewData["Title"] = "Sơ Đồ Bàn";
+    Layout = "_Layout_Employee";
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+
+                <div class="d-none d-md-flex">
+                    <div class="me-3"><span class="status-box status-trong"></span> Trống</div>
+                    <div class="me-3"><span class="status-box status-co-khach"></span> Có khách</div>
+                    <div class="me-3"><span class="status-box status-da-dat"></span> Đã đặt</div>
+                    <div class="me-3"><span class="status-box status-bao-tri"></span> Bảo trì</div>
+                </div>
+            </div>
+
+            <div id="table-layout-container" class="d-flex flex-wrap" data-nhanvien-id="@Model.NhanVienId">
+                <div class="text-center w-100 p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p>Đang tải sơ đồ bàn...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm" style="position: sticky; top: 80px;">
+                <div class="card-body p-4">
+
+                    <div id="panelChuaChon" class="text-center p-5">
+                        <i class="fa-solid fa-hand-pointer fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chọn một bàn để bắt đầu thao tác</h5>
+                    </div>
+
+                    <div id="panelDaChon" style="display: none;">
+                        <h3 class="fw-bold" style="color: var(--cf-brown);">
+                            Bàn <span id="runSoBan">...</span>
+                        </h3>
+                        <p class="fs-5 mb-2">Trạng thái: <span id="runTrangThai" class="fw-bold">...</span></p>
+                        <p id="tbGhiChu" class="fst-italic text-muted" style="display: none;"></p>
+
+                        <div id="tbTongTienWrapper" class="alert alert-danger" style="display: none;">
+                            <span class="fs-5">Tổng tiền tạm tính:</span><br />
+                            <span id="runTongTien" class="fs-3 fw-bold">0 đ</span>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <div class="d-grid gap-3">
+                            <button id="btnGoiMon" class="btn btn-primary btn-lg p-3">
+                                <i class="fa-solid fa-utensils me-2"></i>
+                                <span>Gọi Món / Thanh Toán</span>
+                            </button>
+
+                            <div class="row g-3">
+                                <div class="col-6 d-grid">
+                                    <button id="btnChuyenBan" class="btn btn-outline-secondary p-3">
+                                        <i class="fa-solid fa-right-left me-1"></i> Chuyển Bàn
+                                    </button>
+                                </div>
+                                <div class="col-6 d-grid">
+                                    <button id="btnGopBan" class="btn btn-outline-secondary p-3">
+                                        <i class="fa-solid fa-object-ungroup me-1"></i> Gộp Bàn
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button id="btnBaoCaoSuCo" class="btn btn-outline-warning p-3">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i> Báo cáo Sự cố
+                            </button>
+
+                            <button id="refresh-tables-btn" class="btn btn-link text-muted mt-3">
+                                <i class="fa-solid fa-sync"></i> Làm mới Sơ đồ
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <style>
+        .table-card {
+            border: 3px solid transparent;
+        }
+
+            .table-card.selected {
+                border-color: var(--cf-orange) !important;
+                box-shadow: 0 8px 20px rgba(210, 125, 45, 0.5) !important;
+            }
+    </style>
+}
+
+@section Scripts {
+}

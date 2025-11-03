@@ -1,0 +1,566 @@
+﻿/*
+================================================
+ CAFEBOOK WEB THEME (v1.2 - SỬA LỖI RESPONSIVE)
+================================================
+*/
+:root {
+    --cf-brown: #6F4E37; /* PrimaryBrown */
+    --cf-dark-brown: #4E342E; /* DarkText / DarkBrown */
+    --cf-orange: #D27D2D; /* AccentOrange */
+    --cf-cream: #FFF8E1; /* LightCream */
+    --cf-white: #FFFFFF;
+    --cf-text: #4E342E;
+    --cf-gray: #BDBDBD; /* SubtleGray */
+    --cf-light-gray: #f8f9fa; /* Màu nền xám nhạt */
+    --cf-shadow: rgba(78, 52, 46, 0.15); /* Bóng đổ màu nâu mờ */
+    /* Ghi đè màu Bootstrap */
+    --bs-primary: var(--cf-brown);
+    --bs-secondary: var(--cf-gray);
+    --bs-body-bg: var(--cf-cream);
+    --bs-body-color: var(--cf-text);
+    --bs-link-color: var(--cf-orange);
+    --bs-link-hover-color: var(--cf-dark-brown);
+}
+
+html {
+    font-size: 16px;
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-container {
+    flex-grow: 1; /* Đẩy footer xuống dưới */
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand, .fw-bold {
+    font-weight: 600;
+    color: var(--cf-dark-brown);
+}
+
+/* Header (Navbar) */
+.navbar {
+    background-color: var(--cf-white) !important;
+    box-shadow: 0 4px 12px var(--cf-shadow);
+}
+
+.navbar-brand img {
+    height: 30px;
+    margin-right: 8px;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: rotate(15deg);
+}
+
+/* Footer */
+.footer {
+    background-color: var(--cf-dark-brown);
+    color: var(--cf-gray);
+    border-top: none;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.footer-link {
+    color: var(--cf-white);
+    text-decoration: none;
+    margin-left: 1rem;
+    transition: color 0.3s ease;
+}
+
+    .footer-link:hover {
+        color: var(--cf-orange);
+    }
+
+
+/*
+================================================
+ THIẾT KẾ TRANG LOGIN/REGISTER
+================================================
+*/
+.login-page-body {
+    background-color: var(--cf-cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.login-wrapper {
+    max-width: 850px;
+    width: 100%;
+    margin: 2rem;
+}
+
+.login-container {
+    display: flex;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(78, 52, 46, 0.2);
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.login-brand-col {
+    background-color: var(--cf-brown);
+    color: var(--cf-white);
+    padding: 4rem;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+    .login-brand-col img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .login-brand-col h1 {
+        color: var(--cf-white);
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+.login-form-col {
+    background-color: var(--cf-white);
+    padding: 3rem 4rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+    .login-form-col h2 {
+        color: var(--cf-dark-brown);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .login-form-col .text-muted {
+        margin-bottom: 2.5rem;
+    }
+
+/* Material Textbox */
+.form-floating-material {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+    .form-floating-material .form-control {
+        background-color: transparent;
+        border: none;
+        border-radius: 0;
+        border-bottom: 1px solid var(--cf-gray);
+        padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+        .form-floating-material .form-control:focus {
+            box-shadow: none;
+            border-bottom: 2px solid var(--cf-orange);
+        }
+
+    .form-floating-material .form-label {
+        padding-left: 2.5rem;
+        color: var(--cf-gray);
+        transition: all 0.3s ease;
+    }
+
+    .form-floating-material .form-control:focus ~ .form-label,
+    .form-floating-material .form-control:not(:placeholder-shown) ~ .form-label {
+        color: var(--cf-orange);
+        transform: scale(.85) translateY(-.75rem) translateX(-.15rem);
+    }
+
+
+    .form-floating-material .material-symbols-outlined {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.25rem;
+        color: var(--cf-gray);
+        transition: color 0.3s ease;
+    }
+
+    .form-floating-material .form-control:focus ~ .material-symbols-outlined {
+        color: var(--cf-orange);
+    }
+
+.form-check-input:checked {
+    background-color: var(--cf-orange);
+    border-color: var(--cf-orange);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .login-brand-col {
+        width: 100%;
+        padding: 2rem;
+    }
+
+    .login-form-col {
+        padding: 2rem;
+    }
+}
+
+/*
+========================================
+ STYLES CHO EMPLOYEE (NHÂN VIÊN)
+========================================
+*/
+
+/* Layout chính */
+.employee-body {
+    background-color: var(--cf-light-gray);
+    min-height: 100vh;
+    display: flex; /* Sửa lỗi layout desktop */
+}
+
+/* Sidebar */
+.sidebar-nav {
+    background-color: var(--cf-dark-brown) !important;
+    width: 250px;
+    flex-shrink: 0;
+    transition: none;
+}
+
+@media (min-width: 768px) {
+    .sidebar-nav.offcanvas-md {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        transform: none !important;
+        visibility: visible !important;
+    }
+}
+
+/* Nội dung chính */
+.main-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* Header */
+.header-nav {
+    background-color: #fff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+    .header-nav .nav-link {
+        padding: 0;
+    }
+
+    /* Sửa lỗi nút hamburger trên mobile */
+    .header-nav .btn.btn-link {
+        border-radius: 0;
+        padding: 0.25rem 0.75rem;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: normal;
+        border: none;
+        transition: none;
+        box-shadow: none;
+        background-color: transparent !important;
+    }
+
+        .header-nav .btn.btn-link:hover {
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+
+/* Nút menu sidebar */
+.sidebar-header {
+    padding: 0 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+    padding: 12px 1.5rem;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+    .sidebar-nav .nav-link i {
+        width: 20px;
+        margin-right: 12px;
+        text-align: center;
+    }
+
+    .sidebar-nav .nav-link:hover {
+        color: #fff;
+        background-color: var(--cf-brown);
+        border-left-color: var(--cf-orange);
+    }
+
+    .sidebar-nav .nav-link.active {
+        color: #fff;
+        background-color: var(--cf-brown);
+        font-weight: 600;
+        border-left-color: var(--cf-orange);
+    }
+
+
+/*
+========================================
+ STYLES CHO SƠ ĐỒ BÀN (WEB)
+========================================
+*/
+#table-layout-container {
+    gap: 20px;
+}
+
+.table-card {
+    width: 150px;
+    height: 130px;
+    border-radius: 8px;
+    border-top: 5px solid;
+    background-color: #fff;
+    box-shadow: 0 4px 12px var(--cf-shadow);
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .table-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(78, 52, 46, 0.2);
+    }
+
+    .table-card.selected {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px var(--cf-orange);
+        border-color: var(--cf-orange) !important;
+    }
+
+.table-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.table-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.table-status {
+    font-size: 0.9rem;
+    color: #757575;
+}
+
+.table-price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cf-orange);
+    margin-top: 5px;
+}
+
+.table-card.status-trong {
+    border-color: #66BB6A;
+}
+
+    .table-card.status-trong .table-icon {
+        color: #66BB6A;
+    }
+
+.table-card.status-co-khach {
+    border-color: #EF5350;
+}
+
+    .table-card.status-co-khach .table-icon {
+        color: #EF5350;
+    }
+
+.table-card.status-da-dat {
+    border-color: #FFA726;
+}
+
+    .table-card.status-da-dat .table-icon {
+        color: #FFA726;
+    }
+
+.table-card.status-bao-tri {
+    border-color: #757575;
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+    .table-card.status-bao-tri .table-icon {
+        color: #757575;
+    }
+
+.status-box {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+    .status-box.status-trong {
+        background-color: #66BB6A;
+    }
+
+    .status-box.status-co-khach {
+        background-color: #EF5350;
+    }
+
+    .status-box.status-da-dat {
+        background-color: #FFA726;
+    }
+
+    .status-box.status-bao-tri {
+        background-color: #757575;
+    }
+
+/*
+================================================
+ NÚT BẤM (BUTTONS) - GHI ĐÈ
+================================================
+*/
+.btn {
+    border-radius: 21px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 4px var(--cf-shadow);
+}
+
+.btn-lg {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background-color: var(--cf-brown);
+    color: var(--cf-white);
+    border-color: var(--cf-brown);
+}
+
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--cf-orange);
+        color: var(--cf-white);
+        border-color: var(--cf-orange);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(78, 52, 46, 0.25);
+    }
+
+.btn-outline-light {
+    border-radius: 21px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-width: 2px;
+}
+
+    .btn-outline-light:hover {
+        background-color: var(--cf-orange);
+        color: var(--cf-white);
+        border-color: var(--cf-orange);
+        transform: translateY(-3px);
+    }
+
+.btn-outline-primary {
+    border-radius: 21px;
+    color: var(--cf-brown);
+    border-color: var(--cf-brown);
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--cf-brown);
+        color: var(--cf-white);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--cf-shadow);
+    }
+
+.btn-success {
+    background-color: var(--cf-orange);
+    border-color: var(--cf-orange);
+}
+
+    .btn-success:hover {
+        background-color: #a96323;
+        border-color: #a96323;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(78, 52, 46, 0.25);
+    }
+
+/*
+================================================
+ THẺ (CARDS) - GHI ĐÈ
+================================================
+*/
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--cf-shadow);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(78, 52, 46, 0.2);
+    }
+
+.card-title {
+    color: var(--cf-dark-brown);
+    font-weight: 600;
+}
+
+.card-img-top {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.card-footer {
+    background-color: var(--cf-white);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}

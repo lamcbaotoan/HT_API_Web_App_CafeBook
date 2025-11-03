@@ -1,0 +1,510 @@
+/*
+================================================================================
+ KỊCH BẢN CHÈN DỮ LIỆU ĐẦY ĐỦ (v2.2.2 - SỬA LỖI)
+================================================================================
+ Kịch bản này sẽ XÓA SẠCH VÀ LÀM MỚI toàn bộ dữ liệu.
+ 
+ CẬP NHẬT:
+ - Sửa lỗi 1: Thay TRUNCATE bằng DELETE FROM để vượt qua lỗi FK (Msg 4712).
+ - Sửa lỗi 2: Thêm tenDangNhap UNIQUE cho KhachHang (Msg 2627).
+================================================================================
+*/
+
+USE [CAFEBOOKDB_v2]
+GO
+
+PRINT N'1. TẮT TẤT CẢ CÁC RÀNG BUỘC KHÓA NGOẠI'
+EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'
+GO
+
+PRINT N'2. XÓA SẠCH DỮ LIỆU (DELETE FROM)'
+-- Thay TRUNCATE bằng DELETE để tránh lỗi Msg 4712
+DELETE FROM [dbo].[GiaoDichThanhToan];
+DELETE FROM [dbo].[HoaDon_KhuyenMai];
+DELETE FROM [dbo].[NhatKyHuyMon];
+DELETE FROM [dbo].[ChiTietPhuThuHoaDon];
+DELETE FROM [dbo].[ChiTietHoaDon];
+DELETE FROM [dbo].[HoaDon];
+DELETE FROM [dbo].[DeXuatSach];
+DELETE FROM [dbo].[DeXuatSanPham];
+DELETE FROM [dbo].[ChatLichSu];
+DELETE FROM [dbo].[VaiTro_Quyen];
+DELETE FROM [dbo].[BangChamCong];
+DELETE FROM [dbo].[LichLamViec];
+DELETE FROM [dbo].[ChiTietPhieuThue];
+DELETE FROM [dbo].[PhieuThueSach];
+DELETE FROM [dbo].[Sach];
+DELETE FROM [dbo].[ChiTietXuatHuy];
+DELETE FROM [dbo].[ChiTietKiemKho];
+DELETE FROM [dbo].[ChiTietNhapKho];
+DELETE FROM [dbo].[DinhLuong];
+DELETE FROM [dbo].[SanPham];
+DELETE FROM [dbo].[DanhMuc];
+DELETE FROM [dbo].[PhieuDatBan];
+DELETE FROM [dbo].[DonXinNghi];
+DELETE FROM [dbo].[PhieuLuong];
+DELETE FROM [dbo].[PhieuXuatHuy];
+DELETE FROM [dbo].[PhieuKiemKho];
+DELETE FROM [dbo].[PhieuNhapKho];
+DELETE FROM [dbo].[NhanVien];
+DELETE FROM [dbo].[VaiTro];
+DELETE FROM [dbo].[Quyen];
+DELETE FROM [dbo].[CaiDat];
+DELETE FROM [dbo].[CaLamViec];
+DELETE FROM [dbo].[NhaXuatBan];
+DELETE FROM [dbo].[TacGia];
+DELETE FROM [dbo].[TheLoai];
+DELETE FROM [dbo].[KhuyenMai];
+DELETE FROM [dbo].[KhachHang];
+DELETE FROM [dbo].[NhaCungCap];
+DELETE FROM [dbo].[NguyenLieu];
+DELETE FROM [dbo].[PhuThu];
+DELETE FROM [dbo].[NguoiGiaoHang];
+DELETE FROM [dbo].[Ban];
+DELETE FROM [dbo].[KhuVuc];
+GO
+
+PRINT N'3. RESET LẠI IDENTITY (RESEED VỀ 0)'
+DBCC CHECKIDENT ('[KhuVuc]', RESEED, 0);
+DBCC CHECKIDENT ('[Ban]', RESEED, 0);
+DBCC CHECKIDENT ('[NguoiGiaoHang]', RESEED, 0);
+DBCC CHECKIDENT ('[HoaDon]', RESEED, 0);
+DBCC CHECKIDENT ('[DanhMuc]', RESEED, 0);
+DBCC CHECKIDENT ('[SanPham]', RESEED, 0);
+DBCC CHECKIDENT ('[ChiTietHoaDon]', RESEED, 0);
+DBCC CHECKIDENT ('[PhuThu]', RESEED, 0);
+DBCC CHECKIDENT ('[NhatKyHuyMon]', RESEED, 0);
+DBCC CHECKIDENT ('[NguyenLieu]', RESEED, 0);
+DBCC CHECKIDENT ('[NhaCungCap]', RESEED, 0);
+DBCC CHECKIDENT ('[PhieuNhapKho]', RESEED, 0);
+DBCC CHECKIDENT ('[PhieuKiemKho]', RESEED, 0);
+DBCC CHECKIDENT ('[PhieuXuatHuy]', RESEED, 0);
+DBCC CHECKIDENT ('[KhachHang]', RESEED, 0);
+DBCC CHECKIDENT ('[PhieuDatBan]', RESEED, 0);
+DBCC CHECKIDENT ('[KhuyenMai]', RESEED, 0);
+DBCC CHECKIDENT ('[TheLoai]', RESEED, 0);
+DBCC CHECKIDENT ('[TacGia]', RESEED, 0);
+DBCC CHECKIDENT ('[NhaXuatBan]', RESEED, 0);
+DBCC CHECKIDENT ('[Sach]', RESEED, 0);
+DBCC CHECKIDENT ('[PhieuThueSach]', RESEED, 0);
+DBCC CHECKIDENT ('[VaiTro]', RESEED, 0);
+DBCC CHECKIDENT ('[NhanVien]', RESEED, 0);
+DBCC CHECKIDENT ('[CaLamViec]', RESEED, 0);
+DBCC CHECKIDENT ('[LichLamViec]', RESEED, 0);
+DBCC CHECKIDENT ('[BangChamCong]', RESEED, 0);
+DBCC CHECKIDENT ('[PhieuLuong]', RESEED, 0);
+DBCC CHECKIDENT ('[DonXinNghi]', RESEED, 0);
+DBCC CHECKIDENT ('[GiaoDichThanhToan]', RESEED, 0);
+DBCC CHECKIDENT ('[ChatLichSu]', RESEED, 0);
+GO
+
+PRINT N'4. CHÈN DỮ LIỆU (5 MẪU CHO MỖI BẢNG)'
+GO
+
+-- Bảng Vai Trò (Chức vụ)
+INSERT INTO VaiTro (tenVaiTro, moTa) VALUES 
+(N'Quản trị viên', N'Toàn quyền hệ thống'),
+(N'Quản lý', N'Quản lý vận hành, báo cáo, nhân sự'),
+(N'Thu ngân', N'Lập hóa đơn, thanh toán'),
+(N'Pha chế', N'Chỉ xem các đơn hàng cần pha chế (in bếp/bar)'),
+(N'Phục vụ', N'Ghi order, quản lý bàn');
+GO
+
+-- Bảng Quyền
+INSERT INTO Quyen (idQuyen, TenQuyen, NhomQuyen) VALUES
+('Dashboard.Xem', N'Xem Dashboard', N'BaoCao'),
+('HoaDon.Tao', N'Tạo/Thêm món Hóa đơn', N'BanHang'),
+('HoaDon.ThanhToan', N'Thanh toán Hóa đơn', N'BanHang'),
+('HoaDon.Huy', N'Hủy Hóa đơn / Hủy món', N'BanHang'),
+('NhanSu.QuanLy', N'Quản lý Nhân viên', N'NhanSu'),
+('NhanSu.TinhLuong', N'Tính lương Nhân viên', N'NhanSu'),
+('Kho.Nhap', N'Nhập kho', N'Kho'),
+('Kho.KiemKe', N'Kiểm kê kho', N'Kho'),
+('SanPham.QuanLy', N'Quản lý Sản phẩm', N'DanhMuc'),
+('HeThong.PhanQuyen', N'Quản lý Vai trò & Quyền', N'HeThong');
+GO
+
+-- Bảng Phân Quyền (VaiTro_Quyen)
+INSERT INTO VaiTro_Quyen (idVaiTro, idQuyen)
+SELECT (SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Quản trị viên'), idQuyen FROM Quyen;
+INSERT INTO VaiTro_Quyen (idVaiTro, idQuyen) VALUES
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Quản lý'), 'Dashboard.Xem'),
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Quản lý'), 'HoaDon.Tao'),
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Quản lý'), 'HoaDon.ThanhToan'),
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Quản lý'), 'HoaDon.Huy'),
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Quản lý'), 'NhanSu.QuanLy'),
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Thu ngân'), 'HoaDon.Tao'),
+((SELECT idVaiTro FROM VaiTro WHERE tenVaiTro = N'Thu ngân'), 'HoaDon.ThanhToan');
+GO
+
+-- Bảng Cài Đặt (Hệ thống)
+INSERT INTO CaiDat (tenCaiDat, giaTri, moTa) VALUES
+(N'TenQuan', N'Cafe Sách Bookaholic', N'Tên quán hiển thị trên hóa đơn, trang web'),
+(N'DiaChi', N'08 Hà Văn Tín, P. Hòa Khánh Nam, Q. Liên Chiểu, TP. Đà Nẵng', N'Địa chỉ in trên hóa đơn'),
+(N'SoDienThoai', N'0376.512.695', N'SĐT liên hệ'),
+(N'Website', N'https://cafebook.vn', N'Website quán'),
+(N'Wifi_MatKhau', N'Shu.0311', N'Mật khẩu Wifi cho khách'),
+(N'Sach_PhiTraTreMoiNgay', N'5000', N'Số tiền (VND) phạt nếu khách trả sách trễ 1 ngày'),
+(N'AI_Chat_API_Key', N'sk-xxxxxxxxxxxxxxxxxxxx', N'API Key cho dịch vụ (OpenAI, Gemini...)'),
+(N'AI_Chat_Endpoint', N'https://api.openai.com/v1/chat/completions', N'Endpoint của dịch vụ AI Chat');
+GO
+
+-- Bảng Nhân Viên
+INSERT INTO [dbo].[NhanVien] ([hoTen], [soDienThoai], [email], [ngayVaoLam], [idVaiTro], [tenDangNhap], [matKhau]) VALUES
+(N'Trần Văn Admin', '0900000001', 'admin@cafebook.vn', '2025-01-01', 1, 'admin', 'admin123'),
+(N'Nguyễn Thị Quản Lý', '0900000002', 'manager@cafebook.vn', '2025-01-01', 2, 'manager', 'manager123'),
+(N'Lê Văn Thu Ngân', '0900000003', 'cashier@cafebook.vn', '2025-01-01', 3, 'cashier', 'cashier123'),
+(N'Phạm Hữu Pha Chế', '0900000004', 'barista@cafebook.vn', '2025-01-01', 4, 'barista', 'barista123'),
+(N'Võ Thị Phục Vụ', '0900000005', 'service@cafebook.vn', '2025-01-01', 5, 'service', 'service123');
+GO
+
+-- Bảng Khu Vực
+INSERT INTO KhuVuc (TenKhuVuc, MoTa) VALUES
+(N'Tầng trệt', N'Khu vực trong nhà, máy lạnh'),
+(N'Tầng 2', N'Khu vực đọc sách, yên tĩnh'),
+(N'Sân thượng', N'Khu vực ngoài trời, thoáng mát'),
+(N'Sân vườn', N'Khu vực gần cổng, có cây xanh'),
+(N'Phòng VIP', N'Phòng riêng cho nhóm');
+GO
+
+-- Bảng Bàn (FK: KhuVuc)
+INSERT INTO Ban (soBan, soGhe, trangThai, idKhuVuc) VALUES
+(N'T1-01', 4, N'Trống', 1),
+(N'T2-01', 2, N'Trống', 2),
+(N'ST-01', 6, N'Trống', 3),
+(N'SV-01', 4, N'Trống', 4),
+(N'VIP-01', 10, N'Trống', 5);
+GO
+
+-- Bảng Người Giao Hàng
+INSERT INTO NguoiGiaoHang (TenNguoiGiaoHang, SoDienThoai, TrangThai) VALUES
+(N'Nguyễn Văn A', '0911111111', N'Sẵn sàng'),
+(N'Trần Thị B', '0922222222', N'Đang giao'),
+(N'Lê Văn C', '0933333333', N'Sẵn sàng'),
+(N'Phạm Hùng D', '0944444444', N'Nghỉ'),
+(N'Đặng E', '0955555555', N'Sẵn sàng');
+GO
+
+-- Bảng Phụ Thu
+INSERT INTO PhuThu (TenPhuThu, GiaTri, LoaiGiaTri) VALUES
+(N'Phí dịch vụ cuối tuần', 5000, N'VND'),
+(N'Phí dịch vụ lễ/tết', 10000, N'VND'),
+(N'Phí phục vụ phòng VIP', 50000, N'VND'),
+(N'VAT (10%)', 10, N'%'),
+(N'Phí mang về (Hộp)', 2000, N'VND');
+GO
+
+-- Bảng Nguyên Liệu
+INSERT INTO NguyenLieu (tenNguyenLieu, donViTinh, tonKho, TonKhoToiThieu) VALUES
+(N'Hạt Cà phê Robusta', N'kg', 50, 10),
+(N'Sữa tươi không đường', N'lít', 100, 20),
+(N'Đường cát trắng', N'kg', 80, 10),
+(N'Lá trà Oolong', N'kg', 30, 5),
+(N'Bột Cacao', N'kg', 20, 5);
+GO
+
+-- Bảng Nhà Cung Cấp
+INSERT INTO NhaCungCap (tenNhaCungCap, soDienThoai, diaChi) VALUES
+(N'Nông sản Đà Lạt Farm', '0811111111', N'TP. Đà Lạt, Lâm Đồng'),
+(N'Vinamilk', '0822222222', N'Quận 7, TP. HCM'),
+(N'Đường Biên Hòa', '0833333333', N'Tỉnh Đồng Nai'),
+(N'Trà Phúc Long', '0844444444', N'TP. Thủ Đức, TP. HCM'),
+(N'Puratos Việt Nam (Bột)', '0855555555', N'Tỉnh Bình Dương');
+GO
+
+-- Bảng Khách Hàng
+-- *** SỬA LỖI 2: Thêm tenDangNhap UNIQUE ***
+INSERT INTO KhachHang (hoTen, soDienThoai, email, diemTichLuy, tenDangNhap) VALUES
+(N'Trần Ngọc Anh', '0987654321', 'anh.tn@gmail.com', 150, 'khach1'),
+(N'Lê Minh Hùng', '0987123456', 'hung.lm@gmail.com', 50, 'khach2'),
+(N'Phạm Thu Trang', '0912345678', 'trang.pt@gmail.com', 0, 'khach3'),
+(N'Võ Thành Danh', '0905111222', 'danh.vt@gmail.com', 800, 'khach4'),
+(N'Đỗ Bích Thảo', '0905333444', 'thao.db@gmail.com', 20, 'khach5');
+GO
+
+-- Bảng Khuyến Mãi
+INSERT INTO KhuyenMai (maKhuyenMai, tenChuongTrinh, loaiGiamGia, giaTriGiam, ngayBatDau, ngayKetThuc) VALUES
+('HE2025', N'Vui hè sảng khoái', N'VND', 20000, '2025-06-01', '2025-08-31'),
+('SINHNHAT', N'Mừng sinh nhật quán', N'%', 30, '2025-10-20', '2025-10-27'),
+('TET2026', N'Tết sum vầy', N'VND', 50000, '2026-01-20', '2026-02-10'),
+('SACHMOI', N'Chào sách mới', N'%', 15, '2025-11-01', '2025-11-30'),
+('DIEMTHUONG', N'Đổi 1000 điểm', N'VND', 100000, '2025-01-01', '2026-01-01');
+GO
+
+-- Bảng Thể Loại Sách
+INSERT INTO TheLoai (tenTheLoai) VALUES
+(N'Văn học kinh điển'),
+(N'Phát triển bản thân'),
+(N'Kinh tế - Quản trị'),
+(N'Khoa học viễn tưởng'),
+(N'Truyện tranh (Manga)');
+GO
+
+-- Bảng Tác Giả
+INSERT INTO TacGia (tenTacGia) VALUES
+(N'Nguyễn Nhật Ánh'),
+(N'Haruki Murakami'),
+(N'Dale Carnegie'),
+(N'Yuval Noah Harari'),
+(N'J.K. Rowling');
+GO
+
+-- Bảng Nhà Xuất Bản
+INSERT INTO NhaXuatBan (tenNhaXuatBan) VALUES
+(N'NXB Trẻ'),
+(N'NXB Kim Đồng'),
+(N'NXB Tổng hợp TP.HCM'),
+(N'NXB Lao Động'),
+(N'NXB Nhã Nam');
+GO
+
+-- Bảng Ca Làm Việc
+INSERT INTO CaLamViec (tenCa, gioBatDau, gioKetThuc) VALUES
+(N'Ca Sáng', '06:00:00', '14:00:00'),
+(N'Ca Chiều', '14:00:00', '22:00:00'),
+(N'Ca Gãy 1', '08:00:00', '12:00:00'),
+(N'Ca Gãy 2', '18:00:00', '22:00:00'),
+(N'Ca Fulltime', '08:00:00', '17:00:00');
+GO
+
+-- Bảng Danh Mục Sản Phẩm
+INSERT INTO DanhMuc (tenDanhMuc, idDanhMucCha) VALUES
+(N'Cà phê', NULL),
+(N'Trà & Trà sữa', NULL),
+(N'Nước ép & Sinh tố', NULL),
+(N'Bánh ngọt', NULL),
+(N'Cà phê Việt Nam', 1);
+GO
+
+-- Bảng Sách (FK: TheLoai, TacGia, NhaXuatBan)
+INSERT INTO Sach (tenSach, idTheLoai, idTacGia, idNhaXuatBan, namXuatBan, soLuongTong, soLuongHienCo) VALUES
+(N'Đắc nhân tâm', 2, 3, 3, 2018, 5, 5),
+(N'Rừng Na Uy', 1, 2, 5, 2011, 3, 2),
+(N'Sapiens: Lược sử loài người', 3, 4, 5, 2017, 4, 4),
+(N'Harry Potter và Hòn đá Phù thủy', 4, 5, 1, 2003, 5, 5),
+(N'Cho tôi xin một vé đi tuổi thơ', 1, 1, 2, 2010, 10, 8);
+GO
+
+-- Bảng Sản Phẩm (FK: DanhMuc)
+INSERT INTO SanPham (tenSanPham, idDanhMuc, giaBan, trangThaiKinhDoanh, NhomIn) VALUES
+(N'Cà phê sữa đá', 5, 35000, 1, N'Bar'),
+(N'Trà sữa trân châu', 2, 45000, 1, N'Bar'),
+(N'Nước ép cam', 3, 40000, 1, N'Bếp'),
+(N'Bánh Tiramisu', 4, 55000, 1, N'Bếp'),
+(N'Cà phê đen đá', 5, 30000, 1, N'Bar');
+GO
+
+-- Bảng Phiếu Đặt Bàn (FK: KhachHang, Ban)
+INSERT INTO PhieuDatBan (idKhachHang, idBan, thoiGianDat, soLuongKhach) VALUES
+(1, 1, '2025-11-01 19:00:00', 4),
+(2, 2, '2025-11-02 09:00:00', 2),
+(3, 3, '2025-11-03 20:00:00', 6),
+(4, 5, '2025-11-05 18:00:00', 8),
+(5, 4, '2025-11-05 10:00:00', 3);
+GO
+
+-- Bảng Phiếu Thuê Sách (FK: KhachHang, NhanVien)
+INSERT INTO PhieuThueSach (idKhachHang, idNhanVien, trangThai) VALUES
+(1, 3, N'Đang thuê'),
+(2, 3, N'Đã trả'),
+(4, 5, N'Đang thuê'),
+(5, 5, N'Đã trả'),
+(1, 3, N'Đang thuê');
+GO
+
+-- Bảng Phiếu Nhập Kho (FK: NhaCungCap, NhanVien)
+INSERT INTO PhieuNhapKho (idNhaCungCap, idNhanVien, ngayNhap, tongTien) VALUES
+(1, 2, '2025-10-25 08:00:00', 5000000),
+(2, 2, '2025-10-25 09:00:00', 3000000),
+(3, 2, '2025-10-25 10:00:00', 1500000),
+(4, 2, '2025-10-26 08:00:00', 4000000),
+(5, 2, '2025-10-26 09:00:00', 2000000);
+GO
+
+-- Bảng Phiếu Kiểm Kho (FK: NhanVien)
+INSERT INTO PhieuKiemKho (idNhanVienKiem, NgayKiem, TrangThai) VALUES
+(2, '2025-10-30 22:00:00', N'Đã hoàn thành'),
+(1, '2025-10-31 22:00:00', N'Đã hoàn thành'),
+(2, '2025-11-01 10:00:00', N'Đang kiểm'),
+(2, '2025-11-01 11:00:00', N'Đang kiểm'),
+(2, '2025-11-01 12:00:00', N'Đang kiểm');
+GO
+
+-- Bảng Phiếu Xuất Hủy (FK: NhanVien)
+INSERT INTO PhieuXuatHuy (idNhanVienXuat, NgayXuatHuy, LyDoXuatHuy, TongGiaTriHuy) VALUES
+(4, '2025-10-28 14:00:00', N'Hư hỏng do vận chuyển', 150000),
+(4, '2025-10-29 15:00:00', N'Hết hạn sử dụng', 300000),
+(2, '2025-10-30 16:00:00', N'Rơi vỡ', 50000),
+(4, '2025-10-31 17:00:00', N'Hư hỏng do côn trùng', 70000),
+(2, '2025-11-01 10:00:00', N'Ẩm mốc', 120000);
+GO
+
+-- Bảng Lịch Làm Việc (FK: NhanVien, CaLamViec)
+INSERT INTO LichLamViec (idNhanVien, idCa, ngayLam) VALUES
+(1, 5, '2025-11-01'),
+(2, 5, '2025-11-01'),
+(3, 1, '2025-11-01'),
+(4, 1, '2025-11-01'),
+(5, 2, '2025-11-01');
+GO
+
+-- Bảng Phiếu Lương (FK: NhanVien)
+INSERT INTO PhieuLuong (idNhanVien, thang, nam, luongCoBan, tongGioLam, thucLanh, trangThai) VALUES
+(1, 10, 2025, 15000000, 200, 15000000, N'Đã thanh toán'),
+(2, 10, 2025, 12000000, 208, 12000000, N'Đã thanh toán'),
+(3, 10, 2025, 8000000, 200, 8000000, N'Đã thanh toán'),
+(4, 10, 2025, 7000000, 200, 7000000, N'Chưa thanh toán'),
+(5, 10, 2025, 7000000, 200, 7000000, N'Chưa thanh toán');
+GO
+
+-- Bảng Đơn Xin Nghỉ (FK: NhanVien)
+INSERT INTO DonXinNghi (idNhanVien, LoaiDon, LyDo, NgayBatDau, NgayKetThuc, TrangThai, idNguoiDuyet) VALUES
+(5, N'Nghỉ phép', N'Việc gia đình', '2025-11-03', '2025-11-04', N'Đã duyệt', 2),
+(4, N'Nghỉ ốm', N'Sốt cao', '2025-11-01', '2025-11-01', N'Đã duyệt', 2),
+(3, N'Nghỉ phép', N'Về quê', '2025-11-10', '2025-11-15', N'Chờ duyệt', NULL),
+(2, N'Nghỉ phép', N'Đi du lịch', '2025-12-01', '2025-12-05', N'Chờ duyệt', NULL),
+(1, N'Nghỉ phép', N'Công tác', '2025-11-05', '2025-11-07', N'Đã duyệt', 1);
+GO
+
+-- Bảng Lịch Sử Chat AI (FK: KhachHang, NhanVien)
+INSERT INTO ChatLichSu (idKhachHang, idNhanVien, NoiDungHoi, NoiDungTraLoi, LoaiChat) VALUES
+(1, NULL, N'Quán có sách gì mới không?', N'Chào bạn, quán vừa về bộ sách Rừng Na Uy...', N'KhachHang'),
+(NULL, 2, N'Tóm tắt doanh thu tháng 10', N'Doanh thu tháng 10 là 500.000.000 VND...', N'NhanVien'),
+(2, NULL, N'Quán có món nào cho người ăn kiêng?', N'Chào bạn, quán có món...', N'KhachHang'),
+(NULL, 3, N'Làm thế nào để hủy một hóa đơn?', N'Để hủy hóa đơn, bạn vào mục...', N'NhanVien'),
+(4, NULL, N'Chính sách thuê sách như thế nào?', N'Chào bạn, chính sách thuê sách là...', N'KhachHang');
+GO
+
+-- Bảng Hóa Đơn (FK: Ban, NhanVien, KhachHang, NguoiGiaoHang)
+INSERT INTO HoaDon (idBan, idNhanVien, idKhachHang, thoiGianTao, trangThai, LoaiHoaDon, idNguoiGiaoHang) VALUES
+(1, 3, 1, '2025-10-31 19:00:00', N'Đã thanh toán', N'Tại quán', NULL),
+(2, 3, 2, '2025-10-31 09:30:00', N'Đã thanh toán', N'Tại quán', NULL),
+(NULL, 3, 3, '2025-11-01 10:00:00', N'Chưa thanh toán', N'Mang về', NULL),
+(NULL, 3, 4, '2025-11-01 11:00:00', N'Đang giao', N'Giao hàng', 1),
+(5, 5, 5, '2025-11-01 14:00:00', N'Chưa thanh toán', N'Tại quán', NULL);
+GO
+
+-- Bảng Định Lượng (Công thức) (FK: SanPham, NguyenLieu)
+INSERT INTO DinhLuong (idSanPham, idNguyenLieu, soLuong) VALUES
+(1, 1, 0.025), -- Cà phê sữa (25g cà phê)
+(1, 2, 0.05),  -- Cà phê sữa (50ml sữa)
+(5, 1, 0.025), -- Cà phê đen (25g cà phê)
+(2, 4, 0.03),  -- Trà sữa (30g trà)
+(4, 5, 0.05);  -- Bánh Tiramisu (50g bột cacao)
+GO
+
+-- Bảng Chi Tiết Phiếu Thuê Sách (FK: PhieuThueSach, Sach)
+INSERT INTO ChiTietPhieuThue (idPhieuThueSach, idSach, ngayHenTra, ngayTraThucTe, tienCoc) VALUES
+(1, 2, '2025-11-07 19:00:00', NULL, 100000),
+(2, 1, '2025-10-15 09:00:00', '2025-10-14 17:00:00', 50000),
+(3, 3, '2025-11-10 10:00:00', NULL, 150000),
+(4, 5, '2025-10-20 11:00:00', '2025-10-22 10:00:00', 80000),
+(5, 4, '2025-11-08 15:00:00', NULL, 200000);
+GO
+
+-- Bảng Chi Tiết Phiếu Nhập Kho (FK: PhieuNhapKho, NguyenLieu)
+INSERT INTO ChiTietNhapKho (idPhieuNhapKho, idNguyenLieu, soLuongNhap, donGiaNhap) VALUES
+(1, 1, 50, 100000),
+(2, 2, 100, 30000),
+(3, 3, 80, 18750),
+(4, 4, 30, 133333.33),
+(5, 5, 20, 100000);
+GO
+
+-- Bảng Chi Tiết Kiểm Kho (FK: PhieuKiemKho, NguyenLieu)
+INSERT INTO ChiTietKiemKho (idPhieuKiemKho, idNguyenLieu, TonKhoHeThong, TonKhoThucTe, LyDoChenhLech) VALUES
+(1, 1, 50, 50, NULL),
+(1, 2, 100, 99.5, N'Rơi vãi'),
+(2, 3, 80, 80, NULL),
+(2, 4, 30, 29, N'Hỏng'),
+(2, 5, 20, 20, NULL);
+GO
+
+-- Bảng Chi Tiết Xuất Hủy (FK: PhieuXuatHuy, NguyenLieu)
+INSERT INTO ChiTietXuatHuy (idPhieuXuatHuy, idNguyenLieu, SoLuong, DonGiaVon) VALUES
+(1, 4, 1, 133333),
+(2, 2, 10, 30000),
+(3, 1, 0.1, 100000),
+(4, 4, 0.5, 133333),
+(5, 5, 1, 100000);
+GO
+
+-- Bảng Chấm Công (FK: LichLamViec)
+INSERT INTO BangChamCong (idLichLamViec, gioVao, gioRa) VALUES
+(1, '2025-11-01 07:55:00', '2025-11-01 17:05:00'),
+(2, '2025-11-01 08:00:00', '2025-11-01 17:00:00'),
+(3, '2025-11-01 05:58:00', '2025-11-01 14:02:00'),
+(4, '2025-11-01 06:00:00', NULL), -- Đang làm
+(5, '2025-11-01 13:55:00', '2025-11-01 22:01:00');
+GO
+
+-- Bảng Gợi Ý Sản Phẩm (FK: SanPham, SanPham)
+INSERT INTO DeXuatSanPham (idSanPhamGoc, idSanPhamDeXuat, DoLienQuan, LoaiDeXuat) VALUES
+(1, 4, 0.8, N'Mua kèm'), -- Cà phê sữa -> Bánh Tiramisu
+(5, 4, 0.75, N'Mua kèm'), -- Cà phê đen -> Bánh Tiramisu
+(1, 5, 0.9, N'Tương tự'), -- Cà phê sữa -> Cà phê đen
+(2, 1, 0.5, N'Phổ biến'), -- Trà sữa -> Cà phê sữa
+(3, 2, 0.4, N'Có thể thích'); -- Nước ép -> Trà sữa
+GO
+
+-- Bảng Gợi Ý Sách (FK: Sach, Sach)
+INSERT INTO DeXuatSach (idSachGoc, idSachDeXuat, DoLienQuan, LoaiDeXuat) VALUES
+(1, 2, 0.6, N'Cùng thể loại'),
+(1, 3, 0.7, N'Cùng tác giả'),
+(5, 2, 0.8, N'Cùng thể loại'),
+(4, 3, 0.5, N'Đọc nhiều'),
+(2, 5, 0.8, N'Cùng thể loại');
+GO
+
+-- Bảng Chi Tiết Hóa Đơn (FK: HoaDon, SanPham)
+INSERT INTO ChiTietHoaDon (idHoaDon, idSanPham, soLuong, donGia) VALUES
+(1, 1, 2, 35000), -- Hóa đơn 1, 2 Cà phê sữa
+(1, 4, 1, 55000), -- Hóa đơn 1, 1 Bánh Tiramisu
+(2, 5, 1, 30000), -- Hóa đơn 2, 1 Cà phê đen
+(3, 2, 1, 45000), -- Hóa đơn 3, 1 Trà sữa
+(4, 3, 2, 40000); -- Hóa đơn 4, 2 Nước ép cam
+GO
+
+-- Bảng Chi Tiết Phụ Thu Của Hóa Đơn (FK: HoaDon, PhuThu)
+INSERT INTO ChiTietPhuThuHoaDon (idHoaDon, idPhuThu, SoTien) VALUES
+(1, 1, 5000), -- Hóa đơn 1, Phí cuối tuần
+(3, 5, 2000), -- Hóa đơn 3, Phí mang về
+(4, 5, 2000), -- Hóa đơn 4, Phí mang về
+(5, 3, 50000), -- Hóa đơn 5, Phí phòng VIP
+(1, 4, 12500); -- Hóa đơn 1, VAT 10% (giả sử 125k tiền hàng)
+GO
+
+-- Bảng Nhật Ký Hủy Món (FK: HoaDon, SanPham, NhanVien)
+INSERT INTO NhatKyHuyMon (idHoaDon, idSanPham, SoLuongHuy, LyDo, idNhanVienHuy) VALUES
+(1, 1, 1, N'Khách đổi ý', 3),
+(2, 5, 1, N'Làm sai món', 4),
+(3, 2, 1, N'Hết hàng', 3),
+(4, 3, 1, N'Khách chê', 5),
+(5, 1, 1, N'Khách hủy bàn', 5);
+GO
+
+-- Bảng Liên Kết Hóa Đơn - Khuyến Mãi (FK: HoaDon, KhuyenMai)
+INSERT INTO HoaDon_KhuyenMai (idHoaDon, idKhuyenMai) VALUES
+(1, 2), -- Hóa đơn 1, Mừng sinh nhật
+(2, 2), -- Hóa đơn 2, Mừng sinh nhật
+(3, 4), -- Hóa đơn 3, Chào sách mới
+(4, 1), -- Hóa đơn 4, Vui hè
+(5, 5); -- Hóa đơn 5, Đổi điểm
+GO
+
+-- Bảng Giao Dịch Thanh Toán (FK: HoaDon)
+INSERT INTO GiaoDichThanhToan (idHoaDon, MaGiaoDichNgoai, CongThanhToan, SoTien, TrangThai) VALUES
+(1, N'VNPAY_001', N'VNPAY', 142500, N'Thành công'),
+(2, N'MOMO_002', N'MOMO', 30000, N'Thành công'),
+(3, N'CASH_003', N'Tiền mặt', 47000, N'Thành công'),
+(4, N'BANK_004', N'Chuyển khoản', 82000, N'Đang chờ'),
+(5, N'CASH_005', N'Tiền mặt', 50000, N'Thất bại');
+GO
+
+
+PRINT N'5. BẬT LẠI TẤT CẢ CÁC RÀNG BUỘC KHÓA NGOẠI'
+EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL'
+GO
+
+PRINT N'HOÀN TẤT: Đã chèn dữ liệu mẫu cho toàn bộ CSDL CAFEBOOKDB_v2 (Đã sửa lỗi).'
+GO

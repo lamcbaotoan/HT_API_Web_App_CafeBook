@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <Compile Update="View\Common\BaocaodoanhthuPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\BaoCaoHieuSuatNhanVientPreview.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\BaoCaoTonKhoNguyenLieuPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\BapCaoTonKhoSachPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\CaiDatWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\InputDialogWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\SoDoBanView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\ManHinhQuanly.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\WelcomeWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\ManHinhDangNhap.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\ManHinhNhanVien.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\BaoCaoNhanSuView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\CaiDatNhanSuView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\PhanQuyenView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyBanView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyDonHangView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyDonViChuyenDoiView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyDonXinNghiView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyKhachHangView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyKhuyenMaiView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyKiemKhoView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyLichLamViecView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyLuongView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyNguyenLieuView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyNhaCungCapView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyNhanVienView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyNhapKhoView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLySachView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLySanPhamView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyTonKhoView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyVaiTroView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyXuatHuyView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\TongQuanView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,62 @@
+﻿@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản lý Cafebook</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="employee-body">
+    <div class="d-flex">
+
+        <nav class="sidebar-nav bg-dark">
+            <div class="sidebar-header">
+                <a class="navbar-brand text-white fs-4" asp-page="/employee/WebQuanLyView">
+                    <i class="fa-solid fa-mug-hot"></i> Cafebook
+                </a>
+            </div>
+
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" asp-page="/Employee/WebQuanLyView">
+                        <i class="fa-solid fa-chart-line"></i> Tổng quan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" asp-page="/Employee/SoDoBanView">
+                        <i class="fa-solid fa-border-all"></i> Sơ Đồ Bàn
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="main-content flex-grow-1">
+            <header class="header-nav shadow-sm">
+                <span class="navbar-text">
+                    Xin chào, @(User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity.Name)!
+                </span>
+                <form method="post" asp-page="/employee/DangXuat">
+                    <button type="submit" class="btn btn-link nav-link text-danger">
+                        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                    </button>
+                </form>
+            </header>
+
+            <main role="main" class="p-4">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

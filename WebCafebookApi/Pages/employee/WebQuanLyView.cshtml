@@ -1,0 +1,71 @@
+﻿@page "/Employee/Dashboard"
+@model WebCafebookApi.Pages.employee.WebQuanLyViewModel
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+    Layout = "_Layout_Employee"; // <-- Sử dụng layout nhân viên
+
+    // Logic xử lý ảnh Base64 (giống _LoginPartial)
+    var avatarSrc = string.IsNullOrEmpty(Model.DashboardData.AnhDaiDien)
+        ? "/images/default-avatar.png"
+        : $"data:image/png;base64,{Model.DashboardData.AnhDaiDien}";
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-4 col-md-5">
+            <div class="card h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center p-4">
+                    <img src="@avatarSrc" alt="Avatar" class="rounded-circle mb-3 shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" />
+                    <h3 class="card-title fw-bold mb-1">@Model.DashboardData.HoTen</h3>
+                    <p class="card-text text-muted fs-5 mb-3">@Model.DashboardData.VaiTro</p>
+                    <hr class="w-100" />
+                    <p class="card-text fs-5 mb-0">
+                        <strong class="text-uppercase">Ca làm việc hôm nay:</strong>
+                        <br />
+                        <span class="fw-bold fs-4" style="color: var(--cf-orange);">
+                            @(Model.DashboardData.CaHienTai ?? "...")
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 col-md-7">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fa-solid fa-users fa-3x mb-3 text-danger"></i>
+                            <h1 class="display-3 fw-bold mb-0" style="color: var(--cf-dark-brown);">@Model.DashboardData.TongBanDangPhucVu</h1>
+                            <p class="card-text fs-5 text-muted mb-0">Bàn Đang Phục Vụ</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fa-solid fa-file-invoice fa-3x mb-3 text-primary"></i>
+                            <h1 class="display-3 fw-bold mb-0" style="color: var(--cf-dark-brown);">@Model.DashboardData.TongDonDangXuLy</h1>
+                            <p class="card-text fs-5 text-muted mb-0">Đơn Đang Xử Lý</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <a asp-page="/Employee/SoDoBanView" class="btn btn-primary btn-lg p-4">
+                    <i class="fas fa-border-all me-2"></i> Bắt đầu làm việc (Sơ Đồ Bàn)
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+}

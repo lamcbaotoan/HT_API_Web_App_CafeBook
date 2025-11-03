@@ -1,0 +1,9 @@
+# Thư mục tạm của Visual Studio
+.vs/
+**/bin/
+**/obj/
+
+# File tạm
+*.tmp
+*.bak
+*~

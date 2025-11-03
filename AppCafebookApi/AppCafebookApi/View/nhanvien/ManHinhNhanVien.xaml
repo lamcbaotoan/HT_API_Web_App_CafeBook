@@ -1,0 +1,181 @@
+﻿<Window x:Class="AppCafebookApi.View.nhanvien.ManHinhNhanVien"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AppCafebookApi.View.nhanvien"
+        mc:Ignorable="d"
+        Title="Cafebook - Copyright by © Lâm Chu Bảo Toàn | Contact:[lamchubaotoan@gmail.com]" Height="800" Width="1440"
+        Icon="/Assets/logo.ico"        
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI"
+        WindowState="Maximized">
+
+    <Window.Resources>
+        <!-- Bảng màu thống nhất -->
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
+        <SolidColorBrush x:Key="AccentOrangeBrush" Color="#D27D2D"/>
+        <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
+        <SolidColorBrush x:Key="WhiteTextBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="SubtleWhiteTextBrush" Color="#BCAAA4"/>
+        <SolidColorBrush x:Key="HoverBrownBrush" Color="#8D6E63"/>
+
+        <!-- Bộ Icons -->
+        <Geometry x:Key="IconDashboard">M13,3V9H21V3M13,21H21V11H13M3,21H11V15H3M3,13H11V3H3V13Z</Geometry>
+        <Geometry x:Key="IconBooking">M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z</Geometry>
+        <Geometry x:Key="IconProfile">M12,12A5,5 0 0,1 7,7A5,5 0 0,1 12,2A5,5 0 0,1 17,7A5,5 0 0,1 12,12M12,14C14.67,14 20,15.33 20,18V20H4V18C4,15.33 9.33,14 12,14Z</Geometry>
+        <Geometry x:Key="IconClock">M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z</Geometry>
+        <Geometry x:Key="IconLogout">M16,17V14H9V12H16V9L20,13L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z</Geometry>
+
+        <!-- Style cho các nút điều hướng chính, giống hệt ManHinhAdmin -->
+        <Style x:Key="NavToggleButton" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtleWhiteTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="5" Margin="8,2">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="indicator" Width="4" Height="20" Background="Transparent" CornerRadius="2" VerticalAlignment="Center" Margin="-20,0,10,0"/>
+                                <Viewbox Grid.Column="0" Width="16" Height="16" Margin="0,0,15,0">
+                                    <Path Data="{Binding Path=Tag, RelativeSource={RelativeSource TemplatedParent}}" Fill="{TemplateBinding Foreground}" Stretch="Uniform" VerticalAlignment="Center"/>
+                                </Viewbox>
+                                <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,1,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource HoverBrownBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource DarkBrownBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+                                <Setter TargetName="indicator" Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style cho các nút ở footer, giống hệt ManHinhAdmin -->
+        <Style x:Key="FooterButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtleWhiteTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="5" Margin="8,2">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource HoverBrownBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar (Thanh điều hướng bên trái) -->
+        <Border Grid.Column="0" Background="{StaticResource PrimaryBrownBrush}">
+            <!-- Sử dụng Grid 3 hàng giống màn hình Admin -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- Header: Thông tin người dùng -->
+                    <RowDefinition Height="*"/>
+                    <!-- Content: Menu điều hướng -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Footer: Nút đăng xuất -->
+                </Grid.RowDefinitions>
+
+                <!-- Header: Thông tin người dùng -->
+                <StackPanel Grid.Row="0" Margin="20">
+                    <!-- Avatar Icon -->
+                    <Border x:Name="AvatarBorder" 
+                            Height="70" Width="70"
+                            Background="{StaticResource LightCreamBrush}"
+                            CornerRadius="35"
+                            Margin="0,0,0,10">
+                        <Viewbox Margin="12,10,18,20">
+                            <Path Data="{StaticResource IconProfile}" Fill="{StaticResource PrimaryBrownBrush}">
+                                <Path.RenderTransform>
+                                    <TranslateTransform Y="1.5" />
+                                </Path.RenderTransform>
+                            </Path>
+                        </Viewbox>
+                    </Border>
+                    <TextBlock x:Name="txtUserName" Text="Tên Nhân Viên" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource WhiteTextBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBlock x:Name="txtUserRole" Text="Nhân viên" FontSize="13" Foreground="{StaticResource SubtleWhiteTextBrush}" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Content: Menu điều hướng trong ScrollViewer -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <ToggleButton x:Name="btnSoDoBan" Content="Sơ đồ bàn" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconDashboard}" Click="BtnSoDoBan_Click" IsChecked="True"/>
+                        <ToggleButton x:Name="btnDatBanSach" Content="Quản lý Đặt bàn" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconBooking}" Click="BtnDatBanSach_Click"/>
+
+                        <Separator Margin="15,20" Background="{StaticResource HoverBrownBrush}"/>
+
+                        <ToggleButton x:Name="btnThongTinCaNhan" Content="Thông tin cá nhân" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconProfile}" Click="BtnThongTinCaNhan_Click"/>
+                        <ToggleButton x:Name="btnChamCong" Content="Chấm công" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconClock}" Click="BtnChamCong_Click"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer: Nút đăng xuất -->
+                <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,5">
+                    <Separator Margin="15" Background="{StaticResource HoverBrownBrush}"/>
+                    <Button x:Name="btnDangXuat" Style="{StaticResource FooterButton}" Click="BtnDangXuat_Click"
+                             Background="{StaticResource AccentOrangeBrush}"
+                             Foreground="{StaticResource WhiteTextBrush}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Viewbox Grid.Column="0" Width="16" Height="16" Margin="0,0,15,0">
+                                <Path Data="{StaticResource IconLogout}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            </Viewbox>
+                            <TextBlock Grid.Column="1" Text="Đăng xuất" VerticalAlignment="Center" Margin="0,1,0,0"/>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content (Nội dung chính) -->
+        <Border Grid.Column="1" Background="{StaticResource LightCreamBrush}">
+            <Border.Effect>
+                <DropShadowEffect ShadowDepth="2" Direction="270" Color="Black" Opacity="0.1" BlurRadius="10"/>
+            </Border.Effect>
+            <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
+        </Border>
+    </Grid>
+</Window>
