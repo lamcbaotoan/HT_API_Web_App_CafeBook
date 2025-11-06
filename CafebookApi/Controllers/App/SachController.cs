@@ -1,12 +1,18 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/App/SachController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApp;
+using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http; // <-- THÊM
 
 namespace CafebookApi.Controllers.App
 {
@@ -15,15 +21,122 @@ namespace CafebookApi.Controllers.App
     public class SachController : ControllerBase
     {
         private readonly CafebookDbContext _context;
+        private readonly IWebHostEnvironment _env;
+        private readonly string _baseUrl;
 
-        public SachController(CafebookDbContext context)
+        public SachController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
+            _env = env;
+
+            // Đảm bảo WebRootPath tồn tại
+            if (string.IsNullOrEmpty(_env.WebRootPath))
+            {
+                _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                if (!Directory.Exists(_env.WebRootPath))
+                {
+                    Directory.CreateDirectory(_env.WebRootPath);
+                }
+            }
+
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
         }
 
-        // --- CÁC API SÁCH (Đã có) ---
-        #region API Sách
+        // === 5 HÀM HELPER XỬ LÝ FILE ===
 
+        // HELPER 1: TẠO URL TUYỆT ĐỐI (Giữ nguyên)
+        private string? GetFullImageUrl(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return null;
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
+        }
+
+        // HELPER 2: TẠO TÊN FILE (Giữ nguyên)
+        private string GenerateFileName(int id, string ten)
+        {
+            string slug = SlugifyUtil.GenerateSlug(ten);
+            return $"{id}_{slug}.jpg";
+        }
+
+        // HELPER 3: XÓA FILE CŨ (Giữ nguyên)
+        private void DeleteOldImage(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath)) return;
+            var fileName = relativePath.TrimStart('/');
+            var fullPath = Path.Combine(_env.WebRootPath, fileName.Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+        }
+
+        // HELPER 4: ĐỔI TÊN FILE (Giữ nguyên)
+        private void RenameImage(string oldRelativePath, string newRelativePath)
+        {
+            if (string.IsNullOrEmpty(oldRelativePath) || string.IsNullOrEmpty(newRelativePath) || oldRelativePath == newRelativePath)
+                return;
+            var oldFileName = oldRelativePath.TrimStart('/');
+            var oldFullPath = Path.Combine(_env.WebRootPath, oldFileName.Replace('/', Path.DirectorySeparatorChar));
+            var newFileName = newRelativePath.TrimStart('/');
+            var newFullPath = Path.Combine(_env.WebRootPath, newFileName.Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(oldFullPath))
+            {
+                System.IO.File.Move(oldFullPath, newFullPath);
+            }
+        }
+
+        // HELPER 5 (SỬA): LƯU FILE TỪ IFormFile
+        // (Đã xóa SaveImageFromBase64)
+        private async Task<string> SaveImageFromFile(IFormFile file, string fileName, string relativeDir)
+        {
+            var saveDir = Path.Combine(_env.WebRootPath, relativeDir);
+            if (!Directory.Exists(saveDir))
+            {
+                Directory.CreateDirectory(saveDir);
+            }
+            var fullSavePath = Path.Combine(saveDir, fileName);
+
+            // Dùng stream để copy file
+            await using (var stream = new FileStream(fullSavePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/{relativeDir.Replace(Path.DirectorySeparatorChar, '/')}/{fileName}";
+        }
+        // =============================
+
+        [HttpGet("filters")] // <-- PHẢI LÀ [HttpGet]
+        public async Task<IActionResult> GetSachFilters()
+        {
+            var theLoais = await _context.TheLoais
+                .Select(t => new FilterLookupDto { Id = t.IdTheLoai, Ten = t.TenTheLoai })
+                .OrderBy(t => t.Ten)
+                .ToListAsync();
+
+            var tacGias = await _context.TacGias
+                .Select(t => new FilterLookupDto { Id = t.IdTacGia, Ten = t.TenTacGia })
+                .OrderBy(t => t.Ten)
+                .ToListAsync();
+
+            var nhaXuatBans = await _context.NhaXuatBans
+                .Select(t => new FilterLookupDto { Id = t.IdNhaXuatBan, Ten = t.TenNhaXuatBan })
+                .OrderBy(t => t.Ten)
+                .ToListAsync();
+
+            var dto = new SachFiltersDto
+            {
+                TheLoais = theLoais,
+                TacGias = tacGias,
+                NhaXuatBans = nhaXuatBans
+            };
+            return Ok(dto);
+        }
+
+        #region API Sách (Đã sửa)
+
+        // (Hàm SearchSach và GetSachDetails giữ nguyên logic, chỉ đảm bảo trả về URL)
         [HttpGet("search")]
         public async Task<IActionResult> SearchSach(
             [FromQuery] string? searchText,
@@ -38,7 +151,6 @@ namespace CafebookApi.Controllers.App
             {
                 query = query.Where(s => s.IdTheLoai == theLoaiId);
             }
-
             if (!string.IsNullOrEmpty(searchText))
             {
                 string searchLower = searchText.ToLower();
@@ -48,19 +160,32 @@ namespace CafebookApi.Controllers.App
                 );
             }
 
-            var results = await query
-                .Select(s => new SachDto
+            var rawResults = await query
+                .Select(s => new
                 {
-                    IdSach = s.IdSach,
-                    TenSach = s.TenSach,
+                    s.IdSach,
+                    s.TenSach,
                     TenTacGia = s.TacGia != null ? s.TacGia.TenTacGia : "N/A",
                     TenTheLoai = s.TheLoai != null ? s.TheLoai.TenTheLoai : "N/A",
-                    ViTri = s.ViTri,
-                    SoLuongTong = s.SoLuongTong,
-                    SoLuongHienCo = s.SoLuongHienCo
+                    s.ViTri,
+                    s.SoLuongTong,
+                    s.SoLuongHienCo,
+                    s.AnhBia // Chỉ lấy path
                 })
                 .OrderBy(s => s.TenSach)
                 .ToListAsync();
+
+            var results = rawResults.Select(s => new SachDto
+            {
+                IdSach = s.IdSach,
+                TenSach = s.TenSach,
+                TenTacGia = s.TenTacGia,
+                TenTheLoai = s.TenTheLoai,
+                ViTri = s.ViTri,
+                SoLuongTong = s.SoLuongTong,
+                SoLuongHienCo = s.SoLuongHienCo,
+                AnhBiaUrl = GetFullImageUrl(s.AnhBia) // <-- Dùng Helper
+            }).ToList();
 
             return Ok(results);
         }
@@ -71,7 +196,7 @@ namespace CafebookApi.Controllers.App
             var sach = await _context.Sachs.FindAsync(id);
             if (sach == null) return NotFound();
 
-            var dto = new SachUpdateRequestDto
+            var dto = new SachDetailDto
             {
                 IdSach = sach.IdSach,
                 TenSach = sach.TenSach,
@@ -81,34 +206,143 @@ namespace CafebookApi.Controllers.App
                 NamXuatBan = sach.NamXuatBan,
                 MoTa = sach.MoTa,
                 SoLuongTong = sach.SoLuongTong,
-                AnhBiaBase64 = sach.AnhBia,
+                AnhBiaUrl = GetFullImageUrl(sach.AnhBia), // <-- Dùng Helper
                 GiaBia = sach.GiaBia,
                 ViTri = sach.ViTri
             };
             return Ok(dto);
         }
 
-        [HttpGet("filters")]
-        public async Task<IActionResult> GetSachFilters()
+        // SỬA: Dùng [FromForm]
+        [HttpPost]
+        public async Task<IActionResult> CreateSach(
+                    [FromForm] SachUpdateRequestDto dto)
         {
-            var dto = new SachFiltersDto
+            var sach = new Sach
             {
-                TheLoais = await _context.TheLoais
-                    .Select(t => new FilterLookupDto { Id = t.IdTheLoai, Ten = t.TenTheLoai })
-                    .OrderBy(t => t.Ten)
-                    .ToListAsync(),
-                TacGias = await _context.TacGias
-                    .Select(t => new FilterLookupDto { Id = t.IdTacGia, Ten = t.TenTacGia })
-                    .OrderBy(t => t.Ten)
-                    .ToListAsync(),
-                NhaXuatBans = await _context.NhaXuatBans
-                    .Select(t => new FilterLookupDto { Id = t.IdNhaXuatBan, Ten = t.TenNhaXuatBan })
-                    .OrderBy(t => t.Ten)
-                    .ToListAsync()
+                TenSach = dto.TenSach,
+                IdTheLoai = dto.IdTheLoai,
+                IdTacGia = dto.IdTacGia,
+                IdNhaXuatBan = dto.IdNhaXuatBan,
+                NamXuatBan = dto.NamXuatBan,
+                MoTa = dto.MoTa,
+                SoLuongTong = dto.SoLuongTong,
+                SoLuongHienCo = dto.SoLuongTong,
+                GiaBia = dto.GiaBia,
+                ViTri = dto.ViTri,
+                AnhBia = null
             };
-            return Ok(dto);
+            _context.Sachs.Add(sach);
+            await _context.SaveChangesAsync();
+
+            // SỬA: Lấy file từ dto.AnhBiaUpload
+            if (dto.AnhBiaUpload != null)
+            {
+                try
+                {
+                    string fileName = GenerateFileName(sach.IdSach, sach.TenSach);
+                    string relativePath = await SaveImageFromFile(dto.AnhBiaUpload, fileName, HinhAnhPaths.UrlBooks.TrimStart('/'));
+                    sach.AnhBia = relativePath;
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _context.Sachs.Remove(sach);
+                    await _context.SaveChangesAsync();
+                    return StatusCode(500, $"Lỗi khi lưu ảnh: {ex.Message}");
+                }
+            }
+
+            var detailDto = new SachDetailDto
+            {
+                IdSach = sach.IdSach,
+                TenSach = sach.TenSach,
+                AnhBiaUrl = GetFullImageUrl(sach.AnhBia)
+            };
+            return Ok(detailDto);
         }
 
+        // SỬA: Dùng [FromForm]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateSach(int id,
+                    [FromForm] SachUpdateRequestDto dto)
+        {
+            var sach = await _context.Sachs.FindAsync(id);
+            if (sach == null) return NotFound();
+
+            int soLuongDangMuon = sach.SoLuongTong - sach.SoLuongHienCo;
+            if (dto.SoLuongTong < soLuongDangMuon)
+            {
+                return Conflict($"Số lượng tổng ({dto.SoLuongTong}) không thể nhỏ hơn số lượng đang cho thuê ({soLuongDangMuon}).");
+            }
+
+            var oldImagePath = sach.AnhBia;
+            var oldTenSach = sach.TenSach;
+
+            // SỬA: Lấy file và cờ Xóa từ DTO
+            bool isImageUpload = dto.AnhBiaUpload != null;
+            bool isNameChange = dto.TenSach != oldTenSach;
+
+            sach.TenSach = dto.TenSach;
+            sach.IdTheLoai = dto.IdTheLoai;
+            sach.IdTacGia = dto.IdTacGia;
+            sach.IdNhaXuatBan = dto.IdNhaXuatBan;
+            sach.NamXuatBan = dto.NamXuatBan;
+            sach.MoTa = dto.MoTa;
+            sach.SoLuongTong = dto.SoLuongTong;
+            sach.SoLuongHienCo = dto.SoLuongTong - soLuongDangMuon;
+            sach.GiaBia = dto.GiaBia;
+            sach.ViTri = dto.ViTri;
+
+            string newFileName = GenerateFileName(sach.IdSach, sach.TenSach);
+            string newRelativePath = $"/{HinhAnhPaths.UrlBooks.TrimStart('/')}/{newFileName}";
+
+            if (isImageUpload)
+            {
+                DeleteOldImage(oldImagePath);
+                // === SỬA LỖI CS8604 (Dòng 303) ===
+                // Thêm '!' vì logic 'isImageUpload' đã đảm bảo file không null
+                sach.AnhBia = await SaveImageFromFile(dto.AnhBiaUpload!, newFileName, HinhAnhPaths.UrlBooks.TrimStart('/'));
+            }
+            // SỬA: Lấy cờ Xóa từ DTO
+            else if (dto.XoaAnhBia)
+            {
+                DeleteOldImage(oldImagePath);
+                sach.AnhBia = null;
+            }
+            else if (isNameChange && !string.IsNullOrEmpty(oldImagePath))
+            {
+                RenameImage(oldImagePath, newRelativePath);
+                sach.AnhBia = newRelativePath;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        // (Hàm DeleteSach giữ nguyên logic)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteSach(int id)
+        {
+            if (await _context.ChiTietPhieuThues.AnyAsync(ct => ct.IdSach == id && ct.NgayTraThucTe == null))
+            {
+                return Conflict("Không thể xóa sách. Sách này đang được khách hàng thuê.");
+            }
+
+            var sach = await _context.Sachs.FindAsync(id);
+            if (sach == null) return NotFound();
+
+            DeleteOldImage(sach.AnhBia); // <-- Xóa file ảnh
+
+            _context.Sachs.Remove(sach);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        #endregion
+
+        #region API Lịch sử, Tác giả, Thể loại, NXB
+        // (Toàn bộ các hàm trong region này giữ nguyên)
         [HttpGet("rentals")]
         public async Task<IActionResult> GetRentalData()
         {
@@ -142,97 +376,18 @@ namespace CafebookApi.Controllers.App
             };
             return Ok(dto);
         }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateSach([FromBody] SachUpdateRequestDto dto)
-        {
-            var sach = new Sach
-            {
-                TenSach = dto.TenSach,
-                IdTheLoai = dto.IdTheLoai,
-                IdTacGia = dto.IdTacGia,
-                IdNhaXuatBan = dto.IdNhaXuatBan,
-                NamXuatBan = dto.NamXuatBan,
-                MoTa = dto.MoTa,
-                SoLuongTong = dto.SoLuongTong,
-                SoLuongHienCo = dto.SoLuongTong,
-                AnhBia = dto.AnhBiaBase64,
-                GiaBia = dto.GiaBia,
-                ViTri = dto.ViTri
-            };
-            _context.Sachs.Add(sach);
-            await _context.SaveChangesAsync();
-            return Ok(sach);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSach(int id, [FromBody] SachUpdateRequestDto dto)
-        {
-            var sach = await _context.Sachs.FindAsync(id);
-            if (sach == null) return NotFound();
-
-            int soLuongDangMuon = sach.SoLuongTong - sach.SoLuongHienCo;
-            if (dto.SoLuongTong < soLuongDangMuon)
-            {
-                return Conflict($"Số lượng tổng ({dto.SoLuongTong}) không thể nhỏ hơn số lượng đang cho thuê ({soLuongDangMuon}).");
-            }
-
-            sach.TenSach = dto.TenSach;
-            sach.IdTheLoai = dto.IdTheLoai;
-            sach.IdTacGia = dto.IdTacGia;
-            sach.IdNhaXuatBan = dto.IdNhaXuatBan;
-            sach.NamXuatBan = dto.NamXuatBan;
-            sach.MoTa = dto.MoTa;
-            sach.SoLuongTong = dto.SoLuongTong;
-            sach.SoLuongHienCo = dto.SoLuongTong - soLuongDangMuon;
-            sach.GiaBia = dto.GiaBia;
-            sach.ViTri = dto.ViTri;
-
-            if (dto.AnhBiaBase64 != null)
-            {
-                sach.AnhBia = dto.AnhBiaBase64;
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSach(int id)
-        {
-            if (await _context.ChiTietPhieuThues.AnyAsync(ct => ct.IdSach == id && ct.NgayTraThucTe == null))
-            {
-                return Conflict("Không thể xóa sách. Sách này đang được khách hàng thuê.");
-            }
-
-            var sach = await _context.Sachs.FindAsync(id);
-            if (sach == null) return NotFound();
-
-            _context.Sachs.Remove(sach);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
-
-        #endregion
-
-        // --- CÁC API MỚI CHO TÁC GIẢ, THỂ LOẠI, NXB ---
-        #region API Tác Giả
-
         [HttpPost("tacgia")]
         public async Task<IActionResult> CreateTacGia([FromBody] FilterLookupDto dto)
         {
             if (string.IsNullOrEmpty(dto.Ten)) return BadRequest("Tên không được rỗng.");
-            // Kiểm tra trùng lặp không phân biệt hoa thường
             var existing = await _context.TacGias.FirstOrDefaultAsync(t => t.TenTacGia.ToLower() == dto.Ten.ToLower());
             if (existing != null)
             {
                 return Conflict("Tên tác giả đã tồn tại.");
             }
-
             var newEntity = new TacGia { TenTacGia = dto.Ten };
             _context.TacGias.Add(newEntity);
             await _context.SaveChangesAsync();
-            // Trả về DTO
             return Ok(new FilterLookupDto { Id = newEntity.IdTacGia, Ten = newEntity.TenTacGia });
         }
 
@@ -259,11 +414,6 @@ namespace CafebookApi.Controllers.App
             await _context.SaveChangesAsync();
             return Ok();
         }
-
-        #endregion
-
-        #region API Thể Loại
-
         [HttpPost("theloai")]
         public async Task<IActionResult> CreateTheLoai([FromBody] FilterLookupDto dto)
         {
@@ -303,11 +453,6 @@ namespace CafebookApi.Controllers.App
             await _context.SaveChangesAsync();
             return Ok();
         }
-
-        #endregion
-
-        #region API Nhà Xuất Bản
-
         [HttpPost("nhaxuatban")]
         public async Task<IActionResult> CreateNhaXuatBan([FromBody] FilterLookupDto dto)
         {

@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http; // <-- THÊM
 
 namespace CafebookModel.Model.ModelApp
 {
     /// <summary>
-    /// DTO dùng để hiển thị Sách trên DataGrid
+    /// DTO dùng để hiển thị Sách trên DataGrid (Đã sửa)
     /// </summary>
     public class SachDto
     {
@@ -11,14 +13,33 @@ namespace CafebookModel.Model.ModelApp
         public string TenSach { get; set; } = string.Empty;
         public string? TenTacGia { get; set; }
         public string? TenTheLoai { get; set; }
-        public string? ViTri { get; set; } // <<< THÊM MỚI
+        public string? ViTri { get; set; }
         public int SoLuongTong { get; set; }
-        public int SoLuongHienCo { get; set; } // Số lượng còn lại trong kho
-        public int SoLuongDangMuon => SoLuongTong - SoLuongHienCo; // Số lượng đang được thuê
+        public int SoLuongHienCo { get; set; }
+        public int SoLuongDangMuon => SoLuongTong - SoLuongHienCo;
+        public string? AnhBiaUrl { get; set; } // <-- SỬA: Dùng URL
     }
 
     /// <summary>
-    /// DTO dùng để tải, thêm mới, hoặc cập nhật chi tiết một cuốn sách
+    /// DTO (MỚI) cho Form Chi Tiết (Khi GetDetails)
+    /// </summary>
+    public class SachDetailDto
+    {
+        public int IdSach { get; set; }
+        public string TenSach { get; set; } = string.Empty;
+        public int? IdTheLoai { get; set; }
+        public int? IdTacGia { get; set; }
+        public int? IdNhaXuatBan { get; set; }
+        public int? NamXuatBan { get; set; }
+        public string? MoTa { get; set; }
+        public int SoLuongTong { get; set; }
+        public string? AnhBiaUrl { get; set; } // <-- SỬA: Dùng URL
+        public decimal? GiaBia { get; set; }
+        public string? ViTri { get; set; }
+    }
+
+    /// <summary>
+    /// DTO (SỬA) chỉ dùng để Tải Lên (Create/Update)
     /// </summary>
     public class SachUpdateRequestDto
     {
@@ -30,16 +51,18 @@ namespace CafebookModel.Model.ModelApp
         public int? NamXuatBan { get; set; }
         public string? MoTa { get; set; }
         public int SoLuongTong { get; set; }
+        public decimal? GiaBia { get; set; }
+        public string? ViTri { get; set; }
 
-        // Dùng để GỬI và NHẬN ảnh
-        public string? AnhBiaBase64 { get; set; }
-        public decimal? GiaBia { get; set; } // <<< THÊM MỚI
-        public string? ViTri { get; set; }  // <<< THÊM MỚI
+        // SỬA: Thêm 2 thuộc tính này để Swagger nhận diện
+        // Chúng sẽ bị bỏ qua khi đọc/ghi JSON, chỉ dùng cho [FromForm]
+        [JsonIgnore]
+        public IFormFile? AnhBiaUpload { get; set; }
+        [JsonIgnore]
+        public bool XoaAnhBia { get; set; } = false;
     }
 
-    /// <summary>
-    /// DTO chứa các danh sách (TheLoai, TacGia, NXB) để điền vào ComboBox
-    /// </summary>
+    // (Các DTO còn lại giữ nguyên)
     public class SachFiltersDto
     {
         public List<FilterLookupDto> TheLoais { get; set; } = new();
@@ -47,18 +70,12 @@ namespace CafebookModel.Model.ModelApp
         public List<FilterLookupDto> NhaXuatBans { get; set; } = new();
     }
 
-    /// <summary>
-    /// DTO chứa dữ liệu cho Tab "Lịch sử Thuê"
-    /// </summary>
     public class SachRentalsDto
     {
         public List<BaoCaoSachTreHanDto> SachQuaHan { get; set; } = new();
         public List<LichSuThueDto> LichSuThue { get; set; } = new();
     }
 
-    /// <summary>
-    /// DTO con cho Lịch sử thuê
-    /// </summary>
     public class LichSuThueDto
     {
         public string TenSach { get; set; } = string.Empty;

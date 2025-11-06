@@ -378,18 +378,32 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
+
                                 <Border Grid.Column="0" BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1" Width="140" Height="140" Background="{StaticResource SubtleGrayBrush}">
                                     <Image x:Name="AnhSanPhamPreview" Style="{StaticResource ProductImage}"/>
                                 </Border>
-                                <Button x:Name="btnChonAnh" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" 
-                                        Margin="15,0,0,0" Style="{StaticResource ActionButton}" Background="#F5F5F5" 
-                                        BorderBrush="#E0E0E0" Foreground="{StaticResource DarkBrownBrush}"
-                                        Click="BtnChonAnh_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Path Data="{StaticResource IconUpload}" Fill="{StaticResource DarkBrownBrush}" Width="23" Height="23" Margin="0,0,8,0"/>
-                                        <TextBlock Text="Chọn ảnh" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Orientation="Horizontal" Margin="15,0,0,0">
+                                    <Button x:Name="btnChonAnh" 
+                                            Style="{StaticResource ActionButton}" Background="#F5F5F5" 
+                                            BorderBrush="#E0E0E0" Foreground="{StaticResource DarkBrownBrush}"
+                                            Click="BtnChonAnh_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Data="{StaticResource IconUpload}" Fill="{StaticResource DarkBrownBrush}" Width="23" Height="23" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Chọn ảnh" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button x:Name="btnXoaAnh" 
+                                            Style="{StaticResource DeleteButton}" 
+                                            Margin="10,0,0,0" 
+                                            Click="BtnXoaAnh_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Data="{StaticResource IconDelete}" Fill="White" Width="20" Height="20" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Xóa ảnh" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
                             </Grid>
 
                             <Label Content="Tên Sản Phẩm (*)"/>

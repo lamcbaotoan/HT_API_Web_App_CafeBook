@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Net;
 using AppCafebookApi.Services; // Cần cho AuthService
 using System.Globalization;
+using System.Text.Json; // <-- THÊM VÀO ĐỂ SỬA LỖI CS8602
 
 namespace AppCafebookApi.View.quanly.pages
 {
@@ -117,29 +118,27 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
+        // File: AppCafebookApi/View/quanly/pages/QuanLyLuongView.xaml.cs (CẬP NHẬT HÀM)
+
         private async void BtnLuuChamCong_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedChamCong == null) return;
 
-            // Lấy ngày đã chọn
             DateTime ngayLam = _selectedChamCong.NgayLam;
             DateTime? gioVaoMoi = null;
             DateTime? gioRaMoi = null;
 
             try
             {
-                // Parse Giờ Vào
                 if (!string.IsNullOrWhiteSpace(txtGioVaoMoi.Text))
                 {
                     var tsVao = TimeSpan.ParseExact(txtGioVaoMoi.Text, @"hh\:mm", CultureInfo.InvariantCulture);
                     gioVaoMoi = ngayLam.Add(tsVao);
                 }
-                // Parse Giờ Ra
                 if (!string.IsNullOrWhiteSpace(txtGioRaMoi.Text))
                 {
                     var tsRa = TimeSpan.ParseExact(txtGioRaMoi.Text, @"hh\:mm", CultureInfo.InvariantCulture);
                     gioRaMoi = ngayLam.Add(tsRa);
-                    // Kiểm tra nếu qua ngày
                     if (gioRaMoi < gioVaoMoi) gioRaMoi = gioRaMoi.Value.AddDays(1);
                 }
             }
@@ -152,24 +151,32 @@ namespace AppCafebookApi.View.quanly.pages
             var dto = new ChamCongUpdateDto
             {
                 IdChamCong = _selectedChamCong.IdChamCong,
+                IdLichLamViec = _selectedChamCong.IdLichLamViec, // <-- THÊM DÒNG NÀY
                 GioVaoMoi = gioVaoMoi,
                 GioRaMoi = gioRaMoi
             };
 
-            // Lưu ý: Logic này đang giả định IdChamCong > 0. Cần nâng cấp API để xử lý IdChamCong = 0
-            if (dto.IdChamCong == 0)
-            {
-                MessageBox.Show("Lỗi: Không thể cập nhật thủ công cho nhân viên chưa chấm công lần nào. (Tính năng này cần được nâng cấp API)", "Lỗi");
-                return;
-            }
+            // ============== XÓA BỎ ĐOẠN CODE GÂY LỖI ==============
+            // if (dto.IdChamCong == 0)
+            // {
+            //     MessageBox.Show("Lỗi: Không thể cập nhật thủ công cho nhân viên chưa chấm công lần nào. (Tính năng này cần được nâng cấp API)", "Lỗi");
+            //     return;
+            // }
+            // =======================================================
 
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
+                // (Logic gọi API giữ nguyên)
                 var response = await httpClient.PutAsJsonAsync($"api/app/luong/chamcong", dto);
                 if (response.IsSuccessStatusCode)
                 {
-                    await LoadChamCongAsync(dpNgayChamCong.SelectedDate.Value);
+                    // === SỬA LỖI CS8629 ===
+                    // Thêm kiểm tra HasValue để trình biên dịch không cảnh báo
+                    if (dpNgayChamCong.SelectedDate.HasValue)
+                    {
+                        await LoadChamCongAsync(dpNgayChamCong.SelectedDate.Value);
+                    }
                 }
                 else
                 {
@@ -370,9 +377,28 @@ namespace AppCafebookApi.View.quanly.pages
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Đọc message thành công từ JSON
-                    var successObj = System.Text.Json.JsonSerializer.Deserialize<dynamic>(message);
-                    MessageBox.Show(successObj.GetProperty("message").GetString(), "Chốt Lương Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // === SỬA LỖI CS8602 ===
+                    // Phân tích JSON một cách an toàn
+                    string successMessage = "Chốt lương thành công!"; // Tin nhắn mặc định
+                    try
+                    {
+                        // var successObj = System.Text.Json.JsonSerializer.Deserialize<dynamic>(message); // Dòng cũ
+                        // Thay <dynamic> bằng <JsonElement> và kiểm tra an toàn
+                        var successObj = JsonSerializer.Deserialize<JsonElement>(message);
+
+                        if (successObj.TryGetProperty("message", out var messageProp) &&
+                            messageProp.ValueKind == JsonValueKind.String)
+                        {
+                            // Dùng '??' để xử lý
+                            successMessage = messageProp.GetString() ?? successMessage;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // 'message' không phải là JSON hợp lệ, nhưng vẫn thành công
+                    }
+                    MessageBox.Show(successMessage, "Chốt Lương Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // === KẾT THÚC SỬA LỖI ===
 
                     // Reset
                     _currentBangKeList = new List<LuongBangKeDto>();
@@ -401,21 +427,22 @@ namespace AppCafebookApi.View.quanly.pages
         }
 
         #endregion
-
+        /*
         private void BtnQuayLai_Click(object sender, RoutedEventArgs e)
-        {
-            // Quay lại trang QL Nhân Viên
-            if (this.NavigationService != null)
-            {
-                this.NavigationService.Navigate(new QuanLyNhanVienView());
-            }
-        }
-        private void BtnGoToBaoCao_Click(object sender, RoutedEventArgs e)
         {
             if (this.NavigationService != null && this.NavigationService.CanGoBack)
             {
                 this.NavigationService.GoBack();
             }
+        }*/
+        private void BtnGoToBaoCao_Click(object sender, RoutedEventArgs e)
+        {
+            this.NavigationService.Navigate(new BaoCaoNhanSuView());
+        }
+
+        private void BtnGoToPhatLuong_Click(object sender, RoutedEventArgs e)
+        {
+            this.NavigationService.Navigate(new QuanLyPhatLuongView());
         }
     }
 }

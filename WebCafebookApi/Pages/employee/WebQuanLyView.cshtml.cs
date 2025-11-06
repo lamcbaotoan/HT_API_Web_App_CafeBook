@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization; // <-- THÊM
 
 namespace WebCafebookApi.Pages.employee
 {
-    // Giả định bạn đã cấu hình Authorize cho thư mục /employee
+    // SỬA: Thêm [Authorize] với các vai trò thực tế từ CSDL
+    [Authorize(Roles = "Quản trị viên, Phục vụ, Thu ngân, Pha chế, Bếp, Quản lý")]
     public class WebQuanLyViewModel : PageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -24,11 +26,7 @@ namespace WebCafebookApi.Pages.employee
         public async Task<IActionResult> OnGetAsync()
         {
             var idNhanVienStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(idNhanVienStr))
-            {
-                // Nếu không có cookie, đá về trang đăng nhập
-                return RedirectToPage("/Employee/DangNhapEmployee");
-            }
+            // SỬA: Không cần kiểm tra ID nữa vì [Authorize] đã làm việc đó
 
             var httpClient = _httpClientFactory.CreateClient();
             try

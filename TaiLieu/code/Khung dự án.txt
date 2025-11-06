@@ -63,7 +63,6 @@ Solution 'AppCafebookApi'/
     │   │   ├── jquery-validation/
     │   │   └── jquery-validation-unobtrusive/
     │   └── favicon.ico
-    ├── Data/ # Lớp Dữ Liệu
     ├── Pages/ # Các Trang Razor
     │   ├── account/    # Trang Tài Khoản
     │   ├── employee/  # Trang Nhân Viên

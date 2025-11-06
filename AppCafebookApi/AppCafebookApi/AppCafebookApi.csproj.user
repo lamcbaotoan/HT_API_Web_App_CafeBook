@@ -17,10 +17,25 @@
     <Compile Update="View\Common\CaiDatWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Common\ChonKhuyenMaiWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\HoaDonPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Common\InputDialogWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Common\PhieuLuongPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\GoiMonView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\nhanvien\pages\SoDoBanView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\ThanhToanView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\quanly\ManHinhQuanly.xaml.cs">
@@ -81,6 +96,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\quanly\pages\QuanLyNhapKhoView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyPhatLuongView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\quanly\pages\QuanLyPhuThuView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\quanly\pages\QuanLySachView.xaml.cs">

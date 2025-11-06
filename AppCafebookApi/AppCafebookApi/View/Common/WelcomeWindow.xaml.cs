@@ -34,7 +34,7 @@ namespace AppCafebookApi.View.Common
                 txtUserGreeting.Text = $"Xin chào, {_user.HoTen}";
 
                 // 1. Tải ảnh bằng HinhAnhHelper
-                BitmapImage avatar = HinhAnhHelper.LoadImageFromBase64(
+                BitmapImage avatar = HinhAnhHelper.LoadImage(
                     _user.AnhDaiDien ?? string.Empty,
                     HinhAnhPaths.DefaultAvatar
                 );

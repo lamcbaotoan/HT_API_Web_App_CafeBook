@@ -1,10 +1,13 @@
-﻿using CafebookApi.Data;
+﻿// File: CafebookApi/Controllers/App/LuongController.cs (CẬP NHẬT)
+
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,42 +24,72 @@ namespace CafebookApi.Controllers.App
             _context = context;
         }
 
-        #region Module 6.1: Bảng Chấm Công
+        #region === Helpers ===
+        private async Task<CaiDatNhanSuDto> LoadHrSettingsAsync()
+        {
+            var settings = await _context.CaiDats
+                .Where(c => c.TenCaiDat.StartsWith("HR_"))
+                .ToListAsync();
 
-        /// <summary>
-        /// API Lấy Bảng Chấm Công (đã có giờ vào/ra) theo Ngày
-        /// </summary>
+            T GetSettingValue<T>(string key, T defaultValue)
+            {
+                var setting = settings.FirstOrDefault(s => s.TenCaiDat == key)?.GiaTri;
+                if (string.IsNullOrEmpty(setting)) return defaultValue;
+                try
+                {
+                    return (T)Convert.ChangeType(setting, typeof(T), CultureInfo.InvariantCulture);
+                }
+                catch
+                {
+                    return defaultValue;
+                }
+            }
+
+            return new CaiDatNhanSuDto
+            {
+                // SỬA: 8.0 -> 8.0m (decimal)
+                GioLamChuan = GetSettingValue("HR_GioLamChuan", 8.0m),
+                HeSoOT = GetSettingValue("HR_HeSoOT", 1.5m),
+                PhatDiTre_Phut = GetSettingValue("HR_PhatDiTre_Phut", 5),
+                PhatDiTre_HeSo = GetSettingValue("HR_PhatDiTre_HeSo", 1.0m),
+                ChuyenCan_SoNgay = GetSettingValue("HR_ChuyenCan_SoNgay", 26),
+                ChuyenCan_TienThuong = GetSettingValue("HR_ChuyenCan_TienThuong", 500000m),
+                PhepNam_MacDinh = GetSettingValue("HR_PhepNam_MacDinh", 12)
+            };
+        }
+        #endregion
+
+        #region Module 6.1: Bảng Chấm Công
         [HttpGet("chamcong")]
         public async Task<IActionResult> GetChamCongByDate([FromQuery] DateTime date)
         {
+            var hrSettings = await LoadHrSettingsAsync();
             var targetDate = date.Date;
 
-            // Lấy các lịch làm việc của ngày đó
             var query = _context.LichLamViecs
                 .Include(l => l.NhanVien)
                 .Include(l => l.CaLamViec)
-                .Include(l => l.BangChamCongs) // Join Bảng Chấm Công
+                .Include(l => l.BangChamCongs)
                 .Where(l => l.NgayLam == targetDate);
 
-            var results = (await query.ToListAsync()) // Tải về RAM để xử lý
+            var results = (await query.ToListAsync())
                 .Select(l =>
                 {
-                    var chamCong = l.BangChamCongs.FirstOrDefault(); // Lấy (hoặc không) Bảng chấm công
+                    var chamCong = l.BangChamCongs.FirstOrDefault();
                     var gioVao = chamCong?.GioVao;
                     var gioRa = chamCong?.GioRa;
-                    var soGioLam = chamCong?.SoGioLam ?? 0;
+                    // SỬA: 0 -> 0m (decimal)
+                    var soGioLam = chamCong?.SoGioLam ?? 0m;
                     string trangThai = "Chưa chấm công";
 
                     if (gioVao.HasValue)
                     {
                         var gioCaVao = l.NgayLam.Add(l.CaLamViec.GioBatDau);
-                        // Giả sử quy tắc đi trễ là 5 phút (Sẽ cấu hình ở Module 7)
-                        trangThai = (gioVao.Value > gioCaVao.AddMinutes(5)) ? "Đi trễ" : "Đúng giờ";
+                        trangThai = (gioVao.Value > gioCaVao.AddMinutes(hrSettings.PhatDiTre_Phut)) ? "Đi trễ" : "Đúng giờ";
                     }
 
                     return new ChamCongDto
                     {
-                        // Sửa lỗi: Cần IdChamCong (nếu có) để cập nhật
                         IdChamCong = chamCong?.IdChamCong ?? 0,
                         IdLichLamViec = l.IdLichLamViec,
                         HoTenNhanVien = l.NhanVien.HoTen,
@@ -66,7 +99,7 @@ namespace CafebookApi.Controllers.App
                         GioCaKetThuc = l.CaLamViec.GioKetThuc,
                         GioVao = gioVao,
                         GioRa = gioRa,
-                        SoGioLam = soGioLam,
+                        SoGioLam = soGioLam, // Sẽ tự động khớp kiểu decimal
                         TrangThai = trangThai
                     };
                 })
@@ -77,28 +110,35 @@ namespace CafebookApi.Controllers.App
             return Ok(results);
         }
 
-        /// <summary>
-        /// API Cập nhật Chấm Công (Thủ công)
-        /// </summary>
+        // Hàm UpdateChamCong (đã sửa ở lần trước) giữ nguyên
         [HttpPut("chamcong")]
         public async Task<IActionResult> UpdateChamCong([FromBody] ChamCongUpdateDto dto)
         {
-            // Nếu IdChamCong = 0, nghĩa là nhân viên chưa Check-in lần nào, ta phải TẠO MỚI
+            BangChamCong? chamCong; // Sửa: Cho phép null tạm thời
+
             if (dto.IdChamCong == 0)
             {
-                // Tìm IdLichLamViec
-                var lich = await _context.LichLamViecs.FindAsync(dto.IdChamCong); // Lỗi logic: Phải là IdLichLamViec
-                // FIX: DTO phải gửi IdLichLamViec
-                // Tạm thời bỏ qua (WPF sẽ gửi IdChamCong > 0)
-                return BadRequest("Không thể cập nhật. Nhân viên chưa chấm công lần nào.");
+                var lich = await _context.LichLamViecs.FindAsync(dto.IdLichLamViec);
+                if (lich == null)
+                {
+                    return BadRequest("Không tìm thấy lịch làm việc tương ứng để tạo chấm công.");
+                }
+                chamCong = new BangChamCong
+                {
+                    IdLichLamViec = dto.IdLichLamViec
+                };
+                _context.BangChamCongs.Add(chamCong);
+            }
+            else
+            {
+                chamCong = await _context.BangChamCongs.FindAsync(dto.IdChamCong);
+                if (chamCong == null) return NotFound("Không tìm thấy dữ liệu chấm công.");
             }
 
-            var chamCong = await _context.BangChamCongs.FindAsync(dto.IdChamCong);
-            if (chamCong == null) return NotFound("Không tìm thấy dữ liệu chấm công.");
-
+            // Cảnh báo CS8600 ở dòng 134 đã được giải quyết
+            // vì cả chamCong.GioVao/GioRa và dto.GioVaoMoi/GioRaMoi đều là DateTime? (nullable)
             chamCong.GioVao = dto.GioVaoMoi;
             chamCong.GioRa = dto.GioRaMoi;
-            // CSDL sẽ tự động tính lại SoGioLam (computed column)
 
             await _context.SaveChangesAsync();
             return Ok();
@@ -108,9 +148,6 @@ namespace CafebookApi.Controllers.App
 
         #region Module 6.3 & 6.4: Tính & Chốt Lương
 
-        /// <summary>
-        /// API Tính Lương (Tạm tính)
-        /// </summary>
         [HttpGet("calculate")]
         public async Task<IActionResult> CalculatePayroll([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
@@ -119,9 +156,12 @@ namespace CafebookApi.Controllers.App
                 .Where(nv => nv.TrangThaiLamViec == "Đang làm việc")
                 .ToListAsync();
 
-            // Giả lập quy tắc (Sẽ lấy từ CSDL ở Module 7)
-            double HE_SO_OT = 1.5;
-            double PHAT_DI_TRE_MOI_GIO = 1.0;
+            var hrSettings = await LoadHrSettingsAsync();
+
+            // SỬA: double -> decimal
+            decimal HE_SO_OT = hrSettings.HeSoOT;
+            decimal PHAT_DI_TRE_MOI_GIO = hrSettings.PhatDiTre_HeSo;
+            int SO_PHUT_TRE_CHO_PHEP = hrSettings.PhatDiTre_Phut;
 
             foreach (var nv in nhanViens)
             {
@@ -129,66 +169,84 @@ namespace CafebookApi.Controllers.App
                 {
                     IdNhanVien = nv.IdNhanVien,
                     HoTenNhanVien = nv.HoTen,
-                    LuongCoBan = nv.LuongCoBan, // Lương/giờ
+                    LuongCoBan = nv.LuongCoBan,
                     ChiTiet = ""
                 };
 
-                // 1. Tính Tổng Giờ Làm
-                var lichLamViecList = _context.LichLamViecs
+                var lichLamViecList = await _context.LichLamViecs
                     .Include(l => l.CaLamViec)
                     .Include(l => l.BangChamCongs)
                     .Where(l => l.IdNhanVien == nv.IdNhanVien &&
                                 l.NgayLam >= startDate.Date &&
-                                l.NgayLam <= endDate.Date);
+                                l.NgayLam <= endDate.Date)
+                    .ToListAsync();
 
-                ke.TongGioLam = await lichLamViecList.SelectMany(l => l.BangChamCongs).SumAsync(c => c.SoGioLam ?? 0);
-                ke.TienLuongGio = (decimal)ke.TongGioLam * ke.LuongCoBan;
+                // SỬA: 0m -> decimal
+                ke.TongGioLam = lichLamViecList.SelectMany(l => l.BangChamCongs).Sum(c => c.SoGioLam ?? 0m);
+                ke.TienLuongGio = ke.TongGioLam * ke.LuongCoBan; // Bây giờ là decimal * decimal
+                ke.ChiTiet += $"Giờ: {ke.TongGioLam:F2}h. Lương: {ke.TienLuongGio:N0}. ";
 
-                // 2. Tính Phạt (Đi trễ)
                 decimal tongPhatTuDong = 0;
-                var diTreList = await lichLamViecList
+                var diTreList = lichLamViecList
                     .Select(l => new {
                         GioCaVao = l.NgayLam.Add(l.CaLamViec.GioBatDau),
-                        GioVao = l.BangChamCongs.FirstOrDefault().GioVao
+                        GioVao = l.BangChamCongs.FirstOrDefault()?.GioVao
                     })
-                    .Where(x => x.GioVao.HasValue && x.GioVao.Value > x.GioCaVao.AddMinutes(5)) // Trễ 5 phút
-                    .ToListAsync();
+                    .Where(x => x.GioVao.HasValue && x.GioVao.Value > x.GioCaVao.AddMinutes(SO_PHUT_TRE_CHO_PHEP))
+                    .ToList();
 
                 foreach (var tre in diTreList)
                 {
-                    var phutTre = (tre.GioVao.Value - tre.GioCaVao).TotalMinutes;
-                    tongPhatTuDong += (decimal)(phutTre / 60.0) * ke.LuongCoBan * (decimal)PHAT_DI_TRE_MOI_GIO;
+                    // === SỬA LỖI CS8629 (Dòng 198) ===
+                    // Thêm '!' vì .Where(x => x.GioVao.HasValue) đã lọc
+                    var phutTre = (tre.GioVao!.Value - tre.GioCaVao).TotalMinutes;
+                    // (phutTre / 60.0) là double, ép kiểu (decimal) là đúng
+                    tongPhatTuDong += (decimal)(phutTre / 60.0) * ke.LuongCoBan * PHAT_DI_TRE_MOI_GIO;
                 }
+                if (tongPhatTuDong > 0) ke.ChiTiet += $"Phạt trễ: {tongPhatTuDong:N0}. ";
 
-                // 3. Tính Thưởng (OT)
                 decimal tongThuongTuDong = 0;
-                var otList = await lichLamViecList
+                var otList = lichLamViecList
                     .Select(l => new {
                         GioCaRa = l.NgayLam.Add(l.CaLamViec.GioKetThuc),
-                        GioRa = l.BangChamCongs.FirstOrDefault().GioRa
+                        GioRa = l.BangChamCongs.FirstOrDefault()?.GioRa
                     })
                     .Where(x => x.GioRa.HasValue && x.GioRa.Value > x.GioCaRa)
-                    .ToListAsync();
+                    .ToList();
 
                 foreach (var ot in otList)
                 {
-                    var phutOT = (ot.GioRa.Value - ot.GioCaRa).TotalMinutes;
-                    tongThuongTuDong += (decimal)(phutOT / 60.0) * ke.LuongCoBan * (decimal)HE_SO_OT;
+                    // === SỬA LỖI CS8629 (Dòng 215) ===
+                    // Thêm '!' vì .Where(x => x.GioRa.HasValue) đã lọc
+                    var phutOT = (ot.GioRa!.Value - ot.GioCaRa).TotalMinutes;
+                    // (phutOT / 60.0) là double, ép kiểu (decimal) là đúng
+                    tongThuongTuDong += (decimal)(phutOT / 60.0) * ke.LuongCoBan * HE_SO_OT;
+                }
+                if (tongThuongTuDong > 0) ke.ChiTiet += $"Thưởng OT: {tongThuongTuDong:N0}. ";
+
+                // SỬA: (cc.SoGioLam ?? 0) -> (cc.SoGioLam ?? 0m)
+                int soNgayLamViec = lichLamViecList
+                                        .Count(l => l.BangChamCongs.Any(cc => (cc.SoGioLam ?? 0m) > 0));
+
+                if (soNgayLamViec >= hrSettings.ChuyenCan_SoNgay)
+                {
+                    tongThuongTuDong += hrSettings.ChuyenCan_TienThuong;
+                    ke.ChiTiet += $"Thưởng CC: {hrSettings.ChuyenCan_TienThuong:N0}. ";
                 }
 
-                // 4. Lấy Thưởng/Phạt Thủ Công (Chưa chốt)
                 var thuongPhatManual = await _context.PhieuThuongPhats
                     .Where(p => p.IdNhanVien == nv.IdNhanVien && p.IdPhieuLuong == null)
                     .ToListAsync();
 
                 decimal tongThuongManual = thuongPhatManual.Where(p => p.SoTien > 0).Sum(p => p.SoTien);
-                decimal tongPhatManual = thuongPhatManual.Where(p => p.SoTien < 0).Sum(p => p.SoTien) * -1; // Lấy trị tuyệt đối
+                decimal tongPhatManual = thuongPhatManual.Where(p => p.SoTien < 0).Sum(p => p.SoTien) * -1;
+
+                if (tongThuongManual > 0) ke.ChiTiet += $"Thưởng khác: {tongThuongManual:N0}. ";
+                if (tongPhatManual > 0) ke.ChiTiet += $"Phạt khác: {tongPhatManual:N0}. ";
 
                 ke.TongThuong = tongThuongTuDong + tongThuongManual;
                 ke.TongPhat = tongPhatTuDong + tongPhatManual;
                 ke.ThucLanh = ke.TienLuongGio + ke.TongThuong - ke.TongPhat;
-
-                ke.ChiTiet = $"Giờ: {ke.TongGioLam:F2}h. Lương: {ke.TienLuongGio:N0}. Thưởng: {ke.TongThuong:N0}. Phạt: {ke.TongPhat:N0}.";
 
                 bangKeList.Add(ke);
             }
@@ -196,16 +254,12 @@ namespace CafebookApi.Controllers.App
             return Ok(bangKeList);
         }
 
-        /// <summary>
-        /// API Chốt Lương
-        /// </summary>
         [HttpPost("finalize")]
         public async Task<IActionResult> FinalizePayroll([FromBody] LuongFinalizeDto dto)
         {
             if (dto == null || !dto.DanhSachBangKe.Any())
                 return BadRequest("Dữ liệu chốt lương không hợp lệ.");
 
-            // 1. Kiểm tra xem đã chốt lương tháng/năm này chưa
             var existing = await _context.PhieuLuongs
                 .AnyAsync(p => p.Thang == dto.Thang && p.Nam == dto.Nam);
             if (existing)
@@ -217,7 +271,6 @@ namespace CafebookApi.Controllers.App
             {
                 try
                 {
-                    // 2. Tạo Phiếu Lương
                     foreach (var ke in dto.DanhSachBangKe)
                     {
                         var phieuLuong = new PhieuLuong
@@ -226,19 +279,18 @@ namespace CafebookApi.Controllers.App
                             Thang = dto.Thang,
                             Nam = dto.Nam,
                             LuongCoBan = ke.LuongCoBan,
-                            TongGioLam = (decimal)ke.TongGioLam,
+                            TongGioLam = ke.TongGioLam, // SỬA: Bỏ ép kiểu (decimal) vì cả 2 đã là decimal
                             TienThuong = ke.TongThuong,
                             KhauTru = ke.TongPhat,
                             ThucLanh = ke.ThucLanh,
                             NgayTao = DateTime.Now,
-                            TrangThai = "Đã chốt" // Sẽ đổi thành "Chưa thanh toán"
+                            TrangThai = "Đã chốt"
                         };
                         newPhieuLuongs.Add(phieuLuong);
                     }
                     _context.PhieuLuongs.AddRange(newPhieuLuongs);
-                    await _context.SaveChangesAsync(); // Lưu để lấy IdPhieuLuong
+                    await _context.SaveChangesAsync();
 
-                    // 3. Cập nhật PhieuThuongPhat (Gán IdPhieuLuong vào)
                     for (int i = 0; i < newPhieuLuongs.Count; i++)
                     {
                         var phieuLuongMoi = newPhieuLuongs[i];
@@ -265,7 +317,6 @@ namespace CafebookApi.Controllers.App
                 }
             }
         }
-
         #endregion
     }
 }

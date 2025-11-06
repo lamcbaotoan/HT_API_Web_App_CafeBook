@@ -1,11 +1,16 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/App/TaiKhoanController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApi;
+using CafebookModel.Utils; // <-- THÊM
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq; // Thêm
-using System.Threading.Tasks; // Thêm
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting; // <-- THÊM
+using Microsoft.Extensions.Configuration; // <-- THÊM
+using System.IO; // <-- THÊM
 
 namespace CafebookApi.Controllers.App
 {
@@ -15,39 +20,54 @@ namespace CafebookApi.Controllers.App
     {
         private readonly CafebookDbContext _context;
 
-        public TaiKhoanController(CafebookDbContext context)
-        {
+        // --- SỬA: THÊM CÁC BIẾN ĐỂ XỬ LÝ URL ---
+        private readonly IWebHostEnvironment _env;
+        private readonly string _baseUrl;
+
+        public TaiKhoanController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config) // <-- SỬA: Thêm tham số
+        {
             _context = context;
+
+            // --- THÊM LOGIC KHỞI TẠO TỪ SANPHAMCONTROLLER ---
+            _env = env;
+            if (string.IsNullOrEmpty(_env.WebRootPath))
+            {
+                _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                if (!Directory.Exists(_env.WebRootPath))
+                {
+                    Directory.CreateDirectory(_env.WebRootPath);
+                }
+            }
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url")
+                             ?? "http://127.0.0.1:5166"; // <-- Dùng 127.0.0.1
+        }
+
+        // --- THÊM HÀM HELPER GetFullImageUrl ---
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private string? GetFullImageUrl(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return null;
+            // Đảm bảo đường dẫn dùng "/"
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
         }
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestModel model)
         {
-            if (model == null || string.IsNullOrEmpty(model.TenDangNhap) || string.IsNullOrEmpty(model.MatKhau))
-            {
-                return BadRequest(new LoginResponseModel { Success = false, Message = "Tên đăng nhập và mật khẩu không được rỗng." });
-            }
-
-            // ---------- BẮT ĐẦU SỬA ĐỔI ----------
-
-            // 1. Lấy thông tin đăng nhập và trim()
-            // Biến "userInput" có thể là TenDangNhap, Email, hoặc SoDienThoai
+            // ... (Logic kiểm tra model, truy vấn CSDL giữ nguyên) ...
             var userInput = model.TenDangNhap.Trim();
             var passInput = model.MatKhau.Trim();
 
-            // 2. Sửa câu lệnh truy vấn để kiểm tra 3 cột
             var nhanVien = await _context.NhanViens
-                .Include(nv => nv.VaiTro)
-                    .ThenInclude(vt => vt.VaiTroQuyens)
-                    .ThenInclude(vtq => vtq.Quyen)
-                .FirstOrDefaultAsync(nv =>
-                    // Kiểm tra 1 trong 3 cột này
-                    (nv.TenDangNhap == userInput || nv.SoDienThoai == userInput || nv.Email == userInput) &&
-                    // VÀ mật khẩu phải khớp
-                    (nv.MatKhau == passInput)
-                );
-
-            // ---------- KẾT THÚC SỬA ĐỔI ----------
+              .Include(nv => nv.VaiTro)
+                .ThenInclude(vt => vt.VaiTroQuyens)
+                .ThenInclude(vtq => vtq.Quyen)
+              .FirstOrDefaultAsync(nv =>
+                (nv.TenDangNhap == userInput || nv.SoDienThoai == userInput || nv.Email == userInput) &&
+                (nv.MatKhau == passInput)
+              );
 
             if (nhanVien == null)
             {
@@ -59,19 +79,21 @@ namespace CafebookApi.Controllers.App
                 return Ok(new LoginResponseModel { Success = false, Message = "Tài khoản không có vai trò." });
             }
 
-            // Tạo DTO để trả về
-            var userDto = new NhanVienDto
+            // Tạo DTO để trả về
+            var userDto = new NhanVienDto
             {
                 IdNhanVien = nhanVien.IdNhanVien,
                 HoTen = nhanVien.HoTen,
-                AnhDaiDien = nhanVien.AnhDaiDien, // Chuỗi Base64
+
+                // SỬA: Dùng GetFullImageUrl
+                AnhDaiDien = GetFullImageUrl(nhanVien.AnhDaiDien), // Chuyển path thành URL
+
                 TenVaiTro = nhanVien.VaiTro.TenVaiTro,
                 DanhSachQuyen = nhanVien.VaiTro.VaiTroQuyens
-                                    .Select(vtq => vtq.IdQuyen) // Sửa: Lấy IdQuyen
-                                    .ToList()
+                  .Select(vtq => vtq.IdQuyen)
+                  .ToList()
             };
 
-            // TODO: Tạo JWT Token ở đây nếu cần
             string token = "day_la_jwt_token_tam_thoi";
 
             return Ok(new LoginResponseModel

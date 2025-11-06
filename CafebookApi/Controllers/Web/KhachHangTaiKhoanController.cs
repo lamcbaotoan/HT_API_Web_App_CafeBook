@@ -1,9 +1,14 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/Web/KhachHangTaiKhoanController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApi;
 using CafebookModel.Model.ModelWeb;
+using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace CafebookApi.Controllers.Web
 {
@@ -12,10 +17,26 @@ namespace CafebookApi.Controllers.Web
     public class KhachHangTaiKhoanController : ControllerBase
     {
         private readonly CafebookDbContext _context;
+        private readonly IWebHostEnvironment _env;
+        private readonly string _baseUrl;
 
-        public KhachHangTaiKhoanController(CafebookDbContext context)
+        public KhachHangTaiKhoanController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
+            _env = env;
+            if (string.IsNullOrEmpty(_env.WebRootPath))
+            {
+                _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private string? GetFullImageUrl(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return null;
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
         }
 
         [HttpPost("login")]
@@ -29,10 +50,9 @@ namespace CafebookApi.Controllers.Web
             var userInput = model.TenDangNhap.Trim();
             var passInput = model.MatKhau.Trim();
 
-            // 1. TÌM KIẾM KHÁCH HÀNG
             var khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k =>
                 (k.TenDangNhap == userInput || k.SoDienThoai == userInput || k.Email == userInput) &&
-                (k.MatKhau == passInput) // LƯU Ý: Phải HASH mật khẩu trong thực tế
+                (k.MatKhau == passInput)
             );
 
             if (khachHang == null)
@@ -40,28 +60,32 @@ namespace CafebookApi.Controllers.Web
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Sai thông tin đăng nhập hoặc mật khẩu." });
             }
 
-            // 2. TẠO DTO TRẢ VỀ
+            // SỬA ĐỔI: KIỂM TRA TÀI KHOẢN KHÓA
+            if (khachHang.BiKhoa)
+            {
+                return Ok(new WebLoginResponseModel { Success = false, Message = "Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên." });
+            }
+
             var dto = new KhachHangDto
             {
                 IdKhachHang = khachHang.IdKhachHang,
                 HoTen = khachHang.HoTen,
                 Email = khachHang.Email,
                 SoDienThoai = khachHang.SoDienThoai,
-                TenDangNhap = khachHang.TenDangNhap
+                TenDangNhap = khachHang.TenDangNhap,
+                AnhDaiDienUrl = GetFullImageUrl(khachHang.AnhDaiDien)
             };
-
             return Ok(new WebLoginResponseModel { Success = true, KhachHangData = dto });
         }
-        // THÊM API MỚI CHO ĐĂNG KÝ
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] DangKyRequestModel model)
         {
+            // ... (Logic kiểm tra trùng lặp và tạo KhachHang entity giữ nguyên) ...
             if (model == null || string.IsNullOrEmpty(model.HoTen) || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.SoDienThoai) || string.IsNullOrEmpty(model.Password))
             {
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Vui lòng điền đầy đủ thông tin bắt buộc." });
             }
-
-            // KIỂM TRA TRÙNG LẶP
             if (await _context.KhachHangs.AnyAsync(k => k.Email == model.Email))
             {
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Email này đã được sử dụng." });
@@ -74,32 +98,29 @@ namespace CafebookApi.Controllers.Web
             {
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Tên đăng nhập này đã được sử dụng." });
             }
-
-            // TẠO KHÁCH HÀNG MỚI
-            var khachHang = new KhachHang // <-- Dùng Entity
+            var khachHang = new KhachHang
             {
                 HoTen = model.HoTen,
                 Email = model.Email,
                 SoDienThoai = model.SoDienThoai,
                 TenDangNhap = string.IsNullOrEmpty(model.TenDangNhap) ? null : model.TenDangNhap,
-                MatKhau = model.Password, // LƯU Ý: PHẢI HASH MẬT KHẨU
+                MatKhau = model.Password,
                 NgayTao = DateTime.Now,
-                DiemTichLuy = 0
+                DiemTichLuy = 0,
+                BiKhoa = false // Mặc định khi đăng ký
             };
-
             _context.KhachHangs.Add(khachHang);
             await _context.SaveChangesAsync();
 
-            // Trả về thông tin khách hàng (để tự động đăng nhập)
             var dto = new KhachHangDto
             {
                 IdKhachHang = khachHang.IdKhachHang,
                 HoTen = khachHang.HoTen,
                 Email = khachHang.Email,
                 SoDienThoai = khachHang.SoDienThoai,
-                TenDangNhap = khachHang.TenDangNhap
+                TenDangNhap = khachHang.TenDangNhap,
+                AnhDaiDienUrl = GetFullImageUrl(khachHang.AnhDaiDien)
             };
-
             return Ok(new WebLoginResponseModel { Success = true, KhachHangData = dto });
         }
     }

@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic; // <-- THÊM
+using CafebookModel.Model.ModelApp.NhanVien; // <-- THÊM
 
 namespace CafebookApi.Controllers.App
 {
@@ -14,10 +16,25 @@ namespace CafebookApi.Controllers.App
     public class DonHangController : ControllerBase
     {
         private readonly CafebookDbContext _context;
+        // THÊM: Cần cho việc In lại
+        private Dictionary<string, string> _settings = new Dictionary<string, string>();
 
         public DonHangController(CafebookDbContext context)
         {
             _context = context;
+        }
+
+        // ### THÊM MỚI: Helper (Copy từ ThanhToanController) ###
+        private async Task LoadCaiDat()
+        {
+            _settings = await _context.CaiDats
+                .Where(c =>
+                    c.TenCaiDat == "TenQuan" ||
+                    c.TenCaiDat == "DiaChi" ||
+                    c.TenCaiDat == "SoDienThoai" ||
+                    c.TenCaiDat == "Wifi_MatKhau")
+                .AsNoTracking()
+                .ToDictionaryAsync(c => c.TenCaiDat, c => c.GiaTri);
         }
 
         /// <summary>
@@ -97,12 +114,13 @@ namespace CafebookApi.Controllers.App
         }
 
         /// <summary>
-        /// API Lấy chi tiết một Đơn hàng
+        /// API Lấy chi tiết một Đơn hàng (Món + Phụ thu)
         /// </summary>
+        // ### SỬA: Thay đổi hàm này ###
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetDonHangDetails(int id)
         {
-            var details = await _context.ChiTietHoaDons
+            var items = await _context.ChiTietHoaDons
                 .Where(ct => ct.IdHoaDon == id)
                 .Include(ct => ct.SanPham)
                 .Select(ct => new DonHangChiTietDto
@@ -113,8 +131,105 @@ namespace CafebookApi.Controllers.App
                 })
                 .ToListAsync();
 
-            return Ok(details);
+            var surcharges = await _context.ChiTietPhuThuHoaDons
+                .Where(pt => pt.IdHoaDon == id)
+                .Include(pt => pt.PhuThu)
+                .Select(pt => new PhuThuDto
+                {
+                    IdPhuThu = pt.IdPhuThu,
+                    TenPhuThu = pt.PhuThu.TenPhuThu,
+                    SoTien = pt.SoTien,
+                    GiaTri = pt.PhuThu.GiaTri,
+                    LoaiGiaTri = pt.PhuThu.LoaiGiaTri
+                })
+                .ToListAsync();
+
+            return Ok(new DonHangFullDetailsDto
+            {
+                Items = items,
+                Surcharges = surcharges
+            });
         }
+
+        // ### THÊM MỚI: API Lấy dữ liệu In lại ###
+        [HttpGet("reprint-data/{id}")]
+        public async Task<IActionResult> GetReprintData(int id)
+        {
+            await LoadCaiDat();
+
+            var hoaDon = await _context.HoaDons
+                .Include(h => h.Ban)
+                .Include(h => h.NhanVien)
+                .Include(h => h.KhachHang)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.IdHoaDon == id);
+
+            if (hoaDon == null) return NotFound("Không tìm thấy hóa đơn.");
+
+            var items = await _context.ChiTietHoaDons
+                .Where(ct => ct.IdHoaDon == id)
+                .AsNoTracking()
+                .Select(c => new ChiTietDto
+                {
+                    IdChiTietHoaDon = c.IdChiTietHoaDon,
+                    IdSanPham = c.IdSanPham,
+                    TenSanPham = c.SanPham.TenSanPham,
+                    SoLuong = c.SoLuong,
+                    DonGia = c.DonGia,
+                    ThanhTien = c.ThanhTien
+                }).ToListAsync();
+
+            var surcharges = await _context.ChiTietPhuThuHoaDons
+                .Where(pt => pt.IdHoaDon == id)
+                .AsNoTracking()
+                .Select(pt => new PhuThuDto
+                {
+                    IdPhuThu = pt.IdPhuThu,
+                    TenPhuThu = pt.PhuThu.TenPhuThu,
+                    SoTien = pt.SoTien,
+                    GiaTri = pt.PhuThu.GiaTri,
+                    LoaiGiaTri = pt.PhuThu.LoaiGiaTri
+                }).ToListAsync();
+
+            // Lấy giao dịch thanh toán (để lấy tiền khách đưa)
+            var payment = await _context.GiaoDichThanhToans
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.IdHoaDon == id);
+
+            decimal khachDua = (payment?.CongThanhToan == "Tiền mặt") ? payment.SoTien : hoaDon.ThanhTien;
+
+            var previewData = new HoaDonPreviewDto
+            {
+                IsProvisional = false, // Luôn là hóa đơn cuối cùng
+                TenQuan = _settings.GetValueOrDefault("TenQuan", "CafeBook"),
+                DiaChi = _settings.GetValueOrDefault("DiaChi", "N/A"),
+                SoDienThoai = _settings.GetValueOrDefault("SoDienThoai", "N/A"),
+                WifiMatKhau = _settings.GetValueOrDefault("Wifi_MatKhau", "N/A"),
+
+                IdHoaDon = hoaDon.IdHoaDon,
+                SoBan = hoaDon.Ban?.SoBan ?? hoaDon.LoaiHoaDon,
+                ThoiGianTao = hoaDon.ThoiGianTao,
+                TenNhanVien = hoaDon.NhanVien?.HoTen ?? "N/A",
+                TenKhachHang = hoaDon.KhachHang?.HoTen ?? "Khách vãng lai",
+
+                Items = items,
+                Surcharges = surcharges,
+
+                TongTienGoc = hoaDon.TongTienGoc,
+                TongPhuThu = hoaDon.TongPhuThu,
+                // Gộp tất cả giảm giá vào KM (vì không biết cái nào là điểm)
+                GiamGiaKM = hoaDon.GiamGia,
+                GiamGiaDiem = 0,
+                ThanhTien = hoaDon.ThanhTien,
+
+                PhuongThucThanhToan = hoaDon.PhuongThucThanhToan ?? "N/A",
+                KhachDua = khachDua,
+                TienThoi = khachDua - hoaDon.ThanhTien
+            };
+
+            return Ok(previewData);
+        }
+
 
         /// <summary>
         /// API Cập nhật trạng thái (Hủy, Giao hàng)
@@ -122,7 +237,10 @@ namespace CafebookApi.Controllers.App
         [HttpPut("update-status/{id}")]
         public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] string newStatus)
         {
-            var hoaDon = await _context.HoaDons.FindAsync(id);
+            var hoaDon = await _context.HoaDons
+                .Include(h => h.Ban) // Giữ nguyên
+                .FirstOrDefaultAsync(h => h.IdHoaDon == id);
+
             if (hoaDon == null) return NotFound();
 
             if (hoaDon.TrangThai == "Đã thanh toán")
@@ -130,13 +248,15 @@ namespace CafebookApi.Controllers.App
                 return Conflict("Không thể cập nhật trạng thái cho hóa đơn đã thanh toán.");
             }
 
-            // Cập nhật trạng thái chính
             if (newStatus == "Hủy")
             {
                 hoaDon.TrangThai = "Đã hủy";
-                // TODO: Logic hoàn kho (nếu cần)
+
+                if (hoaDon.Ban != null)
+                {
+                    hoaDon.Ban.TrangThai = "Trống";
+                }
             }
-            // Cập nhật trạng thái giao hàng
             else if (newStatus == "Đang giao")
             {
                 if (hoaDon.LoaiHoaDon != "Giao hàng")

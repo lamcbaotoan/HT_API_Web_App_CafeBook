@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Tập tin: AppCafebookApi/View/quanly/pages/QuanLyNhanVienView.xaml.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -14,9 +15,8 @@ using System.IO;
 using AppCafebookApi.Services;
 using CafebookModel.Utils;
 using System.Globalization;
-using AppCafebookApi.View.Common;
-// THÊM MỚI:
 using AppCafebookApi.View.common;
+using System.Net.Http.Headers; // <-- THÊM
 
 namespace AppCafebookApi.View.quanly.pages
 {
@@ -25,14 +25,20 @@ namespace AppCafebookApi.View.quanly.pages
         private static readonly HttpClient httpClient;
         private List<NhanVienGridDto> _allNhanVienList = new List<NhanVienGridDto>();
         private List<FilterLookupDto> _vaiTroList = new List<FilterLookupDto>();
-        private NhanVienUpdateRequestDto? _selectedNhanVien = null;
-        private string? _currentAvatarBase64 = null;
+
+        // SỬA: Dùng DTO chi tiết (Detail) để nhận URL
+        private NhanVienDetailDto? _selectedNhanVien = null;
+
+        // SỬA: Thay thế Base64 bằng đường dẫn file
+        private string? _currentAvatarFilePath = null;
+        private bool _deleteAvatarRequest = false;
 
         static QuanLyNhanVienView()
         {
             httpClient = new HttpClient
             {
-                BaseAddress = new Uri("http://localhost:5166")
+                // SỬA: Đổi port về 5166 (theo launchSettings.json của bạn)
+                BaseAddress = new Uri("http://127.0.0.1:5166")
             };
         }
 
@@ -58,14 +64,10 @@ namespace AppCafebookApi.View.quanly.pages
                 if (filters != null)
                 {
                     _vaiTroList = filters.VaiTros;
-
-                    // Lọc
                     var filterVaiTro = new List<FilterLookupDto>(_vaiTroList);
                     filterVaiTro.Insert(0, new FilterLookupDto { Id = 0, Ten = "Tất cả Vai trò" });
                     cmbFilterVaiTro.ItemsSource = filterVaiTro;
                     cmbFilterVaiTro.SelectedValue = 0;
-
-                    // Form
                     cmbVaiTro.ItemsSource = _vaiTroList;
                 }
             }
@@ -78,7 +80,6 @@ namespace AppCafebookApi.View.quanly.pages
         private async Task LoadDataGridAsync()
         {
             LoadingOverlay.Visibility = Visibility.Visible;
-
             string searchText = txtSearchNhanVien.Text;
             int vaiTroId = (int)(cmbFilterVaiTro.SelectedValue ?? 0);
 
@@ -104,6 +105,13 @@ namespace AppCafebookApi.View.quanly.pages
                 await LoadDataGridAsync();
         }
 
+        // SỬA: Thêm sự kiện cho XAML
+        private void Filter_Changed(object sender, TextChangedEventArgs e)
+        {
+            if (this.IsLoaded)
+                _ = LoadDataGridAsync();
+        }
+
         #endregion
 
         #region Form & CRUD
@@ -111,7 +119,9 @@ namespace AppCafebookApi.View.quanly.pages
         private void ResetForm()
         {
             _selectedNhanVien = null;
-            _currentAvatarBase64 = null;
+            _currentAvatarFilePath = null;
+            _deleteAvatarRequest = false;
+
             dgNhanVien.SelectedItem = null;
             formChiTiet.IsEnabled = true;
             panelActions.Visibility = Visibility.Visible;
@@ -128,15 +138,15 @@ namespace AppCafebookApi.View.quanly.pages
             txtHoTen.Text = "";
             txtTenDangNhap.Text = "";
             txtMatKhau.Password = "";
-            cmbVaiTro.SelectedIndex = -1; // Bỏ chọn
+            cmbVaiTro.SelectedIndex = -1;
             txtLuongCoBan.Text = "0";
-            cmbTrangThai.SelectedIndex = 0; // "Đang làm việc"
+            cmbTrangThai.SelectedIndex = 0;
             dpNgayVaoLam.SelectedDate = DateTime.Today;
             txtSoDienThoai.Text = "";
             txtEmail.Text = "";
             txtDiaChi.Text = "";
 
-            AvatarPreview.ImageSource = HinhAnhHelper.LoadImageFromBase64(null, HinhAnhPaths.DefaultAvatar);
+            AvatarPreview.ImageSource = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultAvatar);
         }
 
         private async void DgNhanVien_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -150,14 +160,17 @@ namespace AppCafebookApi.View.quanly.pages
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
-                _selectedNhanVien = await httpClient.GetFromJsonAsync<NhanVienUpdateRequestDto>($"api/app/nhanvien/details/{selected.IdNhanVien}");
+                // SỬA: Gọi NhanVienDetailDto
+                _selectedNhanVien = await httpClient.GetFromJsonAsync<NhanVienDetailDto>($"api/app/nhanvien/details/{selected.IdNhanVien}");
                 if (_selectedNhanVien == null)
                 {
                     ResetForm();
                     return;
                 }
 
-                _currentAvatarBase64 = _selectedNhanVien.AnhDaiDienBase64;
+                _currentAvatarFilePath = null;
+                _deleteAvatarRequest = false;
+
                 formChiTiet.IsEnabled = true;
                 panelActions.Visibility = Visibility.Visible;
                 btnThem.Visibility = Visibility.Collapsed;
@@ -180,7 +193,8 @@ namespace AppCafebookApi.View.quanly.pages
                 txtEmail.Text = _selectedNhanVien.Email;
                 txtDiaChi.Text = _selectedNhanVien.DiaChi;
 
-                AvatarPreview.ImageSource = HinhAnhHelper.LoadImageFromBase64(_currentAvatarBase64, HinhAnhPaths.DefaultAvatar);
+                // SỬA: Load ảnh từ URL
+                AvatarPreview.ImageSource = HinhAnhHelper.LoadImage(_selectedNhanVien.AnhDaiDienUrl, HinhAnhPaths.DefaultAvatar);
             }
             catch (Exception ex)
             {
@@ -204,17 +218,26 @@ namespace AppCafebookApi.View.quanly.pages
             {
                 try
                 {
-                    byte[] imageBytes = File.ReadAllBytes(ofd.FileName);
-                    _currentAvatarBase64 = Convert.ToBase64String(imageBytes);
-                    AvatarPreview.ImageSource = HinhAnhHelper.LoadImageFromBase64(_currentAvatarBase64, HinhAnhPaths.DefaultAvatar);
+                    // SỬA: Chỉ lưu đường dẫn file
+                    _currentAvatarFilePath = ofd.FileName;
+                    _deleteAvatarRequest = false;
+                    AvatarPreview.ImageSource = HinhAnhHelper.LoadImage(_currentAvatarFilePath, HinhAnhPaths.DefaultAvatar);
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Lỗi đọc file ảnh: {ex.Message}", "Lỗi File");
-                    _currentAvatarBase64 = null;
-                    AvatarPreview.ImageSource = HinhAnhHelper.LoadImageFromBase64(null, HinhAnhPaths.DefaultAvatar);
+                    _currentAvatarFilePath = null;
+                    AvatarPreview.ImageSource = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultAvatar);
                 }
             }
+        }
+
+        // SỬA: Thêm hàm này (từ XAML của bạn)
+        private void BtnXoaAnh_Click(object sender, RoutedEventArgs e)
+        {
+            _currentAvatarFilePath = null;
+            _deleteAvatarRequest = true;
+            AvatarPreview.ImageSource = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultAvatar);
         }
 
         private async void BtnThem_Click(object sender, RoutedEventArgs e)
@@ -227,9 +250,10 @@ namespace AppCafebookApi.View.quanly.pages
             await SaveNhanVienAsync(isCreating: false);
         }
 
+        // SỬA: Dùng MultipartFormDataContent
         private async Task SaveNhanVienAsync(bool isCreating)
         {
-            // Validate
+            // ... (validation) ...
             if (string.IsNullOrWhiteSpace(txtHoTen.Text) || string.IsNullOrWhiteSpace(txtTenDangNhap.Text))
             {
                 MessageBox.Show("Họ tên và Tên đăng nhập là bắt buộc.", "Lỗi"); return;
@@ -243,20 +267,47 @@ namespace AppCafebookApi.View.quanly.pages
                 MessageBox.Show("Vui lòng chọn Vai trò.", "Lỗi"); return;
             }
 
-            var dto = new NhanVienUpdateRequestDto
+            // SỬA: Dùng MultipartFormDataContent
+            using var form = new MultipartFormDataContent();
+
+            // 1. Thêm các trường dữ liệu
+            form.Add(new StringContent(txtHoTen.Text), "HoTen");
+            form.Add(new StringContent(txtTenDangNhap.Text), "TenDangNhap");
+            if (!string.IsNullOrWhiteSpace(txtMatKhau.Password))
+                form.Add(new StringContent(txtMatKhau.Password), "MatKhau");
+
+            // === SỬA LỖI CS8604 (Dòng 281) ===
+            // Dùng string interpolation ($"") để đảm bảo kết quả luôn là `string` (non-null)
+            // Logic (dòng 269) đã đảm bảo SelectedValue không null
+            form.Add(new StringContent($"{cmbVaiTro.SelectedValue!}"), "IdVaiTro");
+
+            form.Add(new StringContent(decimal.TryParse(txtLuongCoBan.Text, out var l) ? l.ToString() : "0"), "LuongCoBan");
+            form.Add(new StringContent(((cmbTrangThai.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Đang làm việc"), "TrangThaiLamViec");
+            form.Add(new StringContent((dpNgayVaoLam.SelectedDate ?? DateTime.Today).ToString("o")), "NgayVaoLam"); // Gửi ISO 8601
+            form.Add(new StringContent(txtSoDienThoai.Text ?? ""), "SoDienThoai");
+            form.Add(new StringContent(txtEmail.Text ?? ""), "Email");
+            form.Add(new StringContent(txtDiaChi.Text ?? ""), "DiaChi");
+
+            if (!isCreating)
             {
-                HoTen = txtHoTen.Text,
-                TenDangNhap = txtTenDangNhap.Text,
-                MatKhau = string.IsNullOrWhiteSpace(txtMatKhau.Password) ? null : txtMatKhau.Password, // Chỉ gửi nếu có
-                IdVaiTro = (int)cmbVaiTro.SelectedValue,
-                LuongCoBan = decimal.TryParse(txtLuongCoBan.Text, out var l) ? l : 0,
-                TrangThaiLamViec = (cmbTrangThai.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Đang làm việc",
-                NgayVaoLam = dpNgayVaoLam.SelectedDate ?? DateTime.Today,
-                SoDienThoai = txtSoDienThoai.Text,
-                Email = txtEmail.Text,
-                DiaChi = txtDiaChi.Text,
-                AnhDaiDienBase64 = _currentAvatarBase64
-            };
+                // (Fix từ lần trước)
+                form.Add(new StringContent(_selectedNhanVien!.IdNhanVien.ToString()), "IdNhanVien");
+            }
+
+            // 2. Thêm file
+            if (!string.IsNullOrEmpty(_currentAvatarFilePath))
+            {
+                var fileStream = File.OpenRead(_currentAvatarFilePath);
+                var streamContent = new StreamContent(fileStream);
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                form.Add(streamContent, "AnhDaiDienUpload", Path.GetFileName(_currentAvatarFilePath));
+            }
+
+            // 3. Thêm cờ Xóa
+            if (_deleteAvatarRequest)
+            {
+                form.Add(new StringContent("true"), "XoaAnhDaiDien");
+            }
 
             LoadingOverlay.Visibility = Visibility.Visible;
             try
@@ -264,12 +315,12 @@ namespace AppCafebookApi.View.quanly.pages
                 HttpResponseMessage response;
                 if (isCreating)
                 {
-                    response = await httpClient.PostAsJsonAsync("api/app/nhanvien", dto);
+                    response = await httpClient.PostAsync("api/app/nhanvien", form);
                 }
                 else
                 {
-                    dto.IdNhanVien = _selectedNhanVien.IdNhanVien;
-                    response = await httpClient.PutAsJsonAsync($"api/app/nhanvien/{dto.IdNhanVien}", dto);
+                    // (Fix từ lần trước)
+                    response = await httpClient.PutAsync($"api/app/nhanvien/{_selectedNhanVien!.IdNhanVien}", form);
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -290,6 +341,8 @@ namespace AppCafebookApi.View.quanly.pages
             finally
             {
                 LoadingOverlay.Visibility = Visibility.Collapsed;
+                _currentAvatarFilePath = null;
+                _deleteAvatarRequest = false;
             }
         }
 
@@ -317,8 +370,8 @@ namespace AppCafebookApi.View.quanly.pages
 
                     if (confirmDeactivate == MessageBoxResult.Yes)
                     {
-                        // Gọi API Update Status
-                        var statusResponse = await httpClient.PutAsJsonAsync($"api/app/nhanvien/update-status/{_selectedNhanVien.IdNhanVien}", "Nghỉ việc");
+                        // SỬA: Gửi JSON chuẩn
+                        var statusResponse = await httpClient.PutAsJsonAsync($"api/app/nhanvien/update-status/{_selectedNhanVien.IdNhanVien}", new { newStatus = "Nghỉ việc" });
                         if (statusResponse.IsSuccessStatusCode)
                         {
                             MessageBox.Show("Đã cập nhật trạng thái thành 'Nghỉ việc'.", "Thành công");
@@ -349,32 +402,27 @@ namespace AppCafebookApi.View.quanly.pages
         #endregion
 
         #region Navigation
-
+        // ... (Toàn bộ region Navigation giữ nguyên) ...
         private void BtnGoToRoles_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService?.Navigate(new QuanLyVaiTroView());
         }
-
         private void BtnGoToBaoCao_Click(object sender, RoutedEventArgs e)
         {
-            // Yêu cầu #8
             this.NavigationService?.Navigate(new BaoCaoNhanSuView());
         }
-
         private void BtnGoToLichLamViec_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService?.Navigate(new QuanLyLichLamViecView());
         }
-
         private void BtnGoToDonXinNghi_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService?.Navigate(new QuanLyDonXinNghiView());
-        }
+        }/*
         private void BtnGoToLuong_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService?.Navigate(new QuanLyLuongView());
-        }
-
+        }*/
         private void BtnGoToCaiDat_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService?.Navigate(new CaiDatNhanSuView());

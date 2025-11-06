@@ -75,7 +75,7 @@ namespace CafebookApi.Controllers.App
                             p.NgayTao <= filters.EndDate);
 
             report.Kpi.TongLuongDaTra = await phieuLuongQuery.SumAsync(p => p.ThucLanh);
-            report.Kpi.TongGioLam = (double)await phieuLuongQuery.SumAsync(p => p.TongGioLam);
+            report.Kpi.TongGioLam = await phieuLuongQuery.SumAsync(p => p.TongGioLam); // Sửa: Gỡ (decimal)
 
             // Dùng ToList() để thực thi truy vấn SQL
             var bangLuongData = await phieuLuongQuery
@@ -83,10 +83,14 @@ namespace CafebookApi.Controllers.App
                 .Select(g => new
                 {
                     IdNhanVien = g.Key,
-                    TongGioLam = (double)g.Sum(p => p.TongGioLam),
+                    TongGioLam = g.Sum(p => p.TongGioLam),
                     TongLuongCoBan = g.Sum(p => p.LuongCoBan * p.TongGioLam), // Tính tổng trước
-                    TongThuong = g.Sum(p => p.TienThuong),
-                    TongPhat = g.Sum(p => p.KhauTru),
+
+                    // === SỬA LỖI CS0266 TẠI ĐÂY ===
+                    TongThuong = g.Sum(p => p.TienThuong) ?? 0m,
+                    TongPhat = g.Sum(p => p.KhauTru) ?? 0m,
+                    // === KẾT THÚC SỬA LỖI ===
+
                     ThucLanh = g.Sum(p => p.ThucLanh)
                 })
                 .ToListAsync(); // <-- THỰC THI TRUY VẤN TẠI ĐÂY
@@ -101,15 +105,13 @@ namespace CafebookApi.Controllers.App
                     TenVaiTro = nhanVienDaLoc[bl.IdNhanVien].VaiTro.TenVaiTro,
                     TongGioLam = bl.TongGioLam,
                     TongLuongCoBan = bl.TongLuongCoBan,
-                    TongThuong = bl.TongThuong,
-                    TongPhat = bl.TongPhat,
+                    TongThuong = bl.TongThuong, // Đã là decimal (không phải decimal?)
+                    TongPhat = bl.TongPhat,   // Đã là decimal (không phải decimal?)
                     ThucLanh = bl.ThucLanh
                 })
                 .OrderByDescending(x => x.ThucLanh)
                 .ToList();
 
-
-            // === BẮT ĐẦU SỬA LỖI LINQ (Dòng 100) ===
 
             // 3. Lấy dữ liệu Nghỉ Phép (Tab 2 và KPI Nghỉ)
             var donNghiQuery = _context.DonXinNghis
@@ -154,8 +156,6 @@ namespace CafebookApi.Controllers.App
                 .OrderByDescending(x => x.TongSoNgayNghi)
                 .ToList();
 
-            // === KẾT THÚC SỬA LỖI LINQ ===
-
             report.Kpi.TongSoNgayNghi = report.ThongKeNghiPhep.Sum(x => x.TongSoNgayNghi);
 
             // 4. Lấy dữ liệu Biểu đồ (Tổng lương trả theo ngày)
@@ -173,7 +173,11 @@ namespace CafebookApi.Controllers.App
         }
     }
 
-    // SQL Server 2017 trở xuống không có DATEDIFF_BIG, EF Core cần trợ giúp
+    // (Lưu ý: Bạn không cần class DbFunctions ở đây vì chúng ta đã chuyển
+    // logic tính toán ra ngoài SQL (sau khi ToListAsync))
+    // Bạn có thể xóa class DbFunctions nếu nó chỉ dùng cho việc này.
+
+    // (Nếu bạn vẫn dùng DbFunctions ở nơi khác, hãy giữ nó lại)
     public static class DbFunctions
     {
         [DbFunction(Name = "DATEDIFF", IsBuiltIn = true)]

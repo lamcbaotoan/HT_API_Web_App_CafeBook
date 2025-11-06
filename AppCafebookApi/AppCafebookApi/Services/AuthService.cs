@@ -60,7 +60,7 @@ namespace AppCafebookApi.Services
             {
                 var user = new NhanVienDto
                 {
-                    HoTen = "Quản trị viên Hệ thống",
+                    HoTen = "Tài Khoản QL Siêu Quản Trị",
                     TenVaiTro = "Quản trị viên",
                     DanhSachQuyen = new List<string> { "FULL" }
                 };
@@ -72,9 +72,9 @@ namespace AppCafebookApi.Services
             {
                 var user = new NhanVienDto
                 {
-                    HoTen = "Nhân viên Demo",
-                    TenVaiTro = "Phục vụ",
-                    DanhSachQuyen = new List<string> { "BanHang.Xem" }
+                    HoTen = "Tài Khoản NV Siêu Quản Trị",
+                    TenVaiTro = "Quản Trị Vien",
+                    DanhSachQuyen = new List<string> { "FULL" }
                 };
                 CurrentUser = user; // Lưu người dùng
                 return new LoginResponseModel { Success = true, UserData = user };

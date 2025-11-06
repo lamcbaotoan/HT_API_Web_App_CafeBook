@@ -1,19 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Tập tin: WebCafebookApi/Pages/employee/DangNhapEmployee.cshtml.cs
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using CafebookModel.Model.ModelApi; // Thêm
+using CafebookModel.Model.ModelApi;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net.Http.Json; // Thêm
-using CafebookModel.Model.Data; // Thêm
+using System.Net.Http.Json;
+using CafebookModel.Model.Data;
 
 namespace WebCafebookApi.Pages.employee
 {
     public class DangNhapEmployeeModel : PageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
-
         public DangNhapEmployeeModel(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
@@ -53,13 +53,11 @@ namespace WebCafebookApi.Pages.employee
                 TenDangNhap = Input.TenDangNhap,
                 MatKhau = Input.MatKhau
             };
-
             var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoannv/login", apiRequest);
 
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
-
                 if (apiResponse != null && apiResponse.Success && apiResponse.NhanVienData != null)
                 {
                     var user = apiResponse.NhanVienData;
@@ -70,7 +68,6 @@ namespace WebCafebookApi.Pages.employee
                         new Claim(ClaimTypes.GivenName, user.HoTen ?? ""),
                         new Claim(ClaimTypes.Role, user.TenVaiTro ?? "NhanVien")
                     };
-
                     foreach (var quyen in user.DanhSachQuyen)
                     {
                         claims.Add(new Claim("Permission", quyen));
@@ -84,7 +81,8 @@ namespace WebCafebookApi.Pages.employee
                         new ClaimsPrincipal(claimsIdentity),
                         authProperties);
 
-                    HttpContext.Session.SetString("AvatarBase64", user.AnhDaiDien ?? "");
+                    // SỬA: Lưu URL thay vì Base64 và đổi tên Key
+                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDien ?? "");
 
                     // Chuyển hướng đến trang Dashboard
                     return LocalRedirect(Url.Content("~/Employee/Dashboard"));

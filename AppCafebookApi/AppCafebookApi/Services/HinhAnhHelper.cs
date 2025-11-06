@@ -1,47 +1,76 @@
-﻿using System;
+﻿// Tập tin: AppCafebookApi/Services/HinhAnhHelper.cs
+using System;
 using System.IO;
-using System.Windows.Media; // Thêm
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+// KHÔNG CẦN using System.Windows; nữa
 
 namespace AppCafebookApi.Services
 {
     public static class HinhAnhHelper
     {
-        public static BitmapImage LoadImageFromBase64(string? base64String, string defaultImagePath)
+        /// <summary>
+        /// SỬA ĐỔI: Tải ảnh từ URL Web hoặc Đường dẫn File cục bộ.
+        /// </summary>
+        public static BitmapImage LoadImage(string? imageSource, string defaultImagePath)
         {
-            try
+            if (string.IsNullOrEmpty(imageSource))
             {
-                if (string.IsNullOrEmpty(base64String))
-                {
-                    // Nếu không có Base64, tải ảnh mặc định
-                    return LoadImageFromUri(defaultImagePath);
-                }
+                // 1. Không có nguồn -> Tải ảnh mặc định (pack://)
+                return LoadImageFromPackUri(defaultImagePath);
+            }
 
-                // Thử giải mã Base64
-                byte[] imageBytes = Convert.FromBase64String(base64String);
-                using (var ms = new MemoryStream(imageBytes))
+            // 2. Nguồn là URL (http://...)
+            if (imageSource.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                try
                 {
                     var image = new BitmapImage();
                     image.BeginInit();
+                    image.UriSource = new Uri(imageSource, UriKind.Absolute);
+                    image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                     image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = ms;
                     image.EndInit();
-                    image.Freeze();
+
+                    // SỬA: ĐÃ XÓA DÒNG image.Freeze();
+
                     return image;
                 }
+                catch (Exception) // SỬA: Xóa MessageBox, chỉ trả về ảnh mặc định
+                {
+                    return LoadImageFromPackUri(defaultImagePath); // Lỗi URL -> Tải mặc định
+                }
             }
-            catch
+
+            // 3. (SỬA) Nguồn là một đường dẫn file cục bộ (Dùng cho Preview)
+            if (File.Exists(imageSource))
             {
-                // Nếu Base64 bị lỗi, cũng tải ảnh mặc định
-                return LoadImageFromUri(defaultImagePath);
+                try
+                {
+                    var image = new BitmapImage();
+                    image.BeginInit();
+                    image.UriSource = new Uri(imageSource, UriKind.Absolute);
+                    image.CacheOption = BitmapCacheOption.OnLoad;
+                    image.EndInit();
+                    // SỬA: ĐÃ XÓA DÒNG image.Freeze();
+                    return image;
+                }
+                catch
+                {
+                    return LoadImageFromPackUri(defaultImagePath);
+                }
             }
+
+            return LoadImageFromPackUri(defaultImagePath);
         }
 
-        private static BitmapImage LoadImageFromUri(string uriPath)
+        /// <summary>
+        /// (Giữ nguyên) Hàm tải ảnh từ Resource (pack://)
+        /// </summary>
+        private static BitmapImage LoadImageFromPackUri(string uriPath)
         {
             try
             {
-                // Thử tải ảnh từ URI
                 var image = new BitmapImage();
                 var uri = new Uri($"pack://application:,,,/AppCafebookApi;component{uriPath}", UriKind.Absolute);
 
@@ -49,33 +78,25 @@ namespace AppCafebookApi.Services
                 image.UriSource = uri;
                 image.CacheOption = BitmapCacheOption.OnLoad;
                 image.EndInit();
-                image.Freeze();
+                image.Freeze(); // Freeze ở đây thì an toàn, vì file nằm sẵn trong app
                 return image;
             }
             catch (Exception)
             {
-                // ---------- SỬA LỖI TẠI ĐÂY ----------
-                // Nếu tải file bị lỗi (VÍ DỤ SAI BUILD ACTION)
-                // Tạo một ảnh 1x1 pixel rỗng (Transparent) để không bị crash
-
+                // Tạo ảnh 1x1 trong suốt nếu resource bị lỗi
                 var image = new BitmapImage();
-
-                // Sửa "Transparent" thành "Pbgra32"
                 var writeableBitmap = new WriteableBitmap(1, 1, 96, 96, PixelFormats.Pbgra32, null);
-
                 using (var stream = new MemoryStream())
                 {
                     var encoder = new PngBitmapEncoder();
                     encoder.Frames.Add(BitmapFrame.Create(writeableBitmap));
                     encoder.Save(stream);
-                    stream.Position = 0; // Reset stream về đầu
-
+                    stream.Position = 0;
                     image.BeginInit();
                     image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = stream; // Dùng StreamSource thay vì UriSource
+                    image.StreamSource = stream;
                     image.EndInit();
                 }
-
                 image.Freeze();
                 return image;
             }

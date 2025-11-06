@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using WebCafebookApi.Services; // <-- THÊM USING NÀY
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. THÊM DỊCH VỤ HTTPCLIENT (ĐỂ GỌI API)
+// 1. HTTPCLIENT
 builder.Services.AddHttpClient();
 
-// 2. THÊM DỊCH VỤ SESSION (ĐỂ LƯU AVATAR)
+// 2. SESSION
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -14,39 +15,33 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// 3. THÊM DỊCH VỤ AUTHENTICATION (ĐỂ TẠO COOKIE)
+// 3. AUTHENTICATION
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.AccessDeniedPath = "/AccessDenied";
-        options.LogoutPath = "/Account/DangXuat";
+        //options.LoginPath = "/Account/DangNhapView";
+        //options.AccessDeniedPath = "/AccessDenied";
+       //options.LogoutPath = "/Account/DangXuat";
     });
 
-// 4. THÊM RAZOR PAGES (của bạn đã có)
-builder.Services.AddRazorPages(options =>
-{
-    //options.Conventions.AddPageRoute("/Account/DangNhapView", "/Account/Login");
-    //options.Conventions.AddPageRoute("/Account/DangKyView", "/Account/Register");
-    //options.Conventions.AddPageRoute("/Employee/DangNhapEmployee", "/Employee/Login");
-});
+// 4. RAZOR PAGES
+builder.Services.AddRazorPages();
+
+// 5. SỬA: ĐĂNG KÝ EMAIL SERVICE
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddTransient<EmailService>();
+
+// 6. SỬA: ĐĂNG KÝ BỘ NHỚ CACHE
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-}
+// ... (Pipeline giữ nguyên) ...
+//app.UseHttpsRedirection(); // Thêm để đảm bảo chạy HTTPS
 app.UseStaticFiles();
-
 app.UseRouting();
-
-// 5. KÍCH HOẠT CÁC DỊCH VỤ (Thứ tự quan trọng)
-app.UseSession(); // Kích hoạt Session
-app.UseAuthentication(); // Kích hoạt Authentication
-app.UseAuthorization(); // Kích hoạt Authorization
-
+app.UseSession();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapRazorPages();
-
 app.Run();

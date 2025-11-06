@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Globalization;
 using System.Linq;
-using System.Threading.Tasks; // <--- Đảm bảo bạn CÓ 'using' này
+using System.Threading.Tasks;
+using System.Collections.Generic; // <-- THÊM
 
 namespace CafebookApi.Controllers.App
 {
@@ -22,17 +23,32 @@ namespace CafebookApi.Controllers.App
         }
 
         /// <summary>
-        /// SỬA LỖI: Thêm 'async Task<...>'
+        /// THÊM MỚI: API để tải danh sách sản phẩm cho ComboBox
+        /// </summary>
+        [HttpGet("filters")]
+        public async Task<IActionResult> GetKhuyenMaiFilters()
+        {
+            var sanPhams = await _context.SanPhams
+                .Where(sp => sp.TrangThaiKinhDoanh == true)
+                .OrderBy(sp => sp.TenSanPham)
+                .Select(sp => new FilterLookupDto { Id = sp.IdSanPham, Ten = sp.TenSanPham })
+                .ToListAsync();
+
+            return Ok(sanPhams);
+        }
+
+        /// <summary>
+        /// SỬA: Cập nhật logic tìm kiếm
         /// </summary>
         [HttpGet("search")]
-        public async Task<IActionResult> SearchKhuyenMai( // <-- SỬA LỖI (Thêm async Task)
+        public async Task<IActionResult> SearchKhuyenMai(
             [FromQuery] string? maKhuyenMai,
             [FromQuery] string? trangThai)
         {
             var now = DateTime.Now;
             var today = now.Date;
 
-            // Dòng 36: 'await' bây giờ đã hợp lệ
+            // 1. Tự động cập nhật các mã hết hạn
             var hetHan = await _context.KhuyenMais
                 .Where(km => km.TrangThai != "Hết hạn" && km.NgayKetThuc < today)
                 .ToListAsync();
@@ -41,68 +57,48 @@ namespace CafebookApi.Controllers.App
             {
                 km.TrangThai = "Hết hạn";
             }
-
-            // Dòng 44: 'await' bây giờ đã hợp lệ
             await _context.SaveChangesAsync();
 
+            // 2. Bắt đầu truy vấn
             var query = _context.KhuyenMais.AsQueryable();
-
-            if (!string.IsNullOrEmpty(trangThai) && trangThai != "Tất cả")
-            {
-                query = query.Where(km => km.TrangThai == trangThai);
-            }
 
             if (!string.IsNullOrEmpty(maKhuyenMai))
             {
                 query = query.Where(km => km.MaKhuyenMai.Contains(maKhuyenMai));
             }
+            if (!string.IsNullOrEmpty(trangThai) && trangThai != "Tất cả")
+            {
+                query = query.Where(km => km.TrangThai == trangThai);
+            }
 
-            // Dòng 61: 'await' bây giờ đã hợp lệ
-            var results = await query
-                .OrderByDescending(km => km.NgayBatDau)
+            // 3. Select DTO
+            var result = await query
+                .OrderByDescending(km => km.IdKhuyenMai)
                 .Select(km => new KhuyenMaiDto
                 {
                     IdKhuyenMai = km.IdKhuyenMai,
                     MaKhuyenMai = km.MaKhuyenMai,
                     TenKhuyenMai = km.TenChuongTrinh,
-                    GiaTriGiam = km.LoaiGiamGia == "PhanTram"
-                                 ? km.GiaTriGiam.ToString("F0") + "%"
-                                 : km.GiaTriGiam.ToString("N0"),
+                    GiaTriGiam = km.LoaiGiamGia == "PhanTram" ? $"{km.GiaTriGiam}%" : $"{km.GiaTriGiam:N0}đ",
                     GiamToiDa = km.GiamToiDa,
-                    DieuKienApDung = km.DieuKienApDung,
+                    DieuKienApDung = km.DieuKienApDung, // <-- SỬA: Thêm
                     NgayBatDau = km.NgayBatDau,
                     NgayKetThuc = km.NgayKetThuc,
-                    TrangThai = km.TrangThai
+                    TrangThai = km.TrangThai,
+                    SoLuongConLai = km.SoLuongConLai // <-- SỬA: Thêm
                 })
                 .ToListAsync();
 
-            return Ok(results);
+            return Ok(result);
         }
 
         /// <summary>
-        /// SỬA LỖI: Thêm 'async Task<...>'
+        /// SỬA: Trả về đầy đủ các trường
         /// </summary>
-        [HttpGet("filters")]
-        public async Task<IActionResult> GetFilters() // <-- SỬA LỖI (Thêm async Task)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetKhuyenMaiById(int id)
         {
-            var filters = new KhuyenMaiFiltersDto
-            {
-                SanPhams = await _context.SanPhams // 'await' hợp lệ
-                    .Where(s => s.TrangThaiKinhDoanh)
-                    .Select(s => new FilterLookupDto { Id = s.IdSanPham, Ten = s.TenSanPham })
-                    .OrderBy(s => s.Ten)
-                    .ToListAsync()
-            };
-            return Ok(filters);
-        }
-
-        /// <summary>
-        /// SỬA LỖI: Thêm 'async Task<...>'
-        /// </summary>
-        [HttpGet("details/{id}")]
-        public async Task<IActionResult> GetKhuyenMaiDetails(int id) // <-- SỬA LỖI (Thêm async Task)
-        {
-            var km = await _context.KhuyenMais.FindAsync(id); // 'await' hợp lệ
+            var km = await _context.KhuyenMais.FindAsync(id);
             if (km == null) return NotFound();
 
             var dto = new KhuyenMaiUpdateRequestDto
@@ -119,112 +115,125 @@ namespace CafebookApi.Controllers.App
                 NgayBatDau = km.NgayBatDau,
                 NgayKetThuc = km.NgayKetThuc,
                 NgayTrongTuan = km.NgayTrongTuan,
-                GioBatDau = km.GioBatDau?.ToString(@"hh\:mm"),
-                GioKetThuc = km.GioKetThuc?.ToString(@"hh\:mm"),
-                DieuKienApDung = km.DieuKienApDung,
-                TrangThai = km.TrangThai
+                GioBatDau = km.GioBatDau.HasValue ? km.GioBatDau.Value.ToString(@"hh\:mm") : null,
+                GioKetThuc = km.GioKetThuc.HasValue ? km.GioKetThuc.Value.ToString(@"hh\:mm") : null,
+                SoLuongConLai = km.SoLuongConLai,
+                TrangThai = km.TrangThai,
+                DieuKienApDung = km.DieuKienApDung
             };
             return Ok(dto);
         }
 
         /// <summary>
-        /// SỬA LỖI: Thêm 'async Task<...>'
+        /// SỬA: Xử lý đầy đủ các trường khi Tạo mới
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> CreateKhuyenMai([FromBody] KhuyenMaiUpdateRequestDto dto) // <-- SỬA LỖI (Thêm async Task)
+        public async Task<IActionResult> CreateKhuyenMai([FromBody] KhuyenMaiUpdateRequestDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.MaKhuyenMai))
+            if (await _context.KhuyenMais.AnyAsync(km => km.MaKhuyenMai == dto.MaKhuyenMai))
             {
-                return BadRequest("Mã khuyến mãi là bắt buộc.");
-            }
-            if (await _context.KhuyenMais.AnyAsync(km => km.MaKhuyenMai.ToLower() == dto.MaKhuyenMai.ToLower())) // 'await' hợp lệ
-            {
-                return Conflict("Mã khuyến mãi này đã tồn tại.");
+                return BadRequest($"Mã khuyến mãi '{dto.MaKhuyenMai}' đã tồn tại.");
             }
 
             var km = new KhuyenMai
             {
-                MaKhuyenMai = dto.MaKhuyenMai.ToUpper(),
+                MaKhuyenMai = dto.MaKhuyenMai,
                 TenChuongTrinh = dto.TenChuongTrinh,
                 MoTa = dto.MoTa,
                 LoaiGiamGia = dto.LoaiGiamGia,
                 GiaTriGiam = dto.GiaTriGiam,
-                GiamToiDa = dto.GiamToiDa,
-                HoaDonToiThieu = dto.HoaDonToiThieu,
-                IdSanPhamApDung = dto.IdSanPhamApDung,
+                GiamToiDa = (dto.LoaiGiamGia == "PhanTram" && dto.GiamToiDa > 0) ? dto.GiamToiDa : null,
+                HoaDonToiThieu = (dto.HoaDonToiThieu > 0) ? dto.HoaDonToiThieu : null,
+                IdSanPhamApDung = (dto.IdSanPhamApDung > 0) ? dto.IdSanPhamApDung : null,
                 NgayBatDau = dto.NgayBatDau.Date,
                 NgayKetThuc = dto.NgayKetThuc.Date,
-                NgayTrongTuan = dto.NgayTrongTuan,
+                NgayTrongTuan = string.IsNullOrWhiteSpace(dto.NgayTrongTuan) ? null : dto.NgayTrongTuan,
                 GioBatDau = TimeSpan.TryParse(dto.GioBatDau, out var tsStart) ? tsStart : null,
                 GioKetThuc = TimeSpan.TryParse(dto.GioKetThuc, out var tsEnd) ? tsEnd : null,
-                DieuKienApDung = dto.DieuKienApDung,
-                TrangThai = "Hoạt động"
+                SoLuongConLai = (dto.SoLuongConLai > 0) ? dto.SoLuongConLai : null,
+                TrangThai = dto.TrangThai, // Thường là "Hoạt động"
+                DieuKienApDung = dto.DieuKienApDung
             };
 
             _context.KhuyenMais.Add(km);
-            await _context.SaveChangesAsync(); // 'await' hợp lệ
-            return Ok(km);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetKhuyenMaiById), new { id = km.IdKhuyenMai }, km);
         }
 
         /// <summary>
-        /// SỬA LỖI: Thêm 'async Task<...>'
+        /// SỬA: Xử lý đầy đủ các trường khi Cập nhật
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateKhuyenMai(int id, [FromBody] KhuyenMaiUpdateRequestDto dto) // <-- SỬA LỖI (Thêm async Task)
+        public async Task<IActionResult> UpdateKhuyenMai(int id, [FromBody] KhuyenMaiUpdateRequestDto dto)
         {
-            var km = await _context.KhuyenMais.FindAsync(id); // 'await' hợp lệ
+            if (id != dto.IdKhuyenMai) return BadRequest("ID không khớp.");
+
+            var km = await _context.KhuyenMais.FindAsync(id);
             if (km == null) return NotFound();
 
-            if (string.IsNullOrWhiteSpace(dto.MaKhuyenMai))
+            // Kiểm tra mã trùng lặp (nếu đổi mã)
+            if (km.MaKhuyenMai != dto.MaKhuyenMai && await _context.KhuyenMais.AnyAsync(k => k.MaKhuyenMai == dto.MaKhuyenMai))
             {
-                return BadRequest("Mã khuyến mãi là bắt buộc.");
-            }
-            if (await _context.KhuyenMais.AnyAsync(k => k.MaKhuyenMai.ToLower() == dto.MaKhuyenMai.ToLower() && k.IdKhuyenMai != id)) // 'await' hợp lệ
-            {
-                return Conflict("Mã khuyến mãi này đã tồn tại.");
+                return BadRequest($"Mã khuyến mãi '{dto.MaKhuyenMai}' đã tồn tại.");
             }
 
-            km.MaKhuyenMai = dto.MaKhuyenMai.ToUpper();
+            // Map tất cả các trường
+            km.MaKhuyenMai = dto.MaKhuyenMai;
             km.TenChuongTrinh = dto.TenChuongTrinh;
             km.MoTa = dto.MoTa;
             km.LoaiGiamGia = dto.LoaiGiamGia;
             km.GiaTriGiam = dto.GiaTriGiam;
-            km.GiamToiDa = dto.GiamToiDa;
-            km.HoaDonToiThieu = dto.HoaDonToiThieu;
-            km.IdSanPhamApDung = dto.IdSanPhamApDung;
+            km.GiamToiDa = (dto.LoaiGiamGia == "PhanTram" && dto.GiamToiDa > 0) ? dto.GiamToiDa : null;
+            km.HoaDonToiThieu = (dto.HoaDonToiThieu > 0) ? dto.HoaDonToiThieu : null;
+            km.IdSanPhamApDung = (dto.IdSanPhamApDung > 0) ? dto.IdSanPhamApDung : null;
             km.NgayBatDau = dto.NgayBatDau.Date;
             km.NgayKetThuc = dto.NgayKetThuc.Date;
-            km.NgayTrongTuan = dto.NgayTrongTuan;
+            km.NgayTrongTuan = string.IsNullOrWhiteSpace(dto.NgayTrongTuan) ? null : dto.NgayTrongTuan;
             km.GioBatDau = TimeSpan.TryParse(dto.GioBatDau, out var tsStart) ? tsStart : null;
             km.GioKetThuc = TimeSpan.TryParse(dto.GioKetThuc, out var tsEnd) ? tsEnd : null;
+            km.SoLuongConLai = (dto.SoLuongConLai > 0) ? dto.SoLuongConLai : null;
             km.DieuKienApDung = dto.DieuKienApDung;
 
+            // Chỉ cập nhật trạng thái nếu nó không phải là "Hết hạn"
             if (km.TrangThai != "Hết hạn")
             {
                 km.TrangThai = dto.TrangThai;
             }
 
-            await _context.SaveChangesAsync(); // 'await' hợp lệ
+            await _context.SaveChangesAsync();
             return Ok();
         }
 
-        /// <summary>
-        /// SỬA LỖI: Thêm 'async Task<...>'
-        /// </summary>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteKhuyenMai(int id) // <-- SỬA LỖI (Thêm async Task)
+        public async Task<IActionResult> DeleteKhuyenMai(int id)
         {
-            if (await _context.HoaDonKhuyenMais.AnyAsync(hkm => hkm.IdKhuyenMai == id)) // 'await' hợp lệ
+            if (await _context.HoaDonKhuyenMais.AnyAsync(hkm => hkm.IdKhuyenMai == id))
             {
-                return Conflict("Không thể xóa. Khuyến mãi này đã được áp dụng cho hóa đơn.");
+                return BadRequest("Không thể xóa khuyến mãi đã được áp dụng cho hóa đơn.");
             }
 
-            var km = await _context.KhuyenMais.FindAsync(id); // 'await' hợp lệ
+            var km = await _context.KhuyenMais.FindAsync(id);
             if (km == null) return NotFound();
 
             _context.KhuyenMais.Remove(km);
-            await _context.SaveChangesAsync(); // 'await' hợp lệ
+            await _context.SaveChangesAsync();
             return Ok();
+        }
+
+        [HttpPatch("togglestatus/{id}")]
+        public async Task<IActionResult> ToggleKhuyenMaiStatus(int id)
+        {
+            var km = await _context.KhuyenMais.FindAsync(id);
+            if (km == null) return NotFound();
+
+            if (km.TrangThai == "Hết hạn")
+            {
+                return BadRequest("Không thể kích hoạt khuyến mãi đã hết hạn.");
+            }
+
+            km.TrangThai = (km.TrangThai == "Hoạt động") ? "Tạm dừng" : "Hoạt động";
+            await _context.SaveChangesAsync();
+            return Ok(km.TrangThai);
         }
     }
 }

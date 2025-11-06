@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace CafebookModel.Model.ModelApp
+namespace CafebookModel.Model.ModelApp.NhanVien
 {
     /// <summary>
     /// DTO để hiển thị một thẻ 'Bàn' trên sơ đồ
@@ -9,14 +9,13 @@ namespace CafebookModel.Model.ModelApp
     {
         public int IdBan { get; set; }
         public string SoBan { get; set; } = string.Empty;
-        public string TrangThai { get; set; } = string.Empty; // Trống, Có khách, Đã đặt, Bảo trì
+        public string TrangThai { get; set; } = string.Empty;
         public string? GhiChu { get; set; }
-
-        // Tổng tiền của hóa đơn 'Chưa thanh toán' (nếu có)
         public decimal TongTienHienTai { get; set; }
-
-        // ID của hóa đơn 'Chưa thanh toán' (nếu có)
         public int? IdHoaDonHienTai { get; set; }
+
+        // --- ĐÃ THÊM ---
+        public int? IdKhuVuc { get; set; }
     }
 
     /// <summary>

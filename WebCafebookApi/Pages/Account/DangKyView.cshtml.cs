@@ -1,38 +1,31 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Tập tin: WebCafebookApi/Pages/Account/DangKyView.cshtml.cs
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using CafebookModel.Model.ModelApi; // Thêm
-using CafebookModel.Model.ModelWeb; // Thêm
+using CafebookModel.Model.ModelApi;
+using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net.Http.Json; // Thêm
-
-// XÓA CÁC USING LIÊN QUAN ĐẾN DbContext VÀ ENTITIES
-// using Microsoft.EntityFrameworkCore;
-// using CafebookModel.Model.Entities;
+using System.Net.Http.Json;
 
 namespace WebCafebookApi.Pages.Account
 {
     public class DangKyViewModel : PageModel
     {
-        // SỬA LỖI CS0246: Xóa DbContext, dùng HttpClientFactory
         private readonly IHttpClientFactory _httpClientFactory;
         public DangKyViewModel(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }
 
-        // SỬA LỖI CS8618: Khởi tạo Input
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
-        // SỬA LỖI CS8618: Dùng string? và khởi tạo
         public string? ReturnUrl { get; set; }
 
         public class InputModel
         {
-            // SỬA LỖI CS8618: Khởi tạo string
             [Required(ErrorMessage = "Vui lòng nhập họ tên")]
             [Display(Name = "Họ và Tên")]
             public string HoTen { get; set; } = string.Empty;
@@ -48,7 +41,7 @@ namespace WebCafebookApi.Pages.Account
             public string Email { get; set; } = string.Empty;
 
             [Display(Name = "Tên đăng nhập")]
-            public string? TenDangNhap { get; set; } // Nullable là OK
+            public string? TenDangNhap { get; set; }
 
             [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
             [StringLength(100, ErrorMessage = "{0} phải dài từ {2} đến {1} ký tự.", MinimumLength = 6)]
@@ -62,12 +55,12 @@ namespace WebCafebookApi.Pages.Account
             public string ConfirmPassword { get; set; } = string.Empty;
         }
 
-        public void OnGet(string? returnUrl = null) // Sửa lỗi CS8625
+        public void OnGet(string? returnUrl = null)
         {
             ReturnUrl = returnUrl;
         }
 
-        public async Task<IActionResult> OnPostAsync(string? returnUrl = null) // Sửa lỗi CS8625
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
             if (!ModelState.IsValid)
@@ -75,7 +68,6 @@ namespace WebCafebookApi.Pages.Account
                 return Page();
             }
 
-            // GỌI API ĐĂNG KÝ
             var httpClient = _httpClientFactory.CreateClient();
             var apiRequest = new DangKyRequestModel
             {
@@ -85,13 +77,11 @@ namespace WebCafebookApi.Pages.Account
                 TenDangNhap = Input.TenDangNhap,
                 Password = Input.Password
             };
-
             var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoankhach/register", apiRequest);
 
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
-
                 if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null)
                 {
                     // TỰ ĐỘNG ĐĂNG NHẬP SAU KHI ĐĂNG KÝ
@@ -107,15 +97,18 @@ namespace WebCafebookApi.Pages.Account
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
                     await HttpContext.SignInAsync(
                         CookieAuthenticationDefaults.AuthenticationScheme,
                         new ClaimsPrincipal(claimsIdentity));
+
+                    // SỬA: Lưu URL (nếu có) thay vì Base64 và đổi tên Key
+                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
 
                     return LocalRedirect(returnUrl);
                 }
                 else
                 {
-                    // Hiển thị lỗi từ API (ví dụ: "Email đã tồn tại")
                     ModelState.AddModelError(string.Empty, apiResponse?.Message ?? "Lỗi đăng ký.");
                     return Page();
                 }

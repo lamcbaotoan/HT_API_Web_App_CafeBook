@@ -3,11 +3,11 @@
     "Name": "New Profile",
     "Projects": [
       {
-        "Path": "AppCafebookApi\\AppCafebookApi.csproj",
+        "Path": "..\\CafebookApi\\CafebookApi.csproj",
         "Action": "Start"
       },
       {
-        "Path": "..\\CafebookApi\\CafebookApi.csproj",
+        "Path": "AppCafebookApi\\AppCafebookApi.csproj",
         "Action": "Start"
       }
     ]

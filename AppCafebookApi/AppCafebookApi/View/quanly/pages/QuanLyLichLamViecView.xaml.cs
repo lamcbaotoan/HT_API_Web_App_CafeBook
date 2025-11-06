@@ -159,7 +159,9 @@ namespace AppCafebookApi.View.quanly.pages
                 }
                 else
                 {
-                    dto.IdCa = _selectedCaMau.IdCa;
+                    // === SỬA LỖI CS8602 ===
+                    // Thêm toán tử '!' (null-forgiving) vì logic UI đã đảm bảo _selectedCaMau không null khi lưu.
+                    dto.IdCa = _selectedCaMau!.IdCa;
                     response = await httpClient.PutAsJsonAsync($"api/app/calamviec/{dto.IdCa}", dto);
                 }
 

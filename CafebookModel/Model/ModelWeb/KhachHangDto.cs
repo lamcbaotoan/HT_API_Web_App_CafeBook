@@ -7,5 +7,6 @@
         public string? SoDienThoai { get; set; }
         public string? Email { get; set; }
         public string? TenDangNhap { get; set; }
+        public string? AnhDaiDienUrl { get; set; }
     }
 }

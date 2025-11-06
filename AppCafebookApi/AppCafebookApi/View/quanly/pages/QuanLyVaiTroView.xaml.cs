@@ -116,7 +116,9 @@ namespace AppCafebookApi.View.quanly.pages
                 }
                 else
                 {
-                    dto.IdVaiTro = _selectedVaiTro.IdVaiTro;
+                    // === SỬA LỖI CS8602 ===
+                    // Thêm '!' vì logic UI (btnLuu.IsEnabled) đảm bảo _selectedVaiTro không null
+                    dto.IdVaiTro = _selectedVaiTro!.IdVaiTro;
                     response = await httpClient.PutAsJsonAsync($"api/app/vaitro/{dto.IdVaiTro}", dto);
                 }
 

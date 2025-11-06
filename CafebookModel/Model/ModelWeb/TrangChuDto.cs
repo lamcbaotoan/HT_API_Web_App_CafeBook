@@ -1,4 +1,5 @@
-﻿namespace CafebookModel.Model.ModelWeb
+﻿// Tập tin: CafebookModel/Model/ModelWeb/TrangChuDto.cs
+namespace CafebookModel.Model.ModelWeb
 {
     // Lớp cha chứa tất cả
     public class TrangChuDto
@@ -9,16 +10,18 @@
         public List<SachDto> SachNoiBat { get; set; } = new();
     }
 
-    // Lớp cho Model.Info
+    // Lớp cho Model.Info (SỬA ĐỔI)
     public class ThongTinChungDto
     {
         public string TenQuan { get; set; } = "Cafebook";
         public string? GioiThieu { get; set; }
         public string? BannerImageUrl { get; set; }
         public int SoBanTrong { get; set; }
-        public int SoSachDangDuocThue { get; set; }
+        public int SoSachSanSang { get; set; }
         public string? DiaChi { get; set; }
         public string? SoDienThoai { get; set; }
+
+        // THÊM MỚI (từ CSDL CaiDat)
         public string? EmailLienHe { get; set; }
         public string? GioMoCua { get; set; }
     }
@@ -31,11 +34,13 @@
         public string? dieuKienApDung { get; set; }
     }
 
-    // Lớp cho Model.MonNoiBat
+    // Lớp cho Model.MonNoiBat (SỬA ĐỔI)
     public class SanPhamDto
     {
+        // THÊM MỚI:
+        public int IdSanPham { get; set; }
         public string TenSanPham { get; set; } = string.Empty;
-        public string? AnhSanPhamBase64 { get; set; }
+        public string? AnhSanPhamUrl { get; set; }
         public decimal DonGia { get; set; }
     }
 
@@ -45,6 +50,6 @@
         public int IdSach { get; set; }
         public string TieuDe { get; set; } = string.Empty;
         public string? TacGia { get; set; }
-        public string? AnhBia { get; set; } // Base64
+        public string? AnhBiaUrl { get; set; }
     }
 }

@@ -1,19 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Tập tin: WebCafebookApi/Pages/Account/DangNhapView.cshtml.cs
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using CafebookModel.Model.ModelApi; // Thêm
+using CafebookModel.Model.ModelApi;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net.Http.Json; // Thêm
+using System.Net.Http.Json;
 
 namespace WebCafebookApi.Pages.Account
 {
     public class DangNhapViewModel : PageModel
     {
-        // 1. XÓA DbContext, THAY BẰNG HttpClientFactory
         private readonly IHttpClientFactory _httpClientFactory;
-
         public DangNhapViewModel(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
@@ -61,24 +60,19 @@ namespace WebCafebookApi.Pages.Account
                 return Page();
             }
 
-            // 2. TẠO YÊU CẦU GỌI API
             var httpClient = _httpClientFactory.CreateClient();
             var apiRequest = new LoginRequestModel
             {
                 TenDangNhap = Input.LoginIdentifier,
                 MatKhau = Input.Password
             };
-
-            // Lấy URL của API (giả sử là localhost:5166)
             var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoankhach/login", apiRequest);
 
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
-
                 if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null)
                 {
-                    // 3. ĐĂNG NHẬP THÀNH CÔNG -> TẠO COOKIE
                     var user = apiResponse.KhachHangData;
                     var claims = new List<Claim>
                     {
@@ -98,8 +92,8 @@ namespace WebCafebookApi.Pages.Account
                         new ClaimsPrincipal(claimsIdentity),
                         authProperties);
 
-                    // 4. LƯU AVATAR (Mặc định, vì KhachHang không có)
-                    HttpContext.Session.SetString("AvatarBase64", "");
+                    // SỬA: Lưu URL (nếu có) thay vì Base64 và đổi tên Key
+                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
 
                     return LocalRedirect(returnUrl);
                 }

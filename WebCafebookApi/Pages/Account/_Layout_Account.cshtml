@@ -1,0 +1,49 @@
+﻿@{
+    Layout = "_Layout"; // Kế thừa từ Layout chính (có header, footer)
+
+    // Helper để kiểm tra trang
+    string? CurrentPage()
+    {
+        return ViewContext.RouteData.Values["page"]?.ToString();
+    }
+}
+
+<div class="container mt-5">
+    <div class="main-content-card">
+        <div class="account-layout-container">
+
+            <div class="account-sidebar">
+                <nav class="nav flex-column nav-pills">
+                    <a class="nav-link @(CurrentPage() == "/Account/TaiKhoanTongQuanView" ? "active" : "")"
+                       asp-page="/Account/TaiKhoanTongQuanView">
+                        <span class="material-symbols-outlined">person</span>
+                        Tài khoản của tôi
+                    </a>
+                    <a class="nav-link @(CurrentPage() == "/Account/ThongTinCaNhanView" ? "active" : "")"
+                       asp-page="/Account/ThongTinCaNhanView">
+                        <span class="material-symbols-outlined">badge</span>
+                        Hồ sơ
+                    </a>
+                    <a class="nav-link @(CurrentPage() == "/Account/DoiMatKhauView" ? "active" : "")"
+                       asp-page="/Account/DoiMatKhauView">
+                        <span class="material-symbols-outlined">lock</span>
+                        Đổi mật khẩu
+                    </a>
+                    <a class="nav-link disabled" href="#">
+                        <span class="material-symbols-outlined">settings</span>
+                        Cài đặt (Sắp có)
+                    </a>
+                </nav>
+            </div>
+
+            <div class="account-content">
+                @RenderBody()
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

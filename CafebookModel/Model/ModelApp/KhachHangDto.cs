@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CafebookModel.Model.ModelApp
 {
@@ -30,7 +32,7 @@ namespace CafebookModel.Model.ModelApp
         public int DiemTichLuy { get; set; }
         public string? TenDangNhap { get; set; }
         public bool BiKhoa { get; set; }
-        public string? AnhDaiDienBase64 { get; set; }
+        public string? AnhDaiDienUrl { get; set; } // <-- SỬA: Dùng URL
         public List<LichSuDonHangDto> LichSuDonHang { get; set; } = new();
         public List<LichSuThueSachDto> LichSuThueSach { get; set; } = new();
     }
@@ -47,8 +49,12 @@ namespace CafebookModel.Model.ModelApp
         public string? DiaChi { get; set; }
         public int DiemTichLuy { get; set; }
         public string? TenDangNhap { get; set; }
-        public string? AnhDaiDienBase64 { get; set; }
-        // (Không bao gồm mật khẩu, mật khẩu chỉ đổi ở web)
+
+        // SỬA: Xóa Base64, thêm 2 dòng này
+        [JsonIgnore]
+        public IFormFile? AnhDaiDienUpload { get; set; }
+        [JsonIgnore]
+        public bool XoaAnhDaiDien { get; set; } = false;
     }
 
     // --- DTOs con cho Lịch sử ---

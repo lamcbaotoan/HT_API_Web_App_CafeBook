@@ -38,10 +38,17 @@ namespace AppCafebookApi.View.quanly.pages
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
-                _currentSettings = await httpClient.GetFromJsonAsync<CaiDatNhanSuDto>("api/app/caidatnhansu/all");
-                if (_currentSettings != null)
+                // === SỬA LỖI CS8601 ===
+                // 1. Tải dữ liệu vào một biến tạm 'nullable' (có thể là null)
+                var loadedSettings = await httpClient.GetFromJsonAsync<CaiDatNhanSuDto>("api/app/caidatnhansu/all");
+
+                // 2. Kiểm tra biến tạm đó
+                if (loadedSettings != null)
                 {
-                    // Dùng CultureInfo.InvariantCulture để xử lý dấu chấm (.)
+                    // 3. Nếu không null, gán nó vào biến non-null của class
+                    _currentSettings = loadedSettings;
+
+                    // 4. Giờ có thể dùng _currentSettings một cách an toàn
                     txtGioLamChuan.Text = _currentSettings.GioLamChuan.ToString(CultureInfo.InvariantCulture);
                     txtHeSoOT.Text = _currentSettings.HeSoOT.ToString(CultureInfo.InvariantCulture);
                     txtPhatDiTre_Phut.Text = _currentSettings.PhatDiTre_Phut.ToString();
@@ -50,6 +57,12 @@ namespace AppCafebookApi.View.quanly.pages
                     txtChuyenCan_TienThuong.Text = _currentSettings.ChuyenCan_TienThuong.ToString("F0", CultureInfo.InvariantCulture);
                     txtPhepNam_MacDinh.Text = _currentSettings.PhepNam_MacDinh.ToString();
                 }
+                else
+                {
+                    // (Tùy chọn) Thông báo nếu API trả về null
+                    MessageBox.Show("Không thể tải dữ liệu cài đặt (API trả về rỗng).", "Lỗi Tải Dữ Liệu");
+                }
+                // === KẾT THÚC SỬA LỖI ===
             }
             catch (Exception ex)
             {
@@ -69,10 +82,10 @@ namespace AppCafebookApi.View.quanly.pages
                 // Validate và Parse
                 var dto = new CaiDatNhanSuDto
                 {
-                    GioLamChuan = double.Parse(txtGioLamChuan.Text, CultureInfo.InvariantCulture),
-                    HeSoOT = double.Parse(txtHeSoOT.Text, CultureInfo.InvariantCulture),
+                    GioLamChuan = decimal.Parse(txtGioLamChuan.Text, CultureInfo.InvariantCulture),
+                    HeSoOT = decimal.Parse(txtHeSoOT.Text, CultureInfo.InvariantCulture),
                     PhatDiTre_Phut = int.Parse(txtPhatDiTre_Phut.Text),
-                    PhatDiTre_HeSo = double.Parse(txtPhatDiTre_HeSo.Text, CultureInfo.InvariantCulture),
+                    PhatDiTre_HeSo = decimal.Parse(txtPhatDiTre_HeSo.Text, CultureInfo.InvariantCulture),
                     ChuyenCan_SoNgay = int.Parse(txtChuyenCan_SoNgay.Text),
                     ChuyenCan_TienThuong = decimal.Parse(txtChuyenCan_TienThuong.Text, CultureInfo.InvariantCulture),
                     PhepNam_MacDinh = int.Parse(txtPhepNam_MacDinh.Text)

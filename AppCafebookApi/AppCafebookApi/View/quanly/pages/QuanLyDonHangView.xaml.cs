@@ -13,10 +13,11 @@ using Microsoft.Win32; // Cho Excel
 using System.IO; // Cho Excel
 using OfficeOpenXml; // Cho Excel
 using System.Globalization; // Cho Excel
+using AppCafebookApi.View.common; // <-- THÊM MỚI
+using CafebookModel.Model.ModelApp.NhanVien; // <-- THÊM MỚI
 
 namespace AppCafebookApi.View.quanly.pages
 {
-    // Đổi tên class cho khớp (nếu file XAML là QuanLyDonHangView.xaml)
     public partial class QuanLyDonHangView : Page
     {
         private static readonly HttpClient httpClient;
@@ -37,18 +38,14 @@ namespace AppCafebookApi.View.quanly.pages
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            // Thiết lập ngày mặc định (hôm nay)
             dpTuNgay.SelectedDate = DateTime.Today;
             dpDenNgay.SelectedDate = DateTime.Today;
-            cmbTrangThai.SelectedIndex = 0; // "Tất cả"
+            cmbTrangThai.SelectedIndex = 0;
 
             await LoadFiltersAsync();
             await LoadDataGridAsync();
         }
 
-        /// <summary>
-        /// Tải dữ liệu cho ComboBox Nhân viên
-        /// </summary>
         private async Task LoadFiltersAsync()
         {
             try
@@ -67,9 +64,6 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
-        /// <summary>
-        /// Tải DataGrid chính dựa trên bộ lọc
-        /// </summary>
         private async Task LoadDataGridAsync()
         {
             if (dpTuNgay.SelectedDate == null || dpDenNgay.SelectedDate == null) return;
@@ -94,6 +88,7 @@ namespace AppCafebookApi.View.quanly.pages
 
                 // Xóa chi tiết
                 dgChiTietDonHang.ItemsSource = null;
+                icPhuThuChiTiet.ItemsSource = null; // <-- THÊM MỚI
                 btnInLaiHoaDon.IsEnabled = false;
                 btnHuyDonHang.IsEnabled = false;
                 btnGiaoHang.IsEnabled = false;
@@ -127,6 +122,7 @@ namespace AppCafebookApi.View.quanly.pages
             if (dgDonHang.SelectedItem is not DonHangDto selectedOrder)
             {
                 dgChiTietDonHang.ItemsSource = null;
+                icPhuThuChiTiet.ItemsSource = null; // <-- THÊM MỚI
                 btnInLaiHoaDon.IsEnabled = false;
                 btnHuyDonHang.IsEnabled = false;
                 btnGiaoHang.IsEnabled = false;
@@ -135,11 +131,16 @@ namespace AppCafebookApi.View.quanly.pages
 
             try
             {
-                var details = await httpClient.GetFromJsonAsync<List<DonHangChiTietDto>>($"api/app/donhang/details/{selectedOrder.IdHoaDon}");
-                dgChiTietDonHang.ItemsSource = details;
+                // ### SỬA: Gọi API mới (GetDonHangFullDetailsDto) ###
+                var details = await httpClient.GetFromJsonAsync<DonHangFullDetailsDto>($"api/app/donhang/details/{selectedOrder.IdHoaDon}");
+                if (details != null)
+                {
+                    dgChiTietDonHang.ItemsSource = details.Items;
+                    icPhuThuChiTiet.ItemsSource = details.Surcharges; // <-- THÊM MỚI
+                }
 
                 // Logic kích hoạt nút
-                btnInLaiHoaDon.IsEnabled = true; // Luôn cho phép in
+                btnInLaiHoaDon.IsEnabled = true;
 
                 if (selectedOrder.TrangThai == "Đã thanh toán" || selectedOrder.TrangThai == "Đã hủy")
                 {
@@ -148,7 +149,6 @@ namespace AppCafebookApi.View.quanly.pages
                 }
                 else
                 {
-                    // "Chưa thanh toán"
                     btnHuyDonHang.IsEnabled = true;
                     if (selectedOrder.LoaiHoaDon == "Giao hàng")
                     {
@@ -166,12 +166,29 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
-        private void BtnInLaiHoaDon_Click(object sender, RoutedEventArgs e)
+        // ### SỬA: Thay đổi hàm này ###
+        private async void BtnInLaiHoaDon_Click(object sender, RoutedEventArgs e)
         {
-            if (dgDonHang.SelectedItem is DonHangDto selectedOrder)
+            if (dgDonHang.SelectedItem is not DonHangDto selectedOrder) return;
+
+            try
             {
-                MessageBox.Show($"Đang chuẩn bị in HĐ {selectedOrder.IdHoaDon}...\n(Chức năng này cần logic in ấn riêng).", "Thông báo");
-                // TODO: Gọi service in ấn
+                // 1. Gọi API mới để lấy đầy đủ dữ liệu in
+                var dto = await httpClient.GetFromJsonAsync<HoaDonPreviewDto>($"api/app/donhang/reprint-data/{selectedOrder.IdHoaDon}");
+
+                if (dto == null)
+                {
+                    MessageBox.Show("Không thể lấy dữ liệu in.", "Lỗi");
+                    return;
+                }
+
+                // 2. Mở cửa sổ in
+                var previewWindow = new HoaDonPreviewWindow(dto);
+                previewWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi lấy dữ liệu in: {ex.Message}", "Lỗi API");
             }
         }
 
@@ -256,5 +273,12 @@ namespace AppCafebookApi.View.quanly.pages
                 }
             }
         }
+        // ### THÊM HÀM MỚI NÀY VÀO CUỐI FILE ###
+        private void BtnNavigate_PhuThu_Click(object sender, RoutedEventArgs e)
+        {
+            // (Giả định QuanLyPhuThuView ở cùng namespace)
+            this.NavigationService?.Navigate(new QuanLyPhuThuView());
+        }
+        // ### KẾT THÚC THÊM MỚI ###
     }
 }

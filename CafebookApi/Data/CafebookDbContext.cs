@@ -61,7 +61,7 @@ namespace CafebookApi.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
+            modelBuilder.UseCollation("Vietnamese_CI_AS");
             // Cấu hình Khóa chính tổng hợp (Composite Primary Keys)
             modelBuilder.Entity<ChiTietPhuThuHoaDon>().HasKey(c => new { c.IdHoaDon, c.IdPhuThu });
             modelBuilder.Entity<DinhLuong>().HasKey(c => new { c.IdSanPham, c.IdNguyenLieu });

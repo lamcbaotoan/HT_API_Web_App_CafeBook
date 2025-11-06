@@ -1,0 +1,2443 @@
+Backend: C#.
+Frontend: cshtml.
+Database: SQL Server Management Studio 21.
+IDE: Visual Studio Insiders.
+tên projec: WebCafebookApi.
+nền tảng: ASP.NET Core Web App (Razor Pages), Net Framework 8.0.
+//////////////////////////
+🌳 Solution 'AppCafebookApi' (4 of 4 projects)
+│
+├── 🐙 GitHub Actions/
+│
+├── 🔷 AppCafebookApi/ (Dự án WPF Desktop)
+│   ├── ➡️ Dependencies/
+│   ├── 📂 Assets/
+│   │   ├── 📂 images/
+│   │   │   ├── 🖼️ default-avatar.png
+│   │   │   ├── 🖼️ default-book-cover.png
+│   │   │   ├── 🖼️ default-food-icon.png
+│   │   │   ├── 🖼️ logo.ico
+│   │   │   └── 🖼️ logo.png
+│   │   └── 📂 Fonts/
+│   │       └── 🅰️ Font Awesome 6 Free-Solid-900.otf
+│   ├── 📂 Services/
+│   │   ├── C# AuthService.cs
+│   │   └── C# HinhAnhHelpers.cs
+│   ├── 📂 View/
+│   │   ├── 📂 Common/
+│   │   │   ├── 📄 BaocaodoanhthuPreviewWindow.xaml
+│   │   │   ├── 📄 BaoCaoHieuSuatNhanVientPreview.xaml
+│   │   │   ├── 📄 BaoCaoTonKhoNguyenLieuPreviewWindo...
+│   │   │   ├── 📄 BapCaoTonKhoSachPreviewWindow.xaml
+│   │   │   ├── 📄 InputDialogWindow.xaml
+│   │   │   ├── 📄 PhieuLuongPreviewWindow.xaml
+│   │   │   └── 📄 WelcomeWindow.xaml
+│   │   ├── 📂 nhanvien/
+│   │   │    ├── 📂 pages/
+│   │   │    │     ├── 📄 SoDoBanView.xaml
+│   │   │    │     └── 📄 GoiMonView.xaml
+│   │   │    └── 📄 ManHinhNhanVien.xaml
+│   │   └── 📂 quanly/
+│   │       ├── 📂 pages/
+│   │       │   ├── 📄 BaoCaoNhanSuView.xaml
+│   │       │   ├── 📄 CaiDatNhanSuView.xaml
+│   │       │   ├── 📄 PhanQuyenView.xaml
+│   │       │   ├── 📄 QuanLyBanView.xaml
+│   │       │   ├── 📄 QuanLyDonHangView.xaml
+│   │       │   ├── 📄 QuanLyDonViChuyenDoiView.xaml
+│   │       │   ├── 📄 QuanLyDonXinNghiView.xaml
+│   │       │   ├── 📄 QuanLyKiemKhoView.xaml
+│   │       │   ├── 📄 QuanLyKhachHangView.xaml
+│   │       │   ├── 📄 QuanLyKhuyenMaiView.xaml
+│   │       │   ├── 📄 QuanLyLichLamViecView.xaml
+│   │       │   ├── 📄 QuanLyLuongView.xaml
+│   │       │   ├── 📄 QuanLyNguyenLieuView.xaml
+│   │       │   ├── 📄 QuanLyNhaCungCapView.xaml
+│   │       │   ├── 📄 QuanLyNhanVienView.xaml
+│   │       │   ├── 📄 QuanLyNhapKhoView.xaml
+│   │       │   ├── 📄 QuanLyPhatLuongView.xaml
+│   │       │   ├── 📄 QuanLySachView.xaml
+│   │       │   ├── 📄 QuanLySanPhamView.xaml
+│   │       │   ├── 📄 QuanLyVaiTroView.xaml
+│   │       │   ├── 📄 QuanLyXuatHuyView.xaml
+│   │       │   └── 📄 TongQuanView.xaml
+│   │       ├── 📄 ManHinhQuanly.xaml
+│   │       └── 📄 ManHinhDangNhap.xaml
+│   ├── ⚙️ App.xaml
+│   └── 🖼️ logo.ico
+│
+├── 🔷 CafebookApi/ (Dự án ASP.NET Core API Backend)
+│   ├── ➡️ Connected Services/
+│   ├── ➡️ Dependencies/
+│   ├── 📂 Properties/
+│   │   └── 📄 launchSettings.json
+│   ├── 📂 wwwroot/
+│   │   └── 📂 images/
+│   │       ├── 📂 avatars/
+│   │       │   ├── 📂 avatarKH/
+│   │       │   └── 📂 avatarNV/
+│   │       ├── 📂 books/
+│   │       └── 📂 foods/
+│   ├── 📂 Controllers/
+│   │   ├── 📂 App/
+│   │   │   └── 📂 NhanVien/
+│   │   │   │    ├── GoiMonController.cs
+│   │   │   │    ├── GiaoHangController.cs
+│   │   │   │    ├── SoDoBanController.cs
+│   │   │   ├── C# BanQuanLyController.cs
+│   │   │   ├── C# BaoCaoController.cs
+│   │   │   ├── C# BaoCaoHieuSuatController.cs
+│   │   │   ├── C# BaoCaoNhanSuController.cs
+│   │   │   ├── C# BaoCaoSachController.cs
+│   │   │   ├── C# BaoCaoTonKhoController.cs
+│   │   │   ├── C# CaiDatController.cs
+│   │   │   ├── C# CaiDatNhanSuController.cs
+│   │   │   ├── C# CalamViecController.cs
+│   │   │   ├── C# DashboardController.cs
+│   │   │   ├── C# DonHangController.cs
+│   │   │   ├── C# DonViChuyenDoiController.cs
+│   │   │   ├── C# DonXinNghiController.cs
+│   │   │   ├── C# KhachHangController.cs
+│   │   │   ├── C# KhoController.cs
+│   │   │   ├── C# KhuyenMaiController.cs
+│   │   │   ├── C# LichLamViecController.cs
+│   │   │   ├── C# LuongController.cs
+│   │   │   ├── C# NguyenLieuController.cs
+│   │   │   ├── C# NhaCungCapController.cs
+│   │   │   ├── C# NhanVienController.cs
+│   │   │   ├── C# PhanQuyenController.cs
+│   │   │   ├── C# PhatLuongController.cs
+│   │   │   ├── C# SachController.cs
+│   │   │   ├── C# SanPhamController.cs
+│   │   │   ├── C# SoDoBanController.cs
+│   │   │   ├── C# TaiKhoanController.cs
+│   │   │   ├── C# ThongBaoController.cs
+│   │   │   ├── C# ThuongPhatController.cs
+│   │   │   └── C# VaiTroController.cs
+│   │   ├── 📂 Shared/
+│   │   └── 📂 Web/
+│   │       ├── C# KhachHangTaiKhoanController.cs
+│   │       ├── C# NhanVienTaiKhoanController.cs
+│   │       ├── C# TrangChuController.cs
+│   │       └── C# WebQuanLyController.cs
+│   ├── 📂 Data/
+│   │   └── C# CafebookDbContext.cs
+│   ├── 📂 Services/
+│   ├── 📄 appsettings.json
+│   └── C# Program.cs
+│
+├── 🔷 WebCafebookApi/ (Dự án ASP.NET Core Web App - Razor Pages)
+│   ├── ➡️ Connected Services/
+│   ├── ➡️ Dependencies/
+│   ├── 📂 Properties/
+│   │   └── 📄 launchSettings.json
+│   ├── 📂 wwwroot/
+│   │   ├── 📂 css/
+│   │   │   └── 📄 site.css
+│   │   ├── 📂 images/
+│   │   │   ├── 🖼️ default-avatar.png
+│   │   │   ├── 🖼️ default-book-cover.png
+│   │   │   ├── 🖼️ default-food-icon.png
+│   │   │   ├── 🖼️ logo.ico
+│   │   │   └── 🖼️ logo.png
+│   │   ├── 📂 js/
+│   │   │   ├── 📄 profile.js
+│   │   │   └── 📄 site.js
+│   │   ├── 📂 lib/
+│   │   │   ├── 📂 bootstrap/
+│   │   │   │   ├── 📂 dist/
+│   │   │   │   │   ├── 📂 css/
+│   │   │   │   │   │   ├── 📄 bootstrap.css
+│   │   │   │   │   │   ├── 📄 bootstrap-grid.css
+│   │   │   │   │   │   ├── 📄 bootstrap-reboot.css
+│   │   │   │   │   │   └── 📄 bootstrap-utilities.css
+│   │   │   │   │   └── 📂 js/
+│   │   │   │   │       └── 📄 bootstrap.js
+│   │   │   │   └── 📄 LICENSE
+│   │   │   ├── 📂 jquery/
+│   │   │   │   ├── 📂 dist/
+│   │   │   │   │   ├── 📄 jquery.js
+│   │   │   │   │   └── 📄 LICENSE.txt
+│   │   │   │   └── 📄 LICENSE
+│   │   │   ├── 📂 jquery-validation/
+│   │   │   │   ├── 📂 dist/
+│   │   │   │   │   ├── 📄 additional-methods.js
+│   │   │   │   │   └── 📄 jquery.validate.js
+│   │   │   │   └── 📄 LICENSE.md
+│   │   │   └── 📂 jquery-validation-unobtrusive/
+│   │   │       ├── 📂 dist/
+│   │   │       │   └── 📄 jquery.validate.unobtrusive.js
+│   │   │       └── 📄 LICENSE.txt  <-- (Đã cập nhật từ ảnh mới)
+│   │   └── 🖼️ favicon.ico
+│   ├── 📂 Data/
+│   ├── 📂 Pages/
+│   │   ├── 📂 Account/
+│   │   │   ├── 📄 DangKyView.cshtml
+│   │   │   ├── 📄 DangNhapView.cshtml
+│   │   │   ├── 📄 DangXuat.cshtml
+│   │   │   └── 📄 QuenMatKhauView.cshtml
+│   │   ├── 📂 employee/
+│   │   │   ├── 📄 _Layout_Employee.cshtml
+│   │   │   ├── 📄 _ViewStart.cshtml
+│   │   │   ├── 📄 DangNhapEmployee.cshtml
+│   │   │   ├── 📄 DangXuat.cshtml
+│   │   │   ├── 📄 SoDoBanView.cshtml
+│   │   │   └── 📄 WebQuanLyView.cshtml
+│   │   ├── 📂 Shared/
+│   │   │   ├── 📄 _ViewImports.cshtml
+│   │   │   └── 📄 _ViewStart.cshtml
+│   │   └── 📄 TrangChuView.cshtml
+│   ├── 📂 Services/
+│   ├── 📄 appsettings.json
+│   ├── 📄 appsettings.Development.json
+│   └── C# Program.cs
+│
+└── 🔷 CafebookModel/ (Dự án Class Library - Shared Models)
+    ├── ➡️ Dependencies/
+   📂 Model
+    ├── 📂 Data/
+    │   └── C# NhanVienDto.cs
+    ├── 📂 ModelApi/
+    │   ├── C# LoginRequestModel.cs
+    │   └── C# LoginResponseModel.cs
+    ├── 📂 ModelApp/
+    │   ├── C# BanQuanLyDto.cs
+    │   ├── C# BaoCaoDto.cs
+    │   ├── C# BaoCaoHieuSuatDto.cs
+    │   ├── C# BaoCaoSachDto.cs
+    │   ├── C# BaoCaoTonKhoDto.cs
+    │   ├── C# CaiDatDto.cs
+    │   ├── C# CaiDatThongTinCuaHangDto.cs
+    │   ├── C# ChartDataPoint.cs
+    │   ├── C# DashboardSummaryDto.cs
+    │   ├── C# DonHangDto.cs
+    │   ├── C# DonViChuyenDoiDto.cs
+    │   ├── C# DonXinNghiDto.cs
+    │   ├── C# KhachHangDto.cs
+    │   ├── C# KhoDto.cs
+    │   ├── C# KhuyenMaiDto.cs
+    │   ├── C# NhanSuDto.cs
+    │   ├── C# PhatLuongDto.cs
+    │   ├── C# SachDto.cs
+    │   ├── C# SanPhamDto.cs
+    │   ├── C# SoDoBanDto.cs
+    │   └── C# ThongBaoDto.cs
+    ├── 📂 ModelWeb/
+    │   ├── C# DangKyRequestModel.cs
+    │   ├── C# KhachHangDto.cs
+    │   ├── C# TrangChuDto.cs
+    │   ├── C# WebLoginResponseModel.cs
+    │   └── C# WebQuanLyDashboardModel.cs
+    ├── Entities.cs
+    └── 📂 Utils/
+        ├── C# HinhAnhPaths.cs
+        └── C# SlugifyUtil.cs
+//////////////////////////
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Properties\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Properties\launchSettings.json
+{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:20767",
+      "sslPort": 0
+    }
+  },
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5156",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\css\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\css\site.css
+/*
+================================================
+ CAFEBOOK WEB THEME (v1.2 - SỬA LỖI RESPONSIVE)
+================================================
+*/
+:root {
+    --cf-brown: #6F4E37; /* PrimaryBrown */
+    --cf-dark-brown: #4E342E; /* DarkText / DarkBrown */
+    --cf-orange: #D27D2D; /* AccentOrange */
+    --cf-cream: #FFF8E1; /* LightCream */
+    --cf-white: #FFFFFF;
+    --cf-text: #4E342E;
+    --cf-gray: #BDBDBD; /* SubtleGray */
+    --cf-light-gray: #f8f9fa; /* Màu nền xám nhạt */
+    --cf-shadow: rgba(78, 52, 46, 0.15); /* Bóng đổ màu nâu mờ */
+    /* Ghi đè màu Bootstrap */
+    --bs-primary: var(--cf-brown);
+    --bs-secondary: var(--cf-gray);
+    --bs-body-bg: var(--cf-cream);
+    --bs-body-color: var(--cf-text);
+    --bs-link-color: var(--cf-orange);
+    --bs-link-hover-color: var(--cf-dark-brown);
+}
+
+html {
+    font-size: 16px;
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-container {
+    flex-grow: 1; /* Đẩy footer xuống dưới */
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand, .fw-bold {
+    font-weight: 600;
+    color: var(--cf-dark-brown);
+}
+
+/* Header (Navbar) */
+.navbar {
+    background-color: var(--cf-white) !important;
+    box-shadow: 0 4px 12px var(--cf-shadow);
+}
+
+.navbar-brand img {
+    height: 30px;
+    margin-right: 8px;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: rotate(15deg);
+}
+
+/* Footer */
+.footer {
+    background-color: var(--cf-dark-brown);
+    color: var(--cf-gray);
+    border-top: none;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.footer-link {
+    color: var(--cf-white);
+    text-decoration: none;
+    margin-left: 1rem;
+    transition: color 0.3s ease;
+}
+
+    .footer-link:hover {
+        color: var(--cf-orange);
+    }
+
+
+/*
+================================================
+ THIẾT KẾ TRANG LOGIN/REGISTER
+================================================
+*/
+.login-page-body {
+    background-color: var(--cf-cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.login-wrapper {
+    max-width: 850px;
+    width: 100%;
+    margin: 2rem;
+}
+
+.login-container {
+    display: flex;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(78, 52, 46, 0.2);
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.login-brand-col {
+    background-color: var(--cf-brown);
+    color: var(--cf-white);
+    padding: 4rem;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+    .login-brand-col img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .login-brand-col h1 {
+        color: var(--cf-white);
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+.login-form-col {
+    background-color: var(--cf-white);
+    padding: 3rem 4rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+    .login-form-col h2 {
+        color: var(--cf-dark-brown);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .login-form-col .text-muted {
+        margin-bottom: 2.5rem;
+    }
+
+/* Material Textbox */
+.form-floating-material {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+    .form-floating-material .form-control {
+        background-color: transparent;
+        border: none;
+        border-radius: 0;
+        border-bottom: 1px solid var(--cf-gray);
+        padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+        .form-floating-material .form-control:focus {
+            box-shadow: none;
+            border-bottom: 2px solid var(--cf-orange);
+        }
+
+    .form-floating-material .form-label {
+        padding-left: 2.5rem;
+        color: var(--cf-gray);
+        transition: all 0.3s ease;
+    }
+
+    .form-floating-material .form-control:focus ~ .form-label,
+    .form-floating-material .form-control:not(:placeholder-shown) ~ .form-label {
+        color: var(--cf-orange);
+        transform: scale(.85) translateY(-.75rem) translateX(-.15rem);
+    }
+
+
+    .form-floating-material .material-symbols-outlined {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.25rem;
+        color: var(--cf-gray);
+        transition: color 0.3s ease;
+    }
+
+    .form-floating-material .form-control:focus ~ .material-symbols-outlined {
+        color: var(--cf-orange);
+    }
+
+.form-check-input:checked {
+    background-color: var(--cf-orange);
+    border-color: var(--cf-orange);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .login-brand-col {
+        width: 100%;
+        padding: 2rem;
+    }
+
+    .login-form-col {
+        padding: 2rem;
+    }
+}
+
+/*
+========================================
+ STYLES CHO EMPLOYEE (NHÂN VIÊN)
+========================================
+*/
+
+/* Layout chính */
+.employee-body {
+    background-color: var(--cf-light-gray);
+    min-height: 100vh;
+    display: flex; /* Sửa lỗi layout desktop */
+}
+
+/* Sidebar */
+.sidebar-nav {
+    background-color: var(--cf-dark-brown) !important;
+    width: 250px;
+    flex-shrink: 0;
+    transition: none;
+}
+
+@media (min-width: 768px) {
+    .sidebar-nav.offcanvas-md {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        transform: none !important;
+        visibility: visible !important;
+    }
+}
+
+/* Nội dung chính */
+.main-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* Header */
+.header-nav {
+    background-color: #fff;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+    .header-nav .nav-link {
+        padding: 0;
+    }
+
+    /* Sửa lỗi nút hamburger trên mobile */
+    .header-nav .btn.btn-link {
+        border-radius: 0;
+        padding: 0.25rem 0.75rem;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: normal;
+        border: none;
+        transition: none;
+        box-shadow: none;
+        background-color: transparent !important;
+    }
+
+        .header-nav .btn.btn-link:hover {
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+
+/* Nút menu sidebar */
+.sidebar-header {
+    padding: 0 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+    padding: 12px 1.5rem;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+    .sidebar-nav .nav-link i {
+        width: 20px;
+        margin-right: 12px;
+        text-align: center;
+    }
+
+    .sidebar-nav .nav-link:hover {
+        color: #fff;
+        background-color: var(--cf-brown);
+        border-left-color: var(--cf-orange);
+    }
+
+    .sidebar-nav .nav-link.active {
+        color: #fff;
+        background-color: var(--cf-brown);
+        font-weight: 600;
+        border-left-color: var(--cf-orange);
+    }
+
+
+/*
+========================================
+ STYLES CHO SƠ ĐỒ BÀN (WEB)
+========================================
+*/
+#table-layout-container {
+    gap: 20px;
+}
+
+.table-card {
+    width: 150px;
+    height: 130px;
+    border-radius: 8px;
+    border-top: 5px solid;
+    background-color: #fff;
+    box-shadow: 0 4px 12px var(--cf-shadow);
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .table-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(78, 52, 46, 0.2);
+    }
+
+    .table-card.selected {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px var(--cf-orange);
+        border-color: var(--cf-orange) !important;
+    }
+
+.table-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.table-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.table-status {
+    font-size: 0.9rem;
+    color: #757575;
+}
+
+.table-price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cf-orange);
+    margin-top: 5px;
+}
+
+.table-card.status-trong {
+    border-color: #66BB6A;
+}
+
+    .table-card.status-trong .table-icon {
+        color: #66BB6A;
+    }
+
+.table-card.status-co-khach {
+    border-color: #EF5350;
+}
+
+    .table-card.status-co-khach .table-icon {
+        color: #EF5350;
+    }
+
+.table-card.status-da-dat {
+    border-color: #FFA726;
+}
+
+    .table-card.status-da-dat .table-icon {
+        color: #FFA726;
+    }
+
+.table-card.status-bao-tri {
+    border-color: #757575;
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+    .table-card.status-bao-tri .table-icon {
+        color: #757575;
+    }
+
+.status-box {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+    .status-box.status-trong {
+        background-color: #66BB6A;
+    }
+
+    .status-box.status-co-khach {
+        background-color: #EF5350;
+    }
+
+    .status-box.status-da-dat {
+        background-color: #FFA726;
+    }
+
+    .status-box.status-bao-tri {
+        background-color: #757575;
+    }
+
+/*
+================================================
+ NÚT BẤM (BUTTONS) - GHI ĐÈ
+================================================
+*/
+.btn {
+    border-radius: 21px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 4px var(--cf-shadow);
+}
+
+.btn-lg {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background-color: var(--cf-brown);
+    color: var(--cf-white);
+    border-color: var(--cf-brown);
+}
+
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--cf-orange);
+        color: var(--cf-white);
+        border-color: var(--cf-orange);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(78, 52, 46, 0.25);
+    }
+
+.btn-outline-light {
+    border-radius: 21px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-width: 2px;
+}
+
+    .btn-outline-light:hover {
+        background-color: var(--cf-orange);
+        color: var(--cf-white);
+        border-color: var(--cf-orange);
+        transform: translateY(-3px);
+    }
+
+.btn-outline-primary {
+    border-radius: 21px;
+    color: var(--cf-brown);
+    border-color: var(--cf-brown);
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--cf-brown);
+        color: var(--cf-white);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--cf-shadow);
+    }
+
+.btn-success {
+    background-color: var(--cf-orange);
+    border-color: var(--cf-orange);
+}
+
+    .btn-success:hover {
+        background-color: #a96323;
+        border-color: #a96323;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(78, 52, 46, 0.25);
+    }
+
+/*
+================================================
+ THẺ (CARDS) - GHI ĐÈ
+================================================
+*/
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--cf-shadow);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(78, 52, 46, 0.2);
+    }
+
+.card-title {
+    color: var(--cf-dark-brown);
+    font-weight: 600;
+}
+
+.card-img-top {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.card-footer {
+    background-color: var(--cf-white);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\images\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\images\default-avatar.png
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\images\default-book-cover.png
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\images\default-food-icon.png
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\images\logo.ico
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\images\logo.png
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\js\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\js\profile.js
+// wwwroot/js/profile.js
+document.addEventListener('DOMContentLoaded', function () {
+    const avatarUploadInput = document.getElementById('avatarUploadInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarSizeError = document.getElementById('avatarSizeError');
+    const avatarTypeError = document.getElementById('avatarTypeError');
+    const maxSize = 3 * 1024 * 1024; // 3MB in bytes
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+    if (avatarUploadInput && avatarPreview) {
+        avatarUploadInput.addEventListener('change', function (event) {
+            avatarSizeError.style.display = 'none'; // Reset errors
+            avatarTypeError.style.display = 'none';
+
+            const file = event.target.files[0];
+            if (file) {
+                // Check size
+                if (file.size > maxSize) {
+                    avatarSizeError.style.display = 'block';
+                    avatarUploadInput.value = ''; // Clear selection
+                    avatarPreview.src = avatarPreview.dataset.originalSrc || '/images/default-avatar.png'; // Revert preview
+                    return;
+                }
+
+                // Check type
+                if (!allowedTypes.includes(file.type.toLowerCase())) {
+                     avatarTypeError.style.display = 'block';
+                     avatarUploadInput.value = ''; // Clear selection
+                     avatarPreview.src = avatarPreview.dataset.originalSrc || '/images/default-avatar.png'; // Revert preview
+                     return;
+                }
+
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    // Store original src if not already stored
+                    if (!avatarPreview.dataset.originalSrc) {
+                        avatarPreview.dataset.originalSrc = avatarPreview.src;
+                    }
+                    avatarPreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                 // No file selected, revert preview if needed
+                 avatarPreview.src = avatarPreview.dataset.originalSrc || '/images/default-avatar.png';
+            }
+        });
+    }
+});
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\js\site.js
+// =========================================
+// LOGIC SƠ ĐỒ BÀN (NHÂN VIÊN)
+// =========================================
+
+// Thay thế $(document).ready() bằng cú pháp $(function() { ... })
+$(function () {
+
+    // Chỉ chạy code này nếu chúng ta ở đúng trang
+    const $container = $("#table-layout-container");
+    if ($container.length > 0) {
+
+        const apiBaseUrl = "http://localhost:5166";
+        let currentSelectedBan = null;
+        let currentNhanVienId = null;
+
+        // Lấy ID nhân viên từ attribute (do C# render ra)
+        currentNhanVienId = $container.data("nhanvien-id");
+
+        // Hàm để tải và hiển thị bàn
+        function loadSoDoBan() {
+            // Chỉ hiển thị loading ở lần tải đầu
+            if ($container.children(".spinner-border").length > 0) {
+                $container.html('<div class="text-center w-100 p-5"><div class="spinner-border text-primary" role="status"></div><p>Đang tải...</p></div>');
+            }
+
+            $.ajax({
+                url: `${apiBaseUrl}/api/app/sodoban/tables`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (tables) {
+                    $container.empty(); // Xóa loading/bàn cũ
+                    if (!tables || tables.length === 0) {
+                        $container.html("<p>Không tìm thấy bàn nào.</p>");
+                        return;
+                    }
+
+                    tables.forEach(ban => {
+                        let statusClass = '';
+                        let statusIcon = '';
+                        switch (ban.trangThai) {
+                            case 'Trống':
+                                statusClass = 'status-trong';
+                                statusIcon = 'fa-solid fa-check';
+                                break;
+                            case 'Có khách':
+                                statusClass = 'status-co-khach';
+                                statusIcon = 'fa-solid fa-users';
+                                break;
+                            case 'Đã đặt':
+                                statusClass = 'status-da-dat';
+                                statusIcon = 'fa-solid fa-clock';
+                                break;
+                            case 'Bảo trì':
+                            case 'Tạm ngưng':
+                            default:
+                                statusClass = 'status-bao-tri';
+                                statusIcon = 'fa-solid fa-triangle-exclamation';
+                                break;
+                        }
+
+                        let tongTienHtml = ban.trangThai === 'Có khách'
+                            ? `<p class="table-price">${ban.tongTienHienTai.toLocaleString('vi-VN')} đ</p>` : '';
+
+                        // Truyền tất cả dữ liệu vào data-*
+                        let tableCardHtml = `
+                            <div class="table-card ${statusClass}" 
+                                 data-id-ban="${ban.idBan}"
+                                 data-id-hoadon="${ban.idHoaDonHienTai || ''}"
+                                 data-so-ban="${ban.soBan}"
+                                 data-trang-thai="${ban.trangThai}"
+                                 data-ghi-chu="${ban.ghiChu || ''}"
+                                 data-tong-tien="${ban.tongTienHienTai}">
+                                <div class="table-icon"><i class="${statusIcon}"></i></div>
+                                <h5 class="table-name">${ban.soBan}</h5>
+                                <p class="table-status">${ban.trangThai}</p>
+                                ${tongTienHtml}
+                            </div>
+                        `;
+                        $container.append(tableCardHtml);
+                    });
+
+                    // Cập nhật lại trạng thái (nếu bàn đang chọn bị thay đổi)
+                    if (currentSelectedBan) {
+                        const $selectedCard = $container.find(`.table-card[data-id-ban="${currentSelectedBan.idBan}"]`);
+                        if ($selectedCard.length > 0) {
+                            $selectedCard.addClass('selected');
+                            // Cập nhật lại thông tin panel nếu cần
+                            updatePanel($selectedCard.data());
+                        } else {
+                            // Bàn đã bị xóa? Reset panel
+                            resetPanel();
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $container.html(`<div class="alert alert-danger w-100">Không thể tải sơ đồ bàn. Đảm bảo API (localhost:5166) đang chạy. Lỗi: ${error}</div>`);
+                }
+            });
+        }
+
+        // --- HÀM CẬP NHẬT PANEL THAO TÁC ---
+        function updatePanel(banData) {
+            // 1. Lưu dữ liệu bàn đã chọn (giống _selectedBan)
+            currentSelectedBan = {
+                idBan: banData.idBan,
+                idHoaDonHienTai: banData.idHoadon,
+                soBan: banData.soBan,
+                trangThai: banData.trangThai,
+                ghiChu: banData.ghiChu,
+                tongTienHienTai: banData.tongTien
+            };
+
+            // 2. Ẩn placeholder, hiện panel chi tiết
+            $("#panelChuaChon").hide();
+            $("#panelDaChon").show();
+
+            // 3. Điền thông tin vào panel
+            $("#runSoBan").text(currentSelectedBan.soBan);
+            $("#runTrangThai").text(currentSelectedBan.trangThai);
+
+            if (currentSelectedBan.ghiChu) {
+                $("#tbGhiChu").text(`Ghi chú: ${currentSelectedBan.ghiChu}`).show();
+            } else {
+                $("#tbGhiChu").hide();
+            }
+
+            // 4. Logic hiển thị/ẩn nút (Y HỆT WPF)
+            switch (currentSelectedBan.trangThai) {
+                case "Trống":
+                    $("#btnGoiMon").text("Tạo Hóa Đơn Mới").prop('disabled', false);
+                    $("#btnChuyenBan").prop('disabled', true);
+                    $("#btnGopBan").prop('disabled', true);
+                    $("#btnBaoCaoSuCo").prop('disabled', false);
+                    $("#tbTongTienWrapper").hide();
+                    break;
+                case "Có khách":
+                    $("#btnGoiMon").text("Gọi Món / Thanh Toán").prop('disabled', false);
+                    $("#btnChuyenBan").prop('disabled', false);
+                    $("#btnGopBan").prop('disabled', false);
+                    $("#btnBaoCaoSuCo").prop('disabled', true);
+                    $("#tbTongTienWrapper").show();
+                    $("#runTongTien").text(currentSelectedBan.tongTienHienTai.toLocaleString('vi-VN') + " đ");
+                    break;
+                case "Đã đặt":
+                    $("#btnGoiMon").text("Khách đặt (Mở Hóa Đơn)").prop('disabled', false);
+                    $("#btnChuyenBan").prop('disabled', true);
+                    $("#btnGopBan").prop('disabled', true);
+                    $("#btnBaoCaoSuCo").prop('disabled', false);
+                    $("#tbTongTienWrapper").hide();
+                    break;
+                case "Bảo trì":
+                case "Tạm ngưng":
+                default:
+                    $("#btnGoiMon").text("BÀN ĐANG BẢO TRÌ").prop('disabled', true);
+                    $("#btnChuyenBan").prop('disabled', true);
+                    $("#btnGopBan").prop('disabled', true);
+                    $("#btnBaoCaoSuCo").prop('disabled', true);
+                    $("#tbTongTienWrapper").hide();
+                    break;
+            }
+        }
+
+        // --- HÀM RESET PANEL ---
+        function resetPanel() {
+            currentSelectedBan = null;
+            $("#panelChuaChon").show();
+            $("#panelDaChon").hide();
+            $(".table-card").removeClass('selected');
+        }
+
+        // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
+
+        // Tải lần đầu
+        loadSoDoBan();
+        // Tự động làm mới mỗi 30 giây
+        setInterval(loadSoDoBan, 30000);
+
+        // Thay thế .click() bằng .on("click", ...)
+        $("#refresh-tables-btn").on("click", loadSoDoBan);
+
+        // --- LOGIC MỚI: KHI CLICK VÀO MỘT BÀN ---
+        // Thay thế .click() bằng .on("click", ...)
+        $(document).on("click", ".table-card", function () {
+            const $card = $(this);
+
+            // Bỏ chọn tất cả, chọn thẻ này
+            $(".table-card").removeClass('selected');
+            $card.addClass('selected');
+
+            // Lấy dữ liệu từ data-* và cập nhật panel
+            updatePanel($card.data());
+        });
+
+        // 1. Nút Gọi Món / Tạo Hóa Đơn
+        $("#btnGoiMon").on("click", function () {
+            if (!currentSelectedBan) return;
+
+            let idHoaDon = currentSelectedBan.idHoaDonHienTai;
+
+            // Nếu là bàn trống, gọi API tạo HĐ trước
+            if (currentSelectedBan.trangThai === "Trống" || currentSelectedBan.trangThai === "Đã đặt") {
+                if (!currentNhanVienId) {
+                    alert("Lỗi: Không tìm thấy ID nhân viên. Vui lòng tải lại trang.");
+                    return;
+                }
+
+                $(this).prop('disabled', true).text("Đang tạo HĐ...");
+
+                $.ajax({
+                    url: `${apiBaseUrl}/api/app/sodoban/createorder/${currentSelectedBan.idBan}/${currentNhanVienId}`,
+                    type: 'POST',
+                    success: function (result) {
+                        idHoaDon = result.idHoaDon;
+                        alert(`Đã tạo Hóa đơn mới: ${idHoaDon}. Sẵn sàng điều hướng!`);
+                        // TODO: Điều hướng đến trang chi tiết hóa đơn
+                        // window.location.href = `/Employee/ChiTietHoaDon?id=${idHoaDon}`;
+                        loadSoDoBan(); // Tải lại bàn
+                        resetPanel(); // Reset panel về "Chưa chọn"
+                    },
+                    error: function (xhr) {
+                        alert(`Lỗi tạo hóa đơn: ${xhr.responseText}`);
+                        // Nếu lỗi, khôi phục lại nút
+                        $("#btnGoiMon").prop('disabled', false).text("Tạo Hóa Đơn Mới");
+                    }
+                });
+            } else {
+                // Nếu đã có khách, điều hướng trực tiếp
+                alert(`Sẵn sàng điều hướng đến trang gọi món cho Hóa đơn ID: ${idHoaDon}`);
+                // TODO: Điều hướng
+                // window.location.href = `/Employee/ChiTietHoaDon?id=${idHoaDon}`;
+            }
+        });
+
+        // 2. Nút Báo cáo sự cố
+        $("#btnBaoCaoSuCo").on("click", function () {
+            if (!currentSelectedBan || !currentNhanVienId) return;
+
+            // Dùng prompt() thay cho InputDialogWindow
+            const ghiChu = prompt(`Vui lòng mô tả sự cố cho bàn ${currentSelectedBan.soBan}:`);
+
+            if (ghiChu && ghiChu.trim() !== "") {
+                $(this).prop('disabled', true);
+
+                $.ajax({
+                    url: `${apiBaseUrl}/api/app/sodoban/reportproblem/${currentSelectedBan.idBan}/${currentNhanVienId}`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ ghiChuSuCo: ghiChu }),
+                    success: function () {
+                        alert("Đã báo cáo sự cố thành công. Bàn đã được khóa.");
+                        loadSoDoBan(); // Tải lại
+                        resetPanel(); // Reset panel
+                    },
+                    error: function (xhr) {
+                        alert(`Lỗi báo cáo: ${xhr.responseText}`);
+                        $("#btnBaoCaoSuCo").prop('disabled', false); // Khôi phục nút nếu lỗi
+                    }
+                });
+            }
+        });
+
+        // 3. Các nút đang phát triển
+        $("#btnChuyenBan").on("click", function () { alert("Chức năng 'Chuyển Bàn' đang được phát triển."); });
+        $("#btnGopBan").on("click", function () { alert("Chức năng 'Gộp Bàn' đang được phát triển."); });
+    }
+});
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.rtl.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap.css
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.rtl.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-reboot.css
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.min.css.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.min.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.rtl.css e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\css\bootstrap-utilities.css
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.js.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.min.js.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.esm.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.js.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\dist\js\bootstrap.js
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\bootstrap\LICENSE
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery\dist\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery\dist\jquery.min.map e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery\dist\jquery.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery\dist\jquery.js
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery\LICENSE.txt
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\dist\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\dist\additional-methods.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\dist\additional-methods.js
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\dist\jquery.validate.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\dist\jquery.validate.js
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation\LICENSE.md
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.min.js e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.js
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\LICENSE.txt
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\favicon.ico
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangKyView.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangKyView.cshtml
+@page "/Account/Register"
+@model WebCafebookApi.Pages.Account.DangKyViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = null; // Dùng layout riêng của trang Login
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cafebook</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-page-body">
+
+    <div class="login-wrapper">
+        <div class="login-container">
+
+            <div class="login-brand-col d-none d-md-flex">
+                <img src="/images/logo.png" alt="Cafebook Logo">
+                <h1 class="mb-2">Cafebook</h1>
+                <p class="fs-5 opacity-75">Tham gia cộng đồng</p>
+            </div>
+
+            <div class="login-form-col">
+
+                <h2>@ViewData["Title"]</h2>
+                <p class="text-muted">Tạo tài khoản mới để đặt bàn và thuê sách.</p>
+
+                <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.HoTen" class="form-control" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.HoTen"></label>
+                        <span class="material-symbols-outlined">badge</span>
+                        <span asp-validation-for="Input.HoTen" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.SoDienThoai" class="form-control" autocomplete="tel" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.SoDienThoai"></label>
+                        <span class="material-symbols-outlined">phone</span>
+                        <span asp-validation-for="Input.SoDienThoai" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.Email" class="form-control" autocomplete="email" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.Email"></label>
+                        <span class="material-symbols-outlined">mail</span>
+                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.TenDangNhap" class="form-control" autocomplete="username" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.TenDangNhap">Tên đăng nhập (Tùy chọn)</label>
+                        <span class="material-symbols-outlined">person</span>
+                        <span asp-validation-for="Input.TenDangNhap" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.Password" class="form-control" type="password" autocomplete="new-password" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.Password"></label>
+                        <span class="material-symbols-outlined">lock</span>
+                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.ConfirmPassword" class="form-control" type="password" autocomplete="new-password" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.ConfirmPassword"></label>
+                        <span class="material-symbols-outlined">password</span>
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                    </div>
+
+                    <div>
+                        <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Đăng ký</button>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <p class="text-muted mb-0">
+                            Đã có tài khoản?
+                            <a asp-page="/account/DangNhapView">Quay lại Đăng nhập</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangKyView.cshtml.cs
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using CafebookModel.Model.ModelApi; // Thêm
+using CafebookModel.Model.ModelWeb; // Thêm
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Json; // Thêm
+
+// XÓA CÁC USING LIÊN QUAN ĐẾN DbContext VÀ ENTITIES
+// using Microsoft.EntityFrameworkCore;
+// using CafebookModel.Model.Entities;
+
+namespace WebCafebookApi.Pages.Account
+{
+    public class DangKyViewModel : PageModel
+    {
+        // SỬA LỖI CS0246: Xóa DbContext, dùng HttpClientFactory
+        private readonly IHttpClientFactory _httpClientFactory;
+        public DangKyViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        // SỬA LỖI CS8618: Khởi tạo Input
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
+
+        // SỬA LỖI CS8618: Dùng string? và khởi tạo
+        public string? ReturnUrl { get; set; }
+
+        public class InputModel
+        {
+            // SỬA LỖI CS8618: Khởi tạo string
+            [Required(ErrorMessage = "Vui lòng nhập họ tên")]
+            [Display(Name = "Họ và Tên")]
+            public string HoTen { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Vui lòng nhập SĐT")]
+            [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+            [Display(Name = "Số điện thoại")]
+            public string SoDienThoai { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Vui lòng nhập Email")]
+            [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+            [Display(Name = "Email")]
+            public string Email { get; set; } = string.Empty;
+
+            [Display(Name = "Tên đăng nhập")]
+            public string? TenDangNhap { get; set; } // Nullable là OK
+
+            [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
+            [StringLength(100, ErrorMessage = "{0} phải dài từ {2} đến {1} ký tự.", MinimumLength = 6)]
+            [DataType(DataType.Password)]
+            [Display(Name = "Mật khẩu")]
+            public string Password { get; set; } = string.Empty;
+
+            [DataType(DataType.Password)]
+            [Display(Name = "Xác nhận mật khẩu")]
+            [Compare("Password", ErrorMessage = "Mật khẩu và mật khẩu xác nhận không khớp.")]
+            public string ConfirmPassword { get; set; } = string.Empty;
+        }
+
+        public void OnGet(string? returnUrl = null) // Sửa lỗi CS8625
+        {
+            ReturnUrl = returnUrl;
+        }
+
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null) // Sửa lỗi CS8625
+        {
+            returnUrl ??= Url.Content("~/");
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            // GỌI API ĐĂNG KÝ
+            var httpClient = _httpClientFactory.CreateClient();
+            var apiRequest = new DangKyRequestModel
+            {
+                HoTen = Input.HoTen,
+                Email = Input.Email,
+                SoDienThoai = Input.SoDienThoai,
+                TenDangNhap = Input.TenDangNhap,
+                Password = Input.Password
+            };
+
+            var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoankhach/register", apiRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
+
+                if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null)
+                {
+                    // TỰ ĐỘNG ĐĂNG NHẬP SAU KHI ĐĂNG KÝ
+                    var user = apiResponse.KhachHangData;
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.IdKhachHang.ToString()),
+                        new Claim(ClaimTypes.Name, user.TenDangNhap ?? user.Email ?? ""),
+                        new Claim(ClaimTypes.GivenName, user.HoTen),
+                        new Claim(ClaimTypes.Email, user.Email ?? ""),
+                        new Claim(ClaimTypes.MobilePhone, user.SoDienThoai ?? ""),
+                        new Claim(ClaimTypes.Role, "KhachHang")
+                    };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity));
+
+                    return LocalRedirect(returnUrl);
+                }
+                else
+                {
+                    // Hiển thị lỗi từ API (ví dụ: "Email đã tồn tại")
+                    ModelState.AddModelError(string.Empty, apiResponse?.Message ?? "Lỗi đăng ký.");
+                    return Page();
+                }
+            }
+
+            ModelState.AddModelError(string.Empty, "Không thể kết nối máy chủ đăng ký.");
+            return Page();
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangNhapView.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangNhapView.cshtml
+@page "/Account/Login"
+@model WebCafebookApi.Pages.Account.DangNhapViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    // Chúng ta sẽ không dùng Layout chính cho trang đăng nhập
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cafebook</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-page-body">
+
+    <div class="login-wrapper">
+        <div class="login-container">
+
+            <div class="login-brand-col d-none d-md-flex">
+                <img src="/images/logo.png" alt="Cafebook Logo">
+                <h1 class="mb-2">Cafebook</h1>
+                <p class="fs-5 opacity-75">Awaken your senses</p>
+            </div>
+
+            <div class="login-form-col">
+                <a asp-page="/TrangChuView" class="text-decoration-none mb-3" style="align-self: flex-start;">
+                    <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
+                    Về Trang Chủ
+                </a>
+
+                <h2>@ViewData["Title"]</h2>
+                <p class="text-muted">Chào mừng trở lại! Vui lòng nhập thông tin của bạn.</p>
+
+                <form id="account" method="post">
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.LoginIdentifier" class="form-control" autocomplete="username" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.LoginIdentifier" class="form-label">Email, Username hoặc SĐT</label>
+                        <span class="material-symbols-outlined">person</span>
+                        <span asp-validation-for="Input.LoginIdentifier" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.Password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
+                        <span class="material-symbols-outlined">lock</span>
+                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" asp-for="Input.RememberMe" />
+                            <label asp-for="Input.RememberMe" class="form-check-label small">
+                                @Html.DisplayNameFor(m => m.Input.RememberMe)
+                            </label>
+                        </div>
+                        <a asp-page="/account/QuenMatKhauView" class="small">Quên mật khẩu?</a>
+                    </div>
+
+                    <div>
+                        <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Đăng nhập</button>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <p class="text-muted mb-0">
+                            Chưa có tài khoản?
+                            <a asp-page="/account/DangKyView" asp-route-returnUrl="@Model.ReturnUrl">Đăng ký ngay</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangNhapView.cshtml.cs
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using CafebookModel.Model.ModelApi; // Thêm
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Json; // Thêm
+
+namespace WebCafebookApi.Pages.Account
+{
+    public class DangNhapViewModel : PageModel
+    {
+        // 1. XÓA DbContext, THAY BẰNG HttpClientFactory
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public DangNhapViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
+
+        public string? ReturnUrl { get; set; }
+
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        public class InputModel
+        {
+            [Required(ErrorMessage = "Vui lòng nhập Tên đăng nhập, Email hoặc SĐT")]
+            [Display(Name = "Tên đăng nhập, Email hoặc SĐT")]
+            public string LoginIdentifier { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Vui lòng nhập Mật khẩu")]
+            [DataType(DataType.Password)]
+            [Display(Name = "Mật khẩu")]
+            public string Password { get; set; } = string.Empty;
+
+            [Display(Name = "Ghi nhớ đăng nhập")]
+            public bool RememberMe { get; set; }
+        }
+
+        public async Task OnGetAsync(string? returnUrl = null)
+        {
+            if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                ModelState.AddModelError(string.Empty, ErrorMessage);
+            }
+            returnUrl ??= Url.Content("~/");
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            ReturnUrl = returnUrl;
+        }
+
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+        {
+            returnUrl ??= Url.Content("~/");
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            // 2. TẠO YÊU CẦU GỌI API
+            var httpClient = _httpClientFactory.CreateClient();
+            var apiRequest = new LoginRequestModel
+            {
+                TenDangNhap = Input.LoginIdentifier,
+                MatKhau = Input.Password
+            };
+
+            // Lấy URL của API (giả sử là localhost:5166)
+            var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoankhach/login", apiRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
+
+                if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null)
+                {
+                    // 3. ĐĂNG NHẬP THÀNH CÔNG -> TẠO COOKIE
+                    var user = apiResponse.KhachHangData;
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.IdKhachHang.ToString()),
+                        new Claim(ClaimTypes.Name, user.TenDangNhap ?? user.Email ?? ""),
+                        new Claim(ClaimTypes.GivenName, user.HoTen),
+                        new Claim(ClaimTypes.Email, user.Email ?? ""),
+                        new Claim(ClaimTypes.MobilePhone, user.SoDienThoai ?? ""),
+                        new Claim(ClaimTypes.Role, "KhachHang") // Gán Role
+                    };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var authProperties = new AuthenticationProperties { IsPersistent = Input.RememberMe };
+
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity),
+                        authProperties);
+
+                    // 4. LƯU AVATAR (Mặc định, vì KhachHang không có)
+                    HttpContext.Session.SetString("AvatarBase64", "");
+
+                    return LocalRedirect(returnUrl);
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, apiResponse?.Message ?? "Lỗi không xác định từ API.");
+                    return Page();
+                }
+            }
+
+            ModelState.AddModelError(string.Empty, "Không thể kết nối đến máy chủ đăng nhập.");
+            return Page();
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangXuat.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangXuat.cshtml
+@page
+@model WebCafebookApi.Pages.Account.DangXuatModel
+@{
+    // Trang này không cần hiển thị gì đặc biệt,
+    // chỉ cần để PageModel xử lý logic đăng xuất trong OnPost.
+    ViewData["Title"] = "Đăng xuất";
+}
+
+<header>
+    <h1>@ViewData["Title"]</h1>
+    <p>Bạn đã đăng xuất thành công.</p>
+    @* Có thể thêm nút quay lại trang chủ *@
+    <a asp-page="/TrangChuView">Quay lại Trang Chủ</a>
+</header>
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace WebCafebookApi.Pages.Account
+{
+    public class DangXuatModel : PageModel
+    {
+        // Sửa lỗi CS8625: string -> string?
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+
+            if (returnUrl != null)
+            {
+                return LocalRedirect(returnUrl);
+            }
+            else
+            {
+                return RedirectToPage("/TrangChuView");
+            }
+        }
+
+        public async Task<IActionResult> OnGetAsync(string? returnUrl = null) // Sửa lỗi CS8625
+        {
+            return await OnPostAsync(returnUrl);
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\QuenMatKhauView.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\QuenMatKhauView.cshtml
+@page
+@model WebCafebookApi.Pages.Account.QuenMatKhauViewModel
+@{
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\QuenMatKhauView.cshtml.cs
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace WebCafebookApi.Pages.Account
+{
+    public class QuenMatKhauViewModel : PageModel
+    {
+        public void OnGet()
+        {
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\_Layout_Employee.cshtml
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản lý Cafebook</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="employee-body">
+    <div class="d-flex">
+
+        <nav class="sidebar-nav bg-dark">
+            <div class="sidebar-header">
+                <a class="navbar-brand text-white fs-4" asp-page="/employee/WebQuanLyView">
+                    <i class="fa-solid fa-mug-hot"></i> Cafebook
+                </a>
+            </div>
+
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" asp-page="/Employee/WebQuanLyView">
+                        <i class="fa-solid fa-chart-line"></i> Tổng quan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" asp-page="/Employee/SoDoBanView">
+                        <i class="fa-solid fa-border-all"></i> Sơ Đồ Bàn
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="main-content flex-grow-1">
+            <header class="header-nav shadow-sm">
+                <span class="navbar-text">
+                    Xin chào, @(User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity.Name)!
+                </span>
+                <form method="post" asp-page="/employee/DangXuat">
+                    <button type="submit" class="btn btn-link nav-link text-danger">
+                        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                    </button>
+                </form>
+            </header>
+
+            <main role="main" class="p-4">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\_ViewStart.cshtml
+@{
+    Layout = "_Layout_Employee";
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\DangNhapEmployee.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\DangNhapEmployee.cshtml
+@page "/Employee/Login"
+@model WebCafebookApi.Pages.employee.DangNhapEmployeeModel
+@{
+    ViewData["Title"] = "Đăng nhập Nhân viên";
+    Layout = null; // Dùng layout riêng của trang Login
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cafebook</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-page-body">
+
+    <div class="login-wrapper" style="max-width: 450px;">
+        <div class="login-container" style="flex-direction: column;">
+
+            <div class="login-form-col">
+                <a asp-page="/Index" class="text-decoration-none mb-3" style="align-self: flex-start;">
+                    <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
+                    Về Trang Chủ
+                </a>
+
+                <h2 class="text-center">@ViewData["Title"]</h2>
+                <p class="text-muted text-center">Sử dụng tài khoản nội bộ của bạn.</p>
+
+                <form id="account" method="post">
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+                    }
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.TenDangNhap" class="form-control" autocomplete="username" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.TenDangNhap">Tài khoản (Username, Email hoặc SĐT)</label>
+                        <span class="material-symbols-outlined">shield_person</span>
+                        <span asp-validation-for="Input.TenDangNhap" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-material">
+                        <input asp-for="Input.MatKhau" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder=" " />
+                        <label asp-for="Input.MatKhau">Mật khẩu</label>
+                        <span class="material-symbols-outlined">lock</span>
+                        <span asp-validation-for="Input.MatKhau" class="text-danger small"></span>
+                    </div>
+
+                    <div>
+                        <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Đăng nhập</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\DangNhapEmployee.cshtml.cs
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using CafebookModel.Model.ModelApi; // Thêm
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Json; // Thêm
+using CafebookModel.Model.Data; // Thêm
+
+namespace WebCafebookApi.Pages.employee
+{
+    public class DangNhapEmployeeModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public DangNhapEmployeeModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
+
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        public class InputModel
+        {
+            [Required(ErrorMessage = "Vui lòng nhập tài khoản")]
+            public string TenDangNhap { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
+            [DataType(DataType.Password)]
+            public string MatKhau { get; set; } = string.Empty;
+        }
+
+        public async Task OnGetAsync()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        public async Task<IActionResult> OnPostAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            var httpClient = _httpClientFactory.CreateClient();
+            var apiRequest = new LoginRequestModel
+            {
+                TenDangNhap = Input.TenDangNhap,
+                MatKhau = Input.MatKhau
+            };
+
+            var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoannv/login", apiRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
+
+                if (apiResponse != null && apiResponse.Success && apiResponse.NhanVienData != null)
+                {
+                    var user = apiResponse.NhanVienData;
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.IdNhanVien.ToString()),
+                        new Claim(ClaimTypes.Name, user.HoTen ?? ""),
+                        new Claim(ClaimTypes.GivenName, user.HoTen ?? ""),
+                        new Claim(ClaimTypes.Role, user.TenVaiTro ?? "NhanVien")
+                    };
+
+                    foreach (var quyen in user.DanhSachQuyen)
+                    {
+                        claims.Add(new Claim("Permission", quyen));
+                    }
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var authProperties = new AuthenticationProperties { ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8) };
+
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity),
+                        authProperties);
+
+                    HttpContext.Session.SetString("AvatarBase64", user.AnhDaiDien ?? "");
+
+                    // Chuyển hướng đến trang Dashboard
+                    return LocalRedirect(Url.Content("~/Employee/Dashboard"));
+                }
+                else
+                {
+                    ErrorMessage = apiResponse?.Message ?? "Lỗi không xác định từ API.";
+                    return Page();
+                }
+            }
+
+            ErrorMessage = "Không thể kết nối đến máy chủ đăng nhập.";
+            return Page();
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\DangXuat.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\DangXuat.cshtml
+@page "/Employee/Logout"
+@model WebCafebookApi.Pages.employee.DangXuatModel
+@{
+    ViewData["Title"] = "Đăng xuất";
+}
+<p>Đang đăng xuất...</p>
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\DangXuat.cshtml.cs
+using CafebookApi.Data;
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Threading.Tasks;
+
+namespace WebCafebookApi.Pages.employee
+{
+    public class DangXuatModel : PageModel
+    {
+        public async Task<IActionResult> OnPostAsync()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+            return RedirectToPage("/Employee/DangNhapEmployee");
+        }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            return await OnPostAsync();
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\SoDoBanView.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\SoDoBanView.cshtml
+@page "/Employee/SoDoBan"
+@model WebCafebookApi.Pages.employee.SoDoBanViewModel
+@{
+    ViewData["Title"] = "Sơ Đồ Bàn";
+    Layout = "_Layout_Employee";
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+
+                <div class="d-none d-md-flex">
+                    <div class="me-3"><span class="status-box status-trong"></span> Trống</div>
+                    <div class="me-3"><span class="status-box status-co-khach"></span> Có khách</div>
+                    <div class="me-3"><span class="status-box status-da-dat"></span> Đã đặt</div>
+                    <div class="me-3"><span class="status-box status-bao-tri"></span> Bảo trì</div>
+                </div>
+            </div>
+
+            <div id="table-layout-container" class="d-flex flex-wrap" data-nhanvien-id="@Model.NhanVienId">
+                <div class="text-center w-100 p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p>Đang tải sơ đồ bàn...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm" style="position: sticky; top: 80px;">
+                <div class="card-body p-4">
+
+                    <div id="panelChuaChon" class="text-center p-5">
+                        <i class="fa-solid fa-hand-pointer fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chọn một bàn để bắt đầu thao tác</h5>
+                    </div>
+
+                    <div id="panelDaChon" style="display: none;">
+                        <h3 class="fw-bold" style="color: var(--cf-brown);">
+                            Bàn <span id="runSoBan">...</span>
+                        </h3>
+                        <p class="fs-5 mb-2">Trạng thái: <span id="runTrangThai" class="fw-bold">...</span></p>
+                        <p id="tbGhiChu" class="fst-italic text-muted" style="display: none;"></p>
+
+                        <div id="tbTongTienWrapper" class="alert alert-danger" style="display: none;">
+                            <span class="fs-5">Tổng tiền tạm tính:</span><br />
+                            <span id="runTongTien" class="fs-3 fw-bold">0 đ</span>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <div class="d-grid gap-3">
+                            <button id="btnGoiMon" class="btn btn-primary btn-lg p-3">
+                                <i class="fa-solid fa-utensils me-2"></i>
+                                <span>Gọi Món / Thanh Toán</span>
+                            </button>
+
+                            <div class="row g-3">
+                                <div class="col-6 d-grid">
+                                    <button id="btnChuyenBan" class="btn btn-outline-secondary p-3">
+                                        <i class="fa-solid fa-right-left me-1"></i> Chuyển Bàn
+                                    </button>
+                                </div>
+                                <div class="col-6 d-grid">
+                                    <button id="btnGopBan" class="btn btn-outline-secondary p-3">
+                                        <i class="fa-solid fa-object-ungroup me-1"></i> Gộp Bàn
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button id="btnBaoCaoSuCo" class="btn btn-outline-warning p-3">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i> Báo cáo Sự cố
+                            </button>
+
+                            <button id="refresh-tables-btn" class="btn btn-link text-muted mt-3">
+                                <i class="fa-solid fa-sync"></i> Làm mới Sơ đồ
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <style>
+        .table-card {
+            border: 3px solid transparent;
+        }
+
+            .table-card.selected {
+                border-color: var(--cf-orange) !important;
+                box-shadow: 0 8px 20px rgba(210, 125, 45, 0.5) !important;
+            }
+    </style>
+}
+
+@section Scripts {
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\SoDoBanView.cshtml.cs
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Security.Claims; // Cần dùng để lấy ID
+
+namespace WebCafebookApi.Pages.employee
+{
+    // Giả định bạn đã cấu hình Authorize cho thư mục /employee
+    public class SoDoBanViewModel : PageModel
+    {
+        public int NhanVienId { get; set; }
+        public string? ErrorMessage { get; set; }
+
+        public IActionResult OnGet()
+        {
+            var idNhanVienStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(idNhanVienStr) || !int.TryParse(idNhanVienStr, out var id))
+            {
+                // Nếu không có cookie, đá về trang đăng nhập
+                return RedirectToPage("/Employee/DangNhapEmployee");
+            }
+
+            // Gán ID nhân viên để .cshtml có thể đọc
+            NhanVienId = id;
+            return Page();
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\WebQuanLyView.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\WebQuanLyView.cshtml
+@page "/Employee/Dashboard"
+@model WebCafebookApi.Pages.employee.WebQuanLyViewModel
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+    Layout = "_Layout_Employee"; // <-- Sử dụng layout nhân viên
+
+    // Logic xử lý ảnh Base64 (giống _LoginPartial)
+    var avatarSrc = string.IsNullOrEmpty(Model.DashboardData.AnhDaiDien)
+        ? "/images/default-avatar.png"
+        : $"data:image/png;base64,{Model.DashboardData.AnhDaiDien}";
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-4 col-md-5">
+            <div class="card h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center p-4">
+                    <img src="@avatarSrc" alt="Avatar" class="rounded-circle mb-3 shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" />
+                    <h3 class="card-title fw-bold mb-1">@Model.DashboardData.HoTen</h3>
+                    <p class="card-text text-muted fs-5 mb-3">@Model.DashboardData.VaiTro</p>
+                    <hr class="w-100" />
+                    <p class="card-text fs-5 mb-0">
+                        <strong class="text-uppercase">Ca làm việc hôm nay:</strong>
+                        <br />
+                        <span class="fw-bold fs-4" style="color: var(--cf-orange);">
+                            @(Model.DashboardData.CaHienTai ?? "...")
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 col-md-7">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fa-solid fa-users fa-3x mb-3 text-danger"></i>
+                            <h1 class="display-3 fw-bold mb-0" style="color: var(--cf-dark-brown);">@Model.DashboardData.TongBanDangPhucVu</h1>
+                            <p class="card-text fs-5 text-muted mb-0">Bàn Đang Phục Vụ</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fa-solid fa-file-invoice fa-3x mb-3 text-primary"></i>
+                            <h1 class="display-3 fw-bold mb-0" style="color: var(--cf-dark-brown);">@Model.DashboardData.TongDonDangXuLy</h1>
+                            <p class="card-text fs-5 text-muted mb-0">Đơn Đang Xử Lý</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <a asp-page="/Employee/SoDoBanView" class="btn btn-primary btn-lg p-4">
+                    <i class="fas fa-border-all me-2"></i> Bắt đầu làm việc (Sơ Đồ Bàn)
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\WebQuanLyView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+namespace WebCafebookApi.Pages.employee
+{
+    // Giả định bạn đã cấu hình Authorize cho thư mục /employee
+    public class WebQuanLyViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public WebQuanLyViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        [BindProperty]
+        public WebQuanLyDashboardDto DashboardData { get; set; } = new();
+        public string? ErrorMessage { get; set; }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var idNhanVienStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(idNhanVienStr))
+            {
+                // Nếu không có cookie, đá về trang đăng nhập
+                return RedirectToPage("/Employee/DangNhapEmployee");
+            }
+
+            var httpClient = _httpClientFactory.CreateClient();
+            try
+            {
+                var response = await httpClient.GetFromJsonAsync<WebQuanLyDashboardDto>($"http://localhost:5166/api/web/quanly/dashboard/{idNhanVienStr}");
+
+                if (response != null)
+                {
+                    DashboardData = response;
+                }
+                else
+                {
+                    ErrorMessage = "Không thể tải dữ liệu dashboard.";
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ErrorMessage = $"Lỗi kết nối API: {ex.Message}";
+            }
+
+            return Page();
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Shared\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\_ViewImports.cshtml
+@using WebCafebookApi
+@namespace WebCafebookApi.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\_ViewStart.cshtml
+@{
+    Layout = "_Layout";
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\TrangChuView.cshtml.cs e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\TrangChuView.cshtml
+@page "/"
+@model WebCafebookApi.Pages.TrangChuViewModel
+@{
+    ViewData["Title"] = "Trang Chủ";
+    var bannerStyle = string.IsNullOrEmpty(Model.Info?.BannerImageUrl)
+        ? "background-color: #4E342E; color: #FFF8E1;"
+        : $"background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{Model.Info.BannerImageUrl}'); background-size: cover; background-position: center; color: white;";
+}
+
+<div class="container-fluid px-0 mb-5">
+    <div class="text-center p-5" style="@bannerStyle min-height: 40vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 class="display-3 fw-bold" style="color: inherit;">
+            @(Model.Info?.TenQuan ?? "Chào mừng đến Cafebook")
+        </h1>
+        <p class="lead fs-4 col-md-8" style="color: inherit; opacity: 0.9;">
+            @(Model.Info?.GioiThieu ?? "Nơi bạn có thể thưởng thức cà phê thơm ngon, đọc những cuốn sách hay và tìm thấy không gian yên tĩnh cho riêng mình.")
+        </p>
+        <div class="mt-4">
+            <a asp-page="/ThucDonView" class="btn btn-primary btn-lg me-2">Xem Thực Đơn</a>
+            <a asp-page="/ThuVienSachView" class="btn btn-outline-light btn-lg">Khám Phá Sách</a>
+        </div>
+    </div>
+</div>
+
+
+<div class="container">
+
+    @if (Model.Promotions != null && Model.Promotions.Any())
+    {
+    }
+
+    <div class="row mt-5">
+        <h2 class="text-center mb-4 pb-2 border-bottom">☕ Món Nổi Bật</h2>
+        @if (Model.MonNoiBat != null && Model.MonNoiBat.Any())
+        {
+            @foreach (var item in Model.MonNoiBat)
+            {
+                <div class="col-lg col-md-4 col-sm-6 mb-4">
+                    <div class="card h-100">
+                        @{
+                            // SỬA LỖI LOGIC Ở ĐÂY
+                            var imgSrc = string.IsNullOrEmpty(item.AnhSanPhamBase64)
+                            ? "/images/default-food-icon.png"  // 1. Lấy ảnh MẶC ĐỊNH từ wwwroot
+                            : $"data:image/png;base64,{item.AnhSanPhamBase64}"; // 2. Thêm tiền tố cho Base64
+                        }
+                        <img src="@imgSrc" class="card-img-top" alt="@item.TenSanPham" style="height: 180px; object-fit: cover;">
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title">@item.TenSanPham</h6>
+                            <p class="card-text text-danger fw-bold mt-auto mb-0">@item.DonGia.ToString("N0") đ</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-center text-muted">⚙️ Dữ liệu món nổi bật đang được cập nhật...</p>
+        }
+    </div>
+
+    <div class="row mt-5">
+        <h2 class="text-center mb-4 pb-2 border-bottom">📚 Sách Hay Nên Đọc</h2>
+        @if (Model.SachNoiBat != null && Model.SachNoiBat.Any())
+        {
+            @foreach (var sach in Model.SachNoiBat)
+            {
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card h-100">
+                        @{
+                            // SỬA LỖI TƯƠNG TỰ
+                            var imgSrc = string.IsNullOrEmpty(sach.AnhBia)
+                            ? "/images/default-book-cover.png" // 1. Lấy ảnh MẶC ĐỊNH
+                            : $"data:image/png;base64,{sach.AnhBia}"; // 2. Thêm tiền tố Base64
+                        }
+                        <img src="@imgSrc" class="card-img-top" alt="@sach.TieuDe" style="height: 250px; object-fit: cover;">
+                        <div class="card-body">
+                            <h6 class="card-title" style="height: 2.5em; overflow: hidden;">@sach.TieuDe</h6>
+                            <p class="card-text text-muted small">@sach.TacGia</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pb-3">
+                            <a asp-page="/ChiTietSachView" asp-route-id="@sach.IdSach" class="btn btn-outline-primary btn-sm w-100">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-center text-muted">⚙️ Dữ liệu sách nổi bật đang được cập nhật...</p>
+        }
+    </div>
+
+</div>
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\TrangChuView.cshtml.cs
+using CafebookModel.Model.ModelWeb; // Thêm DTO
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Json; // Thêm
+
+namespace WebCafebookApi.Pages // Giả sử namespace là WebCafebookApi.Pages
+{
+    // Đảm bảo tên class khớp với @model
+    public class TrangChuViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        public TrangChuViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        // KHAI BÁO CÁC THUỘC TÍNH MÀ .cshtml CẦN
+        // (Sửa lỗi CS1061)
+        public ThongTinChungDto? Info { get; set; }
+        public List<KhuyenMaiDto> Promotions { get; set; } = new();
+        public List<SanPhamDto> MonNoiBat { get; set; } = new();
+        public List<SachDto> SachNoiBat { get; set; } = new();
+
+        public async Task OnGetAsync()
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            try
+            {
+                // Gọi API Trang chủ
+                var response = await httpClient.GetFromJsonAsync<TrangChuDto>("http://localhost:5166/api/web/trangchu/data");
+
+                if (response != null)
+                {
+                    Info = response.Info;
+                    Promotions = response.Promotions;
+                    MonNoiBat = response.MonNoiBat;
+                    SachNoiBat = response.SachNoiBat;
+                }
+            }
+            catch (Exception)
+            {
+                // Nếu API lỗi, trang vẫn hiển thị (với dữ liệu rỗng)
+                // Khởi tạo Info để tránh lỗi null ở .cshtml
+                Info = new ThongTinChungDto();
+            }
+        }
+    }
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Services\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\appsettings.Development.json e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\appsettings.json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Program.cs
+using Microsoft.AspNetCore.Authentication.Cookies;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. THÊM DỊCH VỤ HTTPCLIENT (ĐỂ GỌI API)
+builder.Services.AddHttpClient();
+
+// 2. THÊM DỊCH VỤ SESSION (ĐỂ LƯU AVATAR)
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// 3. THÊM DỊCH VỤ AUTHENTICATION (ĐỂ TẠO COOKIE)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/AccessDenied";
+        options.LogoutPath = "/Account/DangXuat";
+    });
+
+// 4. THÊM RAZOR PAGES (của bạn đã có)
+builder.Services.AddRazorPages(options =>
+{
+    //options.Conventions.AddPageRoute("/Account/DangNhapView", "/Account/Login");
+    //options.Conventions.AddPageRoute("/Account/DangKyView", "/Account/Register");
+    //options.Conventions.AddPageRoute("/Employee/DangNhapEmployee", "/Employee/Login");
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+}
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// 5. KÍCH HOẠT CÁC DỊCH VỤ (Thứ tự quan trọng)
+app.UseSession(); // Kích hoạt Session
+app.UseAuthentication(); // Kích hoạt Authentication
+app.UseAuthorization(); // Kích hoạt Authorization
+
+app.MapRazorPages();
+
+app.Run();

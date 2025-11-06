@@ -1,11 +1,13 @@
-﻿using AppCafebookApi.Services; // Thêm
-using AppCafebookApi.View.nhanvien.pages; // <-- THÊM USING NÀY
-using CafebookModel.Utils; // Thêm
+﻿using AppCafebookApi.Services;
+using AppCafebookApi.View.nhanvien.pages;
+using CafebookModel.Utils;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives; // Thêm
-using System.Windows.Media; // Thêm
-using System.Windows.Media.Imaging; // Thêm
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Collections.Generic; // <-- Thêm
+using System; // <-- Thêm
 
 namespace AppCafebookApi.View.nhanvien
 {
@@ -14,26 +16,21 @@ namespace AppCafebookApi.View.nhanvien
         public ManHinhNhanVien()
         {
             InitializeComponent();
-            // Sự kiện Loaded có thể được thêm từ XAML hoặc ở đây
             this.Loaded += ManHinhNhanVien_Loaded;
         }
 
         private void ManHinhNhanVien_Loaded(object sender, RoutedEventArgs e)
         {
-
-            btnSoDoBan.IsChecked = true;
-            NavigateToPage(btnSoDoBan, new SoDoBanView());
-
             var currentUser = AuthService.CurrentUser;
             if (currentUser != null)
             {
-                // 1. Cập nhật tên và vai trò (Bạn đã có)
+                // 1. Cập nhật tên và vai trò
                 txtUserName.Text = currentUser.HoTen;
                 txtUserRole.Text = currentUser.TenVaiTro;
 
-                // 2. Cập nhật Avatar (Bạn đã có)
+                // 2. Cập nhật Avatar
                 AvatarBorder.Child = null;
-                BitmapImage avatarImage = HinhAnhHelper.LoadImageFromBase64(
+                BitmapImage avatarImage = HinhAnhHelper.LoadImage(
                     currentUser.AnhDaiDien,
                     HinhAnhPaths.DefaultAvatar
                 );
@@ -42,29 +39,52 @@ namespace AppCafebookApi.View.nhanvien
                     Stretch = Stretch.UniformToFill
                 };
 
-                // --- 3. BẮT ĐẦU PHÂN QUYỀN CHỨC NĂNG ---
+                // --- 3. PHÂN QUYỀN CHỨC NĂNG (Đã cập nhật) ---
 
-                // Dựa trên CSDL, 'Thu ngân' và 'Quản lý' có quyền 'HoaDon.Tao'.
-                // 'Pha chế' và 'Phục vụ' (tài khoản 'service') không có.
-                // Chúng ta ẩn các nút nghiệp vụ chính nếu không có quyền.
-                if (!AuthService.CoQuyen("HoaDon.Tao", "HoaDon.ThanhToan"))
+                // Các chức năng chung (luôn hiển thị)
+                btnSoDoBan.Visibility = Visibility.Visible;
+                btnThongTinCaNhan.Visibility = Visibility.Visible;
+                btnChamCong.Visibility = Visibility.Visible;
+                btnLichLamViecCuaToi.Visibility = Visibility.Visible;
+                btnPhieuLuongCuaToi.Visibility = Visibility.Visible;
+
+                // Chức năng đặc thù (Phục vụ/Thu ngân)
+                bool coQuyenOrder = AuthService.CoQuyen("BanHang.XemSoDo", "BanHang.ThanhToan");
+                btnSoDoBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
+                btnDatBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
+
+                // Chức năng Giao Hàng (chưa có quyền, tạm ẩn)
+                // bool coQuyenGiaoHang = AuthService.CoQuyen("GiaoHang.Xem");
+                // btnGiaoHang.Visibility = coQuyenGiaoHang ? Visibility.Visible : Visibility.Collapsed;
+                btnGiaoHang.Visibility = Visibility.Collapsed; // Tạm ẩn
+
+                // Chức năng Thuê Sách (Thu ngân/Quản lý)
+                bool coQuyenSach = AuthService.CoQuyen("Sach.QuanLy");
+                btnThueSach.Visibility = coQuyenSach ? Visibility.Visible : Visibility.Collapsed;
+
+                // Chọn trang mặc định
+                if (btnSoDoBan.Visibility == Visibility.Visible)
                 {
-                    btnSoDoBan.Visibility = Visibility.Collapsed;
-                    btnDatBanSach.Visibility = Visibility.Collapsed;
+                    btnSoDoBan.IsChecked = true;
+                    NavigateToPage(btnSoDoBan, new SoDoBanView());
                 }
-
-                // Các nút cá nhân (Thông tin, Chấm công) được giữ lại cho mọi người
+                else
+                {
+                    // (Nếu nhân viên không có quyền xem sơ đồ bàn,
+                    // bạn nên điều hướng họ đến trang cá nhân hoặc lịch làm việc)
+                    btnThongTinCaNhan.IsChecked = true;
+                    // NavigateToPage(btnThongTinCaNhan, new ThongTinCaNhanView());
+                }
             }
-
-
         }
-        // --- SỬA LẠI CÁC HÀM CLICK ĐIỀU HƯỚNG ---
 
         private void UncheckOtherButtons(ToggleButton? exception)
         {
+            // Thêm các nút mới vào danh sách
             var navButtons = new List<ToggleButton>
             {
-                btnSoDoBan, btnDatBanSach, btnThongTinCaNhan, btnChamCong
+                btnSoDoBan, btnDatBan, btnGiaoHang, btnThueSach,
+                btnThongTinCaNhan, btnChamCong, btnLichLamViecCuaToi, btnPhieuLuongCuaToi
             };
 
             foreach (var button in navButtons)
@@ -76,7 +96,6 @@ namespace AppCafebookApi.View.nhanvien
             }
         }
 
-        // Hàm này giờ đã hợp lệ vì 'Page' đã được 'using'
         private void NavigateToPage(ToggleButton? clickedButton, Page pageInstance)
         {
             if (clickedButton == null) return;
@@ -85,48 +104,87 @@ namespace AppCafebookApi.View.nhanvien
             MainFrame.Navigate(pageInstance);
         }
 
+        // --- CÁC HÀM CLICK ĐIỀU HƯỚNG ---
+
         private void BtnSoDoBan_Click(object sender, RoutedEventArgs e)
         {
             NavigateToPage(sender as ToggleButton, new SoDoBanView());
         }
 
-        private void BtnDatBanSach_Click(object sender, RoutedEventArgs e)
+        private void BtnDatBan_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Chức năng 'Đặt Bàn Sách' đang được phát triển.");
+            // (Chuyển btnDatBanSach thành btnDatBan cho nhất quán)
+            MessageBox.Show("Chức năng 'Đặt Bàn' đang được phát triển.");
+            ResetToDefaultPage(sender);
+        }
 
-            // SỬA LỖI CS8602: Thêm kiểm tra null
-            if (sender is ToggleButton btn)
-            {
-                btn.IsChecked = false;
-                btnSoDoBan.IsChecked = true; // Trả về trang mặc định
-            }
+        // === CÁC HÀM CLICK MỚI ===
+
+        private void BtnGiaoHang_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: NavigateToPage(sender as ToggleButton, new GiaoHangView());
+            MessageBox.Show("Chức năng 'Đơn Giao Hàng' đang được phát triển.");
+            ResetToDefaultPage(sender);
+        }
+
+        private void BtnThueSach_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: NavigateToPage(sender as ToggleButton, new ThueSachView());
+            MessageBox.Show("Chức năng 'Quản lý Thuê Sách' đang được phát triển.");
+            ResetToDefaultPage(sender);
         }
 
         private void BtnThongTinCaNhan_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Chức năng 'Thông tin cá nhân' đang được phát triển.");
-
-            // SỬA LỖI CS8602: Thêm kiểm tra null
-            if (sender is ToggleButton btn)
-            {
-                btn.IsChecked = false;
-                btnSoDoBan.IsChecked = true; // Trả về trang mặc định
-            }
+            // TODO: NavigateToPage(sender as ToggleButton, new ThongTinCaNhanView());
+            MessageBox.Show("Chức năng 'Thông tin cá nhân & Đổi Mật khẩu' đang được phát triển.");
+            ResetToDefaultPage(sender);
         }
 
-        private void BtnChamCong_Click(object sender, RoutedEventArgs e)
+        private async void BtnChamCong_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Chức năng 'Chấm công' đang được phát triển.");
+            // Đây là nút hành động, không phải điều hướng
+            UncheckOtherButtons(null); // Bỏ check tất cả
+            btnSoDoBan.IsChecked = true; // Quay về Sơ đồ bàn
 
-            // SỬA LỖI CS8602: Thêm kiểm tra null
+            if (AuthService.CurrentUser == null) return;
+            int idNhanVien = AuthService.CurrentUser.IdNhanVien;
+
+            // (Bạn cần tạo API endpoint `api/app/nhanvien/chamcong/{idNhanVien}` 
+            //  để xử lý logic check-in/check-out)
+            MessageBox.Show($"Đang gửi yêu cầu Chấm công (Check-in/Check-out) cho ID: {idNhanVien}...\n(Chức năng này cần API)", "Chấm công");
+        }
+
+        private void BtnLichLamViecCuaToi_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: NavigateToPage(sender as ToggleButton, new LichLamViecCaNhanView());
+            MessageBox.Show("Chức năng 'Xem Lịch Làm Việc' đang được phát triển.");
+            ResetToDefaultPage(sender);
+        }
+
+        private void BtnPhieuLuongCuaToi_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: NavigateToPage(sender as ToggleButton, new PhieuLuongCaNhanView());
+            MessageBox.Show("Chức năng 'Xem Phiếu Lương' đang được phát triển.");
+            ResetToDefaultPage(sender);
+        }
+
+        // --- HÀM HELPER VÀ ĐĂNG XUẤT ---
+
+        private void ResetToDefaultPage(object sender)
+        {
             if (sender is ToggleButton btn)
             {
                 btn.IsChecked = false;
-                btnSoDoBan.IsChecked = true; // Trả về trang mặc định
+                btnSoDoBan.IsChecked = true;
             }
         }
 
-        // ... (Hàm Đăng xuất)
+        private void BtnThongBao_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Chức năng Thông báo đang được phát triển.");
+        }
+
         private void BtnDangXuat_Click(object sender, RoutedEventArgs e)
         {
             var result = MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?",

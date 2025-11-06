@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CafebookModel.Model.ModelApp
 {
-    // (Class SanPhamDto giữ nguyên)
+    /// <summary>
+    /// DTO cho DataGrid (Tìm kiếm)
+    /// </summary>
     public class SanPhamDto
     {
         public int IdSanPham { get; set; }
@@ -10,54 +14,70 @@ namespace CafebookModel.Model.ModelApp
         public decimal GiaBan { get; set; }
         public string? TenDanhMuc { get; set; }
         public bool TrangThaiKinhDoanh { get; set; }
+        public string? HinhAnhUrl { get; set; } // SỬA: Dùng URL
     }
 
-    // (Class SanPhamUpdateRequestDto giữ nguyên)
-    public class SanPhamUpdateRequestDto
+    /// <summary>
+    /// DTO (MỚI) cho Form Chi Tiết (Khi GetDetails)
+    /// </summary>
+    public class SanPhamDetailDto
     {
         public int IdSanPham { get; set; }
         public string TenSanPham { get; set; } = string.Empty;
         public int? IdDanhMuc { get; set; }
         public decimal GiaBan { get; set; }
         public string? MoTa { get; set; }
-        public bool TrangThaiKinhDoanh { get; set; } = true;
+        public bool TrangThaiKinhDoanh { get; set; }
         public string? NhomIn { get; set; }
-        public string? HinhAnhBase64 { get; set; }
+        public string? HinhAnhUrl { get; set; } // DÙNG ĐỂ HIỂN THỊ
     }
 
-    // --- SỬA ĐỔI DTO NÀY ---
+    /// <summary>
+    /// DTO (SỬA) chỉ dùng để Tải Lên (Create/Update)
+    /// </summary>
+    public class SanPhamUpdateRequestDto
+    {
+        public int IdSanPham { get; set; } // Sẽ = 0 nếu là Tạo mới
+        public string TenSanPham { get; set; } = string.Empty;
+        public int? IdDanhMuc { get; set; }
+        public decimal GiaBan { get; set; }
+        public string? MoTa { get; set; }
+        public bool TrangThaiKinhDoanh { get; set; }
+        public string? NhomIn { get; set; }
+
+        // SỬA: Thêm 2 thuộc tính này để Swagger nhận diện
+        [JsonIgnore]
+        public IFormFile? HinhAnhUpload { get; set; }
+        [JsonIgnore]
+        public bool XoaHinhAnh { get; set; } = false;
+    }
+
+    // (Các DTO còn lại giữ nguyên)
     public class SanPhamFiltersDto
     {
         public List<FilterLookupDto> DanhMucs { get; set; } = new();
         public List<FilterLookupDto> NguyenLieus { get; set; } = new();
-        // Thêm: List tất cả các đơn vị
         public List<DonViChuyenDoiDto> DonViTinhs { get; set; } = new();
     }
-
-    // --- THÊM DTO MỚI ---
     public class DonViChuyenDoiDto
     {
         public int Id { get; set; }
         public int IdNguyenLieu { get; set; }
         public string Ten { get; set; } = string.Empty;
     }
-
-    // --- SỬA ĐỔI DTO NÀY ---
     public class DinhLuongDto
     {
         public int IdNguyenLieu { get; set; }
         public string TenNguyenLieu { get; set; } = string.Empty;
-        public decimal SoLuong { get; set; } // (Tên giữ nguyên là SoLuong)
-        public int IdDonViSuDung { get; set; } // (Id của ĐVT, vd: Id 'gram')
-        public string TenDonViSuDung { get; set; } = string.Empty; // (Tên ĐVT, vd: 'gram')
+        public decimal SoLuong { get; set; }
+        public int IdDonViSuDung { get; set; }
+        public string TenDonViSuDung { get; set; } = string.Empty;
     }
-
-    // --- SỬA ĐỔI DTO NÀY ---
     public class DinhLuongUpdateRequestDto
     {
         public int IdSanPham { get; set; }
         public int IdNguyenLieu { get; set; }
         public decimal SoLuong { get; set; }
-        public int IdDonViSuDung { get; set; } // Thêm (Id của 'gram')
+        public int IdDonViSuDung { get; set; }
     }
 }

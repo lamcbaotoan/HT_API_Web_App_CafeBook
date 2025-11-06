@@ -17,6 +17,7 @@
     <None Remove="Assets\images\default-food-icon.png" />
     <None Remove="Assets\logo.ico" />
     <None Remove="Assets\logo.png" />
+    <None Remove="Fonts\Font Awesome 6 Free-Solid-900.otf" />
     <None Remove="logo.ico" />
   </ItemGroup>
 
@@ -41,6 +42,7 @@
     <Resource Include="Assets\images\default-food-icon.png" />
     <Resource Include="Assets\logo.ico" />
     <Resource Include="Assets\logo.png" />
+    <Resource Include="Fonts\Font Awesome 6 Free-Solid-900.otf" />
     <Resource Include="logo.ico" />
   </ItemGroup>
 

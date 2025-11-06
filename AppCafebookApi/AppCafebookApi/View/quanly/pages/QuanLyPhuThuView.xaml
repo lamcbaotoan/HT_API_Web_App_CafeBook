@@ -1,0 +1,149 @@
+﻿<Page x:Class="AppCafebookApi.View.quanly.pages.QuanLyPhuThuView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:AppCafebookApi.View.quanly.pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="700" d:DesignWidth="1100"
+      Title="QuanLyPhuThuView" FontFamily="Segoe UI" Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
+        <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
+        <SolidColorBrush x:Key="WhiteTextBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="BorderGrayBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="ActionGreenBrush" Color="#66BB6A"/>
+        <SolidColorBrush x:Key="ActionRedBrush" Color="#EF5350"/>
+
+        <Geometry x:Key="IconBack">M15.41,16.59L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.59Z</Geometry>
+
+        <Style x:Key="BackButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="4" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{StaticResource LightCreamBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="15,15,15,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="350"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{StaticResource WhiteTextBrush}" CornerRadius="8" Padding="20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                        <TextBlock Text="Quản lý Phụ thu" Style="{StaticResource HeaderTextBlock}" Margin="0"/>
+                        <Button x:Name="btnThemMoi" Content="Thêm mới" Style="{StaticResource PrimaryButton}" Background="{StaticResource ActionGreenBrush}" VerticalAlignment="Center" Margin="20,0,0,0" Click="BtnThemMoi_Click"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" x:Name="dgPhuThu" AutoGenerateColumns="False" IsReadOnly="True" 
+                              SelectionMode="Single" SelectionChanged="DgPhuThu_SelectionChanged"
+                              BorderThickness="0" RowHeaderWidth="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding IdPhuThu}" Width="50"/>
+                            <DataGridTextColumn Header="Tên Phụ thu" Binding="{Binding TenPhuThu}" Width="*"/>
+                            <DataGridTextColumn Header="Giá trị" Binding="{Binding GiaTri, StringFormat=N0}" Width="100"/>
+                            <DataGridTextColumn Header="Loại" Binding="{Binding LoaiGiaTri}" Width="70"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Background="{StaticResource WhiteTextBrush}" CornerRadius="8" Margin="15,0,0,0" Padding="20">
+                <StackPanel x:Name="formPanel">
+                    <TextBlock x:Name="lblFormTitle" Text="Thêm Phụ thu mới" Style="{StaticResource HeaderTextBlock}"/>
+                    <TextBox x:Name="txtIdPhuThu" Text="0" Visibility="Collapsed"/>
+                    <TextBlock Text="Tên Phụ thu:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtTenPhuThu" Padding="8" Margin="0,0,0,15"/>
+                    <TextBlock Text="Loại Giá trị:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="cmbLoaiGiaTri" Padding="8" Margin="0,0,0,15" SelectedIndex="0">
+                        <ComboBoxItem Content="VND"/>
+                        <ComboBoxItem Content="%"/>
+                    </ComboBox>
+                    <TextBlock Text="Giá trị:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtGiaTri" Padding="8" Margin="0,0,0,20"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="btnHuy" Content="Hủy" Style="{StaticResource PrimaryButton}" 
+                                Background="White" Foreground="{StaticResource TextGrayBrush}" 
+                                BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1" 
+                                Width="80" Margin="0,0,10,0" Click="BtnHuy_Click"/>
+
+                        <Button x:Name="btnXoa" Content="Xóa" Style="{StaticResource PrimaryButton}" 
+                                Background="{StaticResource ActionRedBrush}" 
+                                Width="80" Margin="0,0,10,0" Click="BtnXoa_Click" IsEnabled="False"/>
+
+                        <Button x:Name="btnLuu" Content="Thêm" Style="{StaticResource PrimaryButton}" 
+                                Background="{StaticResource ActionGreenBrush}" 
+                                Width="100" Click="BtnLuu_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Button x:Name="btnQuayLai" Grid.Row="1" 
+                Style="{StaticResource BackButton}"
+                HorizontalAlignment="Left" Margin="25,10,0,10"
+                Click="BtnQuayLai_Click">
+            <StackPanel Orientation="Horizontal">
+                <Path Data="{StaticResource IconBack}" Fill="{StaticResource PrimaryBrownBrush}" Width="23" Height="23" Margin="0,0,5,0"/>
+                <TextBlock Text="Quay lại" VerticalAlignment="Center" FontSize="14"/>
+            </StackPanel>
+        </Button>
+    </Grid>
+</Page>

@@ -53,7 +53,7 @@ namespace AppCafebookApi.View.quanly
                 txtAdminName.Text = currentUser.HoTen;
                 txtUserRole.Text = currentUser.TenVaiTro;
                 AvatarBorder.Child = null;
-                BitmapImage avatarImage = HinhAnhHelper.LoadImageFromBase64(
+                BitmapImage avatarImage = HinhAnhHelper.LoadImage(
                     currentUser.AnhDaiDien,
                     HinhAnhPaths.DefaultAvatar
                 );

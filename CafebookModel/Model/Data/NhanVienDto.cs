@@ -9,7 +9,7 @@ namespace CafebookModel.Model.Data
         public int IdNhanVien { get; set; }
         public string? HoTen { get; set; }
         public string? TenVaiTro { get; set; }
-        public string? AnhDaiDien { get; set; } // Đây là chuỗi Base64
+        public string? AnhDaiDien { get; set; } 
         public List<string> DanhSachQuyen { get; set; } = new List<string>();
     }
 }

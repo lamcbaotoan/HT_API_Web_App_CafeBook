@@ -1,10 +1,17 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/App/SanPhamController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApp;
+using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http; // <-- Thêm
 
 namespace CafebookApi.Controllers.App
 {
@@ -13,98 +20,163 @@ namespace CafebookApi.Controllers.App
     public class SanPhamController : ControllerBase
     {
         private readonly CafebookDbContext _context;
+        private readonly IWebHostEnvironment _env;
+        private readonly string _baseUrl;
 
-        public SanPhamController(CafebookDbContext context)
+        public SanPhamController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
+            _env = env;
+
+            if (string.IsNullOrEmpty(_env.WebRootPath))
+            {
+                _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                if (!Directory.Exists(_env.WebRootPath))
+                {
+                    Directory.CreateDirectory(_env.WebRootPath);
+                }
+            }
+
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
         }
 
-        #region API Sản Phẩm (Giữ nguyên)
+        // === HELPER 1: TẠO URL TUYỆT ĐỐI === (Giữ nguyên)
+        private string? GetFullImageUrl(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return null;
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
+        }
+
+        // === HELPER 2: TẠO TÊN FILE === (Giữ nguyên)
+        private string GenerateFileName(int id, string ten)
+        {
+            string slug = SlugifyUtil.GenerateSlug(ten);
+            return $"{id}_{slug}.jpg"; // Luôn lưu là .jpg
+        }
+
+        // === HELPER 3: XÓA FILE CŨ === (Giữ nguyên)
+        private void DeleteOldImage(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath)) return;
+            var fileName = relativePath.TrimStart('/');
+            var fullPath = Path.Combine(_env.WebRootPath, fileName.Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+        }
+
+        // === HELPER 4 (MỚI): ĐỔI TÊN FILE === (Giữ nguyên)
+        private void RenameImage(string oldRelativePath, string newRelativePath)
+        {
+            if (string.IsNullOrEmpty(oldRelativePath) || string.IsNullOrEmpty(newRelativePath) || oldRelativePath == newRelativePath)
+                return;
+
+            var oldFileName = oldRelativePath.TrimStart('/');
+            var oldFullPath = Path.Combine(_env.WebRootPath, oldFileName.Replace('/', Path.DirectorySeparatorChar));
+
+            var newFileName = newRelativePath.TrimStart('/');
+            var newFullPath = Path.Combine(_env.WebRootPath, newFileName.Replace('/', Path.DirectorySeparatorChar));
+
+            if (System.IO.File.Exists(oldFullPath))
+            {
+                System.IO.File.Move(oldFullPath, newFullPath);
+            }
+        }
+
+        // === HELPER 5 (SỬA): LƯU FILE TỪ IFormFile ===
+        // (Đã xóa SaveImageFromBase64)
+        private async Task<string> SaveImageFromFile(IFormFile file, string fileName, string relativeDir)
+        {
+            var saveDir = Path.Combine(_env.WebRootPath, relativeDir);
+            if (!Directory.Exists(saveDir))
+            {
+                Directory.CreateDirectory(saveDir);
+            }
+            var fullSavePath = Path.Combine(saveDir, fileName);
+
+            // Dùng stream để copy file
+            await using (var stream = new FileStream(fullSavePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/{relativeDir.Replace(Path.DirectorySeparatorChar, '/')}/{fileName}";
+        }
+
+        #region API Sản Phẩm (Đã sửa)
+
+        // ... (Hàm SearchSanPham, GetSanPhamDetails giữ nguyên) ...
         [HttpGet("search")]
         public async Task<IActionResult> SearchSanPham([FromQuery] string? searchText, [FromQuery] int? danhMucId, [FromQuery] bool? trangThai)
         {
+            // ... (Logic không đổi)
             var query = _context.SanPhams.Include(s => s.DanhMuc).AsQueryable();
+
             if (danhMucId.HasValue && danhMucId > 0)
-            {
                 query = query.Where(s => s.IdDanhMuc == danhMucId);
-            }
             if (trangThai.HasValue)
-            {
                 query = query.Where(s => s.TrangThaiKinhDoanh == trangThai.Value);
-            }
             if (!string.IsNullOrEmpty(searchText))
             {
                 string searchLower = searchText.ToLower();
                 query = query.Where(s => s.TenSanPham.ToLower().Contains(searchLower));
             }
-            var results = await query.Select(s => new SanPhamDto { IdSanPham = s.IdSanPham, TenSanPham = s.TenSanPham, GiaBan = s.GiaBan, TenDanhMuc = s.DanhMuc != null ? s.DanhMuc.TenDanhMuc : "N/A", TrangThaiKinhDoanh = s.TrangThaiKinhDoanh }).OrderBy(s => s.TenSanPham).ToListAsync();
+
+            var rawResults = await query.Select(s => new
+            {
+                s.IdSanPham,
+                s.TenSanPham,
+                s.GiaBan,
+                TenDanhMuc = s.DanhMuc != null ? s.DanhMuc.TenDanhMuc : "N/A",
+                s.TrangThaiKinhDoanh,
+                s.HinhAnh
+            })
+            .OrderBy(s => s.TenSanPham)
+            .ToListAsync();
+
+            var results = rawResults.Select(s => new SanPhamDto
+            {
+                IdSanPham = s.IdSanPham,
+                TenSanPham = s.TenSanPham,
+                GiaBan = s.GiaBan,
+                TenDanhMuc = s.TenDanhMuc,
+                TrangThaiKinhDoanh = s.TrangThaiKinhDoanh,
+                HinhAnhUrl = GetFullImageUrl(s.HinhAnh)
+            }).ToList();
+
             return Ok(results);
         }
 
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetSanPhamDetails(int id)
         {
+            // ... (Logic không đổi)
             var sp = await _context.SanPhams.FindAsync(id);
             if (sp == null) return NotFound();
-            var dto = new SanPhamUpdateRequestDto { IdSanPham = sp.IdSanPham, TenSanPham = sp.TenSanPham, IdDanhMuc = sp.IdDanhMuc, GiaBan = sp.GiaBan, MoTa = sp.MoTa, TrangThaiKinhDoanh = sp.TrangThaiKinhDoanh, NhomIn = sp.NhomIn, HinhAnhBase64 = sp.HinhAnh };
-            return Ok(dto);
-        }
-        #endregion
 
-        /// <summary>
-        /// API lấy dữ liệu cho các ComboBox lọc
-        /// </summary>
-        [HttpGet("filters")]
-        public async Task<IActionResult> GetSanPhamFilters()
-        {
-            // --- SỬA LỖI 500 TẠI ĐÂY ---
-            // 1. Tải Danh Mucs (Như cũ)
-            var danhMucs = await _context.DanhMucs
-                .Select(t => new FilterLookupDto { Id = t.IdDanhMuc, Ten = t.TenDanhMuc })
-                .OrderBy(t => t.Ten)
-                .ToListAsync();
-
-            // 2. Tải Nguyên Liệu (Sửa lỗi LINQ)
-            var nguyenLieus = (await _context.NguyenLieus
-                .Select(nl => new { nl.IdNguyenLieu, nl.TenNguyenLieu, nl.DonViTinh })
-                .ToListAsync()) // 1. Tải về C#
-                .Select(nl => new FilterLookupDto // 2. Nối chuỗi trong C#
-                {
-                    Id = nl.IdNguyenLieu,
-                    Ten = nl.TenNguyenLieu + $" ({nl.DonViTinh})"
-                })
-                .OrderBy(nl => nl.Ten) // 3. Sắp xếp trong C#
-                .ToList();
-
-            // 3. Tải Đơn Vị Tính (Như cũ)
-            var donViTinhs = await _context.DonViChuyenDois
-                .Select(d => new DonViChuyenDoiDto
-                {
-                    Id = d.IdChuyenDoi,
-                    IdNguyenLieu = d.IdNguyenLieu,
-                    Ten = d.TenDonVi
-                })
-                .ToListAsync();
-
-            var dto = new SanPhamFiltersDto
+            var dto = new SanPhamDetailDto
             {
-                DanhMucs = danhMucs,
-                NguyenLieus = nguyenLieus,
-                DonViTinhs = donViTinhs
+                IdSanPham = sp.IdSanPham,
+                TenSanPham = sp.TenSanPham,
+                IdDanhMuc = sp.IdDanhMuc,
+                GiaBan = sp.GiaBan,
+                MoTa = sp.MoTa,
+                TrangThaiKinhDoanh = sp.TrangThaiKinhDoanh,
+                NhomIn = sp.NhomIn,
+                HinhAnhUrl = GetFullImageUrl(sp.HinhAnh) // <-- Dùng Helper
             };
             return Ok(dto);
         }
 
-        /// <summary>
-        /// API Thêm sản phẩm mới
-        /// </summary>
+
+        // SỬA: Dùng [FromForm]
         [HttpPost]
-        public async Task<IActionResult> CreateSanPham([FromBody] SanPhamUpdateRequestDto dto)
+        public async Task<IActionResult> CreateSanPham(
+                    [FromForm] SanPhamUpdateRequestDto dto)
         {
-            // (Giữ nguyên logic kiểm tra trùng lặp)
-            if (await _context.SanPhams.AnyAsync(s =>
-                s.TenSanPham.ToLower() == dto.TenSanPham.ToLower() &&
-                s.IdDanhMuc == dto.IdDanhMuc))
+            if (await _context.SanPhams.AnyAsync(s => s.TenSanPham.ToLower() == dto.TenSanPham.ToLower() && s.IdDanhMuc == dto.IdDanhMuc))
             {
                 return Conflict("Tên sản phẩm này đã tồn tại trong danh mục đã chọn.");
             }
@@ -117,53 +189,105 @@ namespace CafebookApi.Controllers.App
                 MoTa = dto.MoTa,
                 TrangThaiKinhDoanh = dto.TrangThaiKinhDoanh,
                 NhomIn = dto.NhomIn,
-                HinhAnh = dto.HinhAnhBase64
+                HinhAnh = null
             };
             _context.SanPhams.Add(sanPham);
-            await _context.SaveChangesAsync();
-            return Ok(sanPham); // Trả về sản phẩm đã tạo (chứa Id mới)
+            await _context.SaveChangesAsync(); // Lưu lần 1 (Lấy ID)
+
+            // SỬA: Lấy file từ dto.HinhAnhUpload
+            if (dto.HinhAnhUpload != null)
+            {
+                try
+                {
+                    string fileName = GenerateFileName(sanPham.IdSanPham, sanPham.TenSanPham);
+                    string relativePath = await SaveImageFromFile(dto.HinhAnhUpload, fileName, HinhAnhPaths.UrlFoods.TrimStart('/'));
+                    sanPham.HinhAnh = relativePath;
+                    await _context.SaveChangesAsync(); // Lưu lần 2 (Cập nhật ảnh)
+                }
+                catch (Exception ex)
+                {
+                    _context.SanPhams.Remove(sanPham);
+                    await _context.SaveChangesAsync();
+                    return StatusCode(500, $"Lỗi khi lưu ảnh: {ex.Message}");
+                }
+            }
+
+            var detailDto = new SanPhamDetailDto
+            {
+                IdSanPham = sanPham.IdSanPham,
+                TenSanPham = sanPham.TenSanPham,
+                HinhAnhUrl = GetFullImageUrl(sanPham.HinhAnh)
+            };
+
+            return Ok(detailDto);
         }
 
-        /// <summary>
-        /// API Cập nhật sản phẩm
-        /// </summary>
+        // SỬA: Dùng [FromForm]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSanPham(int id, [FromBody] SanPhamUpdateRequestDto dto)
+        public async Task<IActionResult> UpdateSanPham(int id,
+                    [FromForm] SanPhamUpdateRequestDto dto)
         {
-            // (Giữ nguyên hàm này)
             var sp = await _context.SanPhams.FindAsync(id);
             if (sp == null) return NotFound();
+
             if (await _context.SanPhams.AnyAsync(s => s.TenSanPham.ToLower() == dto.TenSanPham.ToLower() && s.IdDanhMuc == dto.IdDanhMuc && s.IdSanPham != id))
             {
                 return Conflict("Tên sản phẩm này đã tồn tại trong danh mục đã chọn.");
             }
+
+            var oldImagePath = sp.HinhAnh;
+            var oldTenSanPham = sp.TenSanPham;
+
+            // SỬA: Lấy file và cờ Xóa từ DTO
+            bool isImageUpload = dto.HinhAnhUpload != null;
+            bool isNameChange = dto.TenSanPham != oldTenSanPham;
+
             sp.TenSanPham = dto.TenSanPham;
             sp.IdDanhMuc = dto.IdDanhMuc ?? 0;
             sp.GiaBan = dto.GiaBan;
             sp.MoTa = dto.MoTa;
             sp.TrangThaiKinhDoanh = dto.TrangThaiKinhDoanh;
             sp.NhomIn = dto.NhomIn;
-            if (dto.HinhAnhBase64 != null)
+
+            string newFileName = GenerateFileName(sp.IdSanPham, sp.TenSanPham);
+            string newRelativePath = $"/{HinhAnhPaths.UrlFoods.TrimStart('/')}/{newFileName}";
+
+            if (isImageUpload)
             {
-                sp.HinhAnh = string.IsNullOrEmpty(dto.HinhAnhBase64) ? null : dto.HinhAnhBase64;
+                DeleteOldImage(oldImagePath);
+                // === SỬA LỖI CS8604 (Dòng 258) ===
+                // Thêm '!' vì logic 'isImageUpload' đã đảm bảo file không null
+                sp.HinhAnh = await SaveImageFromFile(dto.HinhAnhUpload!, newFileName, HinhAnhPaths.UrlFoods.TrimStart('/'));
             }
+            // SỬA: Lấy cờ Xóa từ DTO
+            else if (dto.XoaHinhAnh)
+            {
+                DeleteOldImage(oldImagePath);
+                sp.HinhAnh = null;
+            }
+            else if (isNameChange && !string.IsNullOrEmpty(oldImagePath))
+            {
+                RenameImage(oldImagePath, newRelativePath);
+                sp.HinhAnh = newRelativePath;
+            }
+
             await _context.SaveChangesAsync();
             return Ok();
         }
 
-        /// <summary>
-        /// API Xóa sản phẩm
-        /// </summary>
+        // ... (DeleteSanPham giữ nguyên, logic DeleteOldImage đã có) ...
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSanPham(int id)
         {
-            // (Giữ nguyên hàm này)
             if (await _context.ChiTietHoaDons.AnyAsync(ct => ct.IdSanPham == id))
             {
                 return Conflict("Không thể xóa. Sản phẩm này đã tồn tại trong lịch sử hóa đơn.");
             }
             var sp = await _context.SanPhams.FindAsync(id);
             if (sp == null) return NotFound();
+
+            DeleteOldImage(sp.HinhAnh); // <-- Logic xóa ảnh
+
             var dinhLuong = await _context.DinhLuongs.Where(d => d.IdSanPham == id).ToListAsync();
             if (dinhLuong.Any())
             {
@@ -174,8 +298,43 @@ namespace CafebookApi.Controllers.App
             return Ok();
         }
 
-        // --- THÊM MỚI: API CHO DANH MỤC (SỬA LỖI TAB 2) ---
+        #endregion
+
         #region API Danh Mục
+        [HttpGet("filters")] // <-- PHẢI LÀ [HttpGet]
+        public async Task<IActionResult> GetSanPhamFilters()
+        {
+            var danhMucs = await _context.DanhMucs
+                .Select(t => new FilterLookupDto { Id = t.IdDanhMuc, Ten = t.TenDanhMuc })
+                .OrderBy(t => t.Ten)
+                .ToListAsync();
+            var nguyenLieus = (await _context.NguyenLieus
+                .Select(nl => new { nl.IdNguyenLieu, nl.TenNguyenLieu, nl.DonViTinh })
+                .ToListAsync())
+                .Select(nl => new FilterLookupDto
+                {
+                    Id = nl.IdNguyenLieu,
+                    Ten = nl.TenNguyenLieu + $" ({nl.DonViTinh})"
+                })
+                .OrderBy(nl => nl.Ten)
+                .ToList();
+            var donViTinhs = await _context.DonViChuyenDois
+                .Select(d => new DonViChuyenDoiDto
+                {
+                    Id = d.IdChuyenDoi,
+                    IdNguyenLieu = d.IdNguyenLieu,
+                    Ten = d.TenDonVi
+                })
+                .ToListAsync();
+            var dto = new SanPhamFiltersDto
+            {
+                DanhMucs = danhMucs,
+                NguyenLieus = nguyenLieus,
+                DonViTinhs = donViTinhs
+            };
+            return Ok(dto);
+        }
+
         [HttpPost("danhmuc")]
         public async Task<IActionResult> CreateDanhMuc([FromBody] FilterLookupDto dto)
         {
@@ -217,21 +376,19 @@ namespace CafebookApi.Controllers.App
         }
         #endregion
 
-        // --- API CHO ĐỊNH LƯỢNG (Đã Cập Nhật theo CSDL v2) ---
         #region API Định Lượng
-
         [HttpGet("{idSanPham}/dinhluong")]
         public async Task<IActionResult> GetDinhLuong(int idSanPham)
         {
             var data = await _context.DinhLuongs
                 .Where(d => d.IdSanPham == idSanPham)
                 .Include(d => d.NguyenLieu)
-                .Include(d => d.DonViSuDung) // Join ĐVT
+                .Include(d => d.DonViSuDung)
                 .Select(d => new DinhLuongDto
                 {
                     IdNguyenLieu = d.IdNguyenLieu,
                     TenNguyenLieu = d.NguyenLieu.TenNguyenLieu,
-                    SoLuong = d.SoLuongSuDung, // Lấy từ cột mới
+                    SoLuong = d.SoLuongSuDung,
                     IdDonViSuDung = d.IdDonViSuDung,
                     TenDonViSuDung = d.DonViSuDung.TenDonVi
                 })
@@ -245,13 +402,11 @@ namespace CafebookApi.Controllers.App
             var existing = await _context.DinhLuongs.FindAsync(dto.IdSanPham, dto.IdNguyenLieu);
             if (existing != null)
             {
-                // Cập nhật
                 existing.SoLuongSuDung = dto.SoLuong;
                 existing.IdDonViSuDung = dto.IdDonViSuDung;
             }
             else
             {
-                // Thêm mới
                 var newDinhLuong = new DinhLuong
                 {
                     IdSanPham = dto.IdSanPham,
@@ -268,7 +423,6 @@ namespace CafebookApi.Controllers.App
         [HttpDelete("dinhluong/{idSanPham}/{idNguyenLieu}")]
         public async Task<IActionResult> DeleteDinhLuong(int idSanPham, int idNguyenLieu)
         {
-            // (Giữ nguyên hàm này)
             var existing = await _context.DinhLuongs.FindAsync(idSanPham, idNguyenLieu);
             if (existing != null)
             {
@@ -277,7 +431,6 @@ namespace CafebookApi.Controllers.App
             }
             return Ok();
         }
-
         #endregion
     }
 }

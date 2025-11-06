@@ -14,6 +14,7 @@ using OfficeOpenXml.Style;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq; // Cần NuGet Newtonsoft.Json
 using System.Globalization;
+using System.Text.Json; // THÊM
 
 namespace AppCafebookApi.View.common
 {
@@ -50,10 +51,18 @@ namespace AppCafebookApi.View.common
         {
             try
             {
-                var response = await httpClient.GetStringAsync("api/app/baocaohieusuat/filters");
-                var json = JObject.Parse(response);
+                // SỬA: Dùng GetFromJsonAsync<JsonElement?>
+                var response = await httpClient.GetFromJsonAsync<JsonElement?>("api/app/baocaohieusuat/filters");
 
-                var vaiTros = json["vaiTros"]?.ToObject<List<FilterLookupDto>>() ?? new List<FilterLookupDto>();
+                if (!response.HasValue) // SỬA: Dùng .HasValue
+                {
+                    MessageBox.Show("Không nhận được dữ liệu lọc.", "Lỗi API");
+                    return;
+                }
+
+                // SỬA: Dùng .GetProperty().Deserialize<>()
+                var vaiTros = response.Value.GetProperty("vaiTros").Deserialize<List<FilterLookupDto>>() ?? new List<FilterLookupDto>();
+
                 vaiTros.Insert(0, new FilterLookupDto { Id = 0, Ten = "Tất cả Vai trò" });
                 cmbVaiTro.ItemsSource = vaiTros;
                 cmbVaiTro.SelectedValue = 0;

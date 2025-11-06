@@ -1,10 +1,17 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/App/KhachHangController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApp;
+using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+using Microsoft.AspNetCore.Http;
+using System;
 
 namespace CafebookApi.Controllers.App
 {
@@ -13,14 +20,82 @@ namespace CafebookApi.Controllers.App
     public class KhachHangController : ControllerBase
     {
         private readonly CafebookDbContext _context;
+        private readonly IWebHostEnvironment _env;
+        private readonly string _baseUrl;
 
-        public KhachHangController(CafebookDbContext context)
+        public KhachHangController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
+
+            _env = env;
+            if (string.IsNullOrEmpty(_env.WebRootPath))
+            {
+                _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                if (!Directory.Exists(_env.WebRootPath))
+                {
+                    Directory.CreateDirectory(_env.WebRootPath);
+                }
+            }
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url")
+                       ?? "http://127.0.0.1:5166";
         }
 
+        // === 5 HÀM HELPER XỬ LÝ FILE ===
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private string? GetFullImageUrl(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return null;
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private string GenerateFileName(int id, string ten)
+        {
+            string slug = SlugifyUtil.GenerateSlug(ten);
+            return $"{id}_{slug}.jpg";
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private void DeleteOldImage(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath)) return;
+            var fileName = relativePath.TrimStart('/');
+            var fullPath = Path.Combine(_env.WebRootPath, fileName.Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private void RenameImage(string oldRelativePath, string newRelativePath)
+        {
+            if (string.IsNullOrEmpty(oldRelativePath) || string.IsNullOrEmpty(newRelativePath) || oldRelativePath == newRelativePath)
+                return;
+            var oldFullPath = Path.Combine(_env.WebRootPath, oldRelativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            var newFullPath = Path.Combine(_env.WebRootPath, newRelativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(oldFullPath))
+            {
+                System.IO.File.Move(oldFullPath, newFullPath);
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private async Task<string> SaveImageFromFile(IFormFile file, string fileName, string relativeDir)
+        {
+            var saveDir = Path.Combine(_env.WebRootPath, relativeDir);
+            if (!Directory.Exists(saveDir))
+            {
+                Directory.CreateDirectory(saveDir);
+            }
+            var fullSavePath = Path.Combine(saveDir, fileName);
+            await using (var stream = new FileStream(fullSavePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            return $"/{relativeDir.Replace(Path.DirectorySeparatorChar, '/')}/{fileName}";
+        }
+        // ===================================
+
         /// <summary>
-        /// API Lấy danh sách Khách hàng (có lọc/tìm kiếm)
+        /// API Lấy danh sách Khách hàng
         /// </summary>
         [HttpGet("search")]
         public async Task<IActionResult> SearchKhachHang(
@@ -61,7 +136,7 @@ namespace CafebookApi.Controllers.App
         }
 
         /// <summary>
-        /// API Lấy chi tiết và lịch sử
+        /// SỬA: API Lấy chi tiết và lịch sử
         /// </summary>
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetKhachHangDetails(int id)
@@ -79,7 +154,7 @@ namespace CafebookApi.Controllers.App
                 DiemTichLuy = kh.DiemTichLuy,
                 TenDangNhap = kh.TenDangNhap,
                 BiKhoa = kh.BiKhoa,
-                AnhDaiDienBase64 = kh.AnhDaiDien,
+                AnhDaiDienUrl = GetFullImageUrl(kh.AnhDaiDien), // <-- SỬA
 
                 LichSuDonHang = await _context.HoaDons
                     .Where(h => h.IdKhachHang == id)
@@ -95,7 +170,7 @@ namespace CafebookApi.Controllers.App
                 LichSuThueSach = await _context.PhieuThueSachs
                     .Where(p => p.IdKhachHang == id)
                     .Include(p => p.ChiTietPhieuThues)
-                        .ThenInclude(ct => ct.Sach) // Lấy Tên Sách
+                        .ThenInclude(ct => ct.Sach)
                     .OrderByDescending(p => p.NgayThue)
                     .SelectMany(p => p.ChiTietPhieuThues.Select(ct => new LichSuThueSachDto
                     {
@@ -104,29 +179,26 @@ namespace CafebookApi.Controllers.App
                         NgayThue = p.NgayThue,
                         TrangThai = p.TrangThai
                     }))
-                    .Take(20) // Lấy 20 lượt thuê gần nhất
+                    .Take(20)
                     .ToListAsync()
             };
             return Ok(dto);
         }
 
         /// <summary>
-        /// API Thêm khách hàng mới
+        /// SỬA: API Thêm khách hàng mới
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> CreateKhachHang([FromBody] KhachHangUpdateRequestDto dto)
+        public async Task<IActionResult> CreateKhachHang([FromForm] KhachHangUpdateRequestDto dto) // <-- SỬA [FromForm]
         {
             if (string.IsNullOrEmpty(dto.HoTen) || string.IsNullOrEmpty(dto.SoDienThoai))
             {
                 return BadRequest("Họ tên và SĐT là bắt buộc.");
             }
-
-            // Kiểm tra trùng SĐT
             if (await _context.KhachHangs.AnyAsync(kh => kh.SoDienThoai == dto.SoDienThoai))
             {
                 return Conflict("Số điện thoại này đã tồn tại.");
             }
-            // Kiểm tra trùng Email (nếu có)
             if (!string.IsNullOrEmpty(dto.Email) && await _context.KhachHangs.AnyAsync(kh => kh.Email == dto.Email))
             {
                 return Conflict("Email này đã tồn tại.");
@@ -142,18 +214,37 @@ namespace CafebookApi.Controllers.App
                 DiemTichLuy = 0,
                 NgayTao = DateTime.Now,
                 BiKhoa = false,
-                AnhDaiDien = dto.AnhDaiDienBase64
+                AnhDaiDien = null // SỬA: Tạm thời null
             };
             _context.KhachHangs.Add(khachHang);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Lưu lần 1 để lấy ID
+
+            // SỬA: Thêm logic lưu file
+            if (dto.AnhDaiDienUpload != null)
+            {
+                try
+                {
+                    string fileName = GenerateFileName(khachHang.IdKhachHang, khachHang.HoTen);
+                    string relativePath = await SaveImageFromFile(dto.AnhDaiDienUpload, fileName, HinhAnhPaths.UrlAvatarKH.TrimStart('/'));
+                    khachHang.AnhDaiDien = relativePath;
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _context.KhachHangs.Remove(khachHang);
+                    await _context.SaveChangesAsync();
+                    return StatusCode(500, $"Lỗi khi lưu ảnh: {ex.Message}");
+                }
+            }
+
             return Ok(khachHang);
         }
 
         /// <summary>
-        /// API Cập nhật khách hàng
+        /// SỬA: API Cập nhật khách hàng
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateKhachHang(int id, [FromBody] KhachHangUpdateRequestDto dto)
+        public async Task<IActionResult> UpdateKhachHang(int id, [FromForm] KhachHangUpdateRequestDto dto) // <-- SỬA [FromForm]
         {
             var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null) return NotFound();
@@ -167,39 +258,68 @@ namespace CafebookApi.Controllers.App
                 return Conflict("Email này đã tồn tại.");
             }
 
+            // SỬA: Logic xử lý file
+            var oldImagePath = kh.AnhDaiDien;
+            var oldTen = kh.HoTen;
+            bool isImageUpload = dto.AnhDaiDienUpload != null;
+            bool isNameChange = dto.HoTen != oldTen;
+
+            // Cập nhật text
             kh.HoTen = dto.HoTen;
             kh.SoDienThoai = dto.SoDienThoai;
             kh.Email = dto.Email;
             kh.DiaChi = dto.DiaChi;
             kh.TenDangNhap = dto.TenDangNhap;
             kh.DiemTichLuy = dto.DiemTichLuy;
-            if (dto.AnhDaiDienBase64 != null) // Nếu "" là xóa ảnh, nếu khác là cập nhật
+
+            // Xử lý file
+            string newFileName = GenerateFileName(kh.IdKhachHang, kh.HoTen);
+            string newRelativePath = $"/{HinhAnhPaths.UrlAvatarKH.TrimStart('/')}/{newFileName}";
+
+            if (isImageUpload)
             {
-                kh.AnhDaiDien = string.IsNullOrEmpty(dto.AnhDaiDienBase64) ? null : dto.AnhDaiDienBase64;
+                DeleteOldImage(oldImagePath);
+                // === SỬA LỖI CS8604 (Dòng 282) ===
+                // Thêm '!' vì logic 'isImageUpload' đã đảm bảo file không null
+                kh.AnhDaiDien = await SaveImageFromFile(dto.AnhDaiDienUpload!, newFileName, HinhAnhPaths.UrlAvatarKH.TrimStart('/'));
+            }
+            else if (dto.XoaAnhDaiDien)
+            {
+                DeleteOldImage(oldImagePath);
+                kh.AnhDaiDien = null;
+            }
+            else if (isNameChange && !string.IsNullOrEmpty(oldImagePath))
+            {
+                RenameImage(oldImagePath, newRelativePath);
+                kh.AnhDaiDien = newRelativePath;
             }
 
             await _context.SaveChangesAsync();
             return Ok();
         }
 
+        // Helper class cho API UpdateStatus
+        public class UpdateStatusRequest
+        {
+            public bool BiKhoa { get; set; }
+        }
+
         /// <summary>
-        /// API Khóa/Mở khóa tài khoản
+        /// SỬA: API Khóa/Mở khóa tài khoản
         /// </summary>
         [HttpPut("update-status/{id}")]
-        public async Task<IActionResult> UpdateKhachHangStatus(int id, [FromBody] bool biKhoa)
+        public async Task<IActionResult> UpdateKhachHangStatus(int id, [FromBody] UpdateStatusRequest request) // <-- SỬA: Nhận Object
         {
             var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null) return NotFound();
 
-            kh.BiKhoa = biKhoa;
-            // TODO: Ghi nhật ký hệ thống ở đây
-
+            kh.BiKhoa = request.BiKhoa; // <-- SỬA: Lấy từ object
             await _context.SaveChangesAsync();
             return Ok();
         }
 
         /// <summary>
-        /// API Xóa khách hàng
+        /// SỬA: API Xóa khách hàng
         /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteKhachHang(int id)
@@ -216,6 +336,9 @@ namespace CafebookApi.Controllers.App
 
             var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null) return NotFound();
+
+            // SỬA: Thêm xóa file
+            DeleteOldImage(kh.AnhDaiDien);
 
             _context.KhachHangs.Remove(kh);
             await _context.SaveChangesAsync();

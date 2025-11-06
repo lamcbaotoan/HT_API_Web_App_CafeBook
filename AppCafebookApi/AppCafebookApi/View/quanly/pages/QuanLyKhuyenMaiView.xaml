@@ -22,14 +22,12 @@
         <SolidColorBrush x:Key="StatusGreenBrush" Color="#E8F5E9"/>
         <SolidColorBrush x:Key="StatusGrayBrush" Color="#F5F5F5"/>
         <SolidColorBrush x:Key="StatusRedBrush" Color="#FFEBEE"/>
-
         <Geometry x:Key="IconExcel">M21.17 3.25Q21.5 3.25 21.76 3.5 22 3.74 22 4.08V19.92Q22 20.26 21.76 20.5 21.5 20.75 21.17 20.75H7.83Q7.5 20.75 7.24 20.5 7 20.26 7 19.92V4.08Q7 3.74 7.24 3.5 7.5 3.25 7.83 3.25H21.17M13.83 18.25V15.7H11.5V14.05L13.72 10.63H11.6V9H16.33V10.65L14.12 14.07H16.25V15.7H13.83V18.25M6.25 15.5Q6.25 15.15 6.04 14.88 5.82 14.6 5.5 14.6H3.5Q3.18 14.6 2.96 14.88 2.75 15.15 2.75 15.5V17.5Q2.75 17.82 2.96 18.1 3.18 18.38 3.5 18.38H5.5Q5.82 18.38 6.04 18.1 6.25 17.82 6.25 17.5V15.5M6.25 9.5Q6.25 9.18 6.04 8.9 5.82 8.62 5.5 8.62H3.5Q3.18 8.62 2.96 8.9 2.75 9.18 2.75 9.5V11.5Q2.75 11.82 2.96 12.1 3.18 12.38 3.5 12.38H5.5Q5.82 12.38 6.04 12.1 6.25 11.82 6.25 11.5V9.5Z</Geometry>
         <Geometry x:Key="IconNew">M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z</Geometry>
         <Geometry x:Key="IconAdd">M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z</Geometry>
         <Geometry x:Key="IconSave">M17,3H5C3.89,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V7L17,3M15,9H5V5H15V9M12,19C10.34,19 9,17.66 9,16C9,14.34 10.34,13 12,13C13.66,13 15,14.34 15,16C15,17.66 13.66,19 12,19Z</Geometry>
         <Geometry x:Key="IconDelete">M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19C6,20.1 6.9,21 8,21H16C17.1,21 18,20.1 18,19V7H6V19Z</Geometry>
         <Geometry x:Key="IconFilter">M14,12V19.88C14.04,20.18 13.94,20.5 13.71,20.71C13.32,21.1 12.69,21.1 12.3,20.71L10.29,18.7C10.06,18.47 9.96,18.16 10,17.87V12H14M15,9H9V4H15V9Z</Geometry>
-
         <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -72,7 +70,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="MaterialInput" TargetType="Control">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Padding" Value="8,5"/>
@@ -89,8 +86,6 @@
         <Style TargetType="TextBox" BasedOn="{StaticResource MaterialInput}"/>
         <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialInput}"/>
         <Style TargetType="DatePicker" BasedOn="{StaticResource MaterialInput}"/>
-
-
         <Style x:Key="PromotionDataGridRowStyle" TargetType="DataGridRow">
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
@@ -166,6 +161,7 @@
                             <DataGridTextColumn Header="Tên chương trình" Binding="{Binding TenKhuyenMai}" Width="*"/>
                             <DataGridTextColumn Header="Giảm" Binding="{Binding GiaTriGiam}" Width="80"/>
                             <DataGridTextColumn Header="Tối đa" Binding="{Binding GiamToiDa, StringFormat=N0}" Width="80"/>
+                            <DataGridTextColumn Header="SL Còn" Binding="{Binding SoLuongConLai}" Width="80"/>
                             <DataGridTextColumn Header="Bắt đầu" Binding="{Binding NgayBatDau, StringFormat='dd/MM/yy'}" Width="80"/>
                             <DataGridTextColumn Header="Kết thúc" Binding="{Binding NgayKetThuc, StringFormat='dd/MM/yy'}" Width="80"/>
                             <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="100"/>
@@ -190,7 +186,6 @@
                             </StackPanel>
                         </Button>
                     </StackPanel>
-
                 </Grid>
             </Border>
 
@@ -204,7 +199,7 @@
 
                         <TextBlock Text="Tên chương trình:" Margin="0,0,0,5"/>
                         <TextBox x:Name="txtTenKM" Margin="0,0,0,10"/>
-                        <TextBlock Text="Mô tả:" Margin="0,0,0,5"/>
+                        <TextBlock Text="Mô tả (Ghi chú nội bộ):" Margin="0,0,0,5"/>
                         <TextBox x:Name="txtMoTa" Height="40" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10"/>
 
                         <Grid>
@@ -215,8 +210,8 @@
                             <StackPanel Grid.Column="0" Margin="0,0,5,0">
                                 <TextBlock Text="Loại giảm giá:" Margin="0,0,0,5"/>
                                 <ComboBox x:Name="cmbLoaiGiamGia">
-                                    <ComboBoxItem Content="PhanTram" Tag="PhanTram"/>
-                                    <ComboBoxItem Content="SoTien" Tag="SoTien"/>
+                                    <ComboBoxItem Content="Phần Trăm" Tag="PhanTram"/>
+                                    <ComboBoxItem Content="Số Tiền" Tag="SoTien"/>
                                 </ComboBox>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="5,0,0,0">
@@ -242,11 +237,14 @@
                                 <TextBox x:Name="txtDonHangToiThieu"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                <TextBlock Text="Sản phẩm áp dụng:" Margin="0,0,0,5"/>
-                                <ComboBox x:Name="cmbSanPhamApDung" DisplayMemberPath="Ten" SelectedValuePath="Id"
-                                          IsEditable="True" IsTextSearchEnabled="True"/>
+                                <TextBlock Text="Số lượng còn lại:" Margin="0,0,0,5"/>
+                                <TextBox x:Name="txtSoLuongConLai" ToolTip="Để 0 hoặc trống nếu không giới hạn"/>
                             </StackPanel>
                         </Grid>
+
+                        <TextBlock Text="Sản phẩm áp dụng:" Margin="0,10,0,5"/>
+                        <ComboBox x:Name="cmbSanPhamApDung" DisplayMemberPath="Ten" SelectedValuePath="Id"
+                                  IsEditable="True" IsTextSearchEnabled="True" Margin="0,0,0,10"/>
 
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>

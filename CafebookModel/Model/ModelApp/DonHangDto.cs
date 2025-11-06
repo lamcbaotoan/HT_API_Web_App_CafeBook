@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CafebookModel.Model.ModelApp.NhanVien;
+using System;
 using System.Collections.Generic;
 
 namespace CafebookModel.Model.ModelApp
@@ -27,6 +28,17 @@ namespace CafebookModel.Model.ModelApp
         public int SoLuong { get; set; }
         public decimal ThanhTien { get; set; }
     }
+
+    // ### THÊM DTO MỚI NÀY VÀO CUỐI FILE ###
+    /// <summary>
+    /// DTO mới: Chứa cả Món ăn và Phụ thu cho bảng chi tiết
+    /// </summary>
+    public class DonHangFullDetailsDto
+    {
+        public List<DonHangChiTietDto> Items { get; set; } = new();
+        public List<PhuThuDto> Surcharges { get; set; } = new();
+    }
+    // ### KẾT THÚC THÊM MỚI ###
 
     /// <summary>
     /// DTO để lấy dữ liệu cho các ComboBox lọc

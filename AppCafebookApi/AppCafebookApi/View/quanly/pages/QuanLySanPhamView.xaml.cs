@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Tập tin: AppCafebookApi/View/quanly/pages/QuanLySanPhamView.xaml.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -10,13 +11,14 @@ using CafebookModel.Model.ModelApp;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Win32;
-using System.IO;
+using System.IO; // <-- Thêm
 using AppCafebookApi.Services;
 using CafebookModel.Utils;
 using AppCafebookApi.View.common;
 using System.Globalization;
-using OfficeOpenXml; // Cho Excel
-using CafebookModel.Model.Entities; // Cho logic lưu mới
+using OfficeOpenXml;
+using CafebookModel.Model.Entities;
+using System.Net.Http.Headers; // <-- Thêm
 
 namespace AppCafebookApi.View.quanly.pages
 {
@@ -24,10 +26,14 @@ namespace AppCafebookApi.View.quanly.pages
     {
         private static readonly HttpClient httpClient;
         private List<SanPhamDto> _allSanPhamList = new List<SanPhamDto>();
-        private SanPhamUpdateRequestDto? _selectedSanPhamDetails = null;
-        private string? _currentAnhBiaBase64 = null;
 
-        // Cache
+        private SanPhamDetailDto? _selectedSanPhamDetails = null;
+
+        // SỬA: Đã xóa Base64, dùng 2 biến này để quản lý file upload
+        private string? _currentAnhBiaFilePath = null; // Lưu đường dẫn file cục bộ
+        private bool _deleteImageRequest = false;     // Đánh dấu yêu cầu xóa ảnh
+
+        // Cache (Giữ nguyên)
         private List<FilterLookupDto> _danhMucList = new List<FilterLookupDto>();
         private List<FilterLookupDto> _nguyenLieuList = new List<FilterLookupDto>();
         private List<DonViChuyenDoiDto> _donViTinhList = new List<DonViChuyenDoiDto>();
@@ -36,7 +42,7 @@ namespace AppCafebookApi.View.quanly.pages
         {
             httpClient = new HttpClient
             {
-                BaseAddress = new Uri("http://localhost:5166")
+                BaseAddress = new Uri("http://127.0.0.1:5166")
             };
         }
 
@@ -56,6 +62,7 @@ namespace AppCafebookApi.View.quanly.pages
 
         #region 1. Tải Dữ Liệu (Sản Phẩm, Lọc, Định Lượng)
 
+        // (Hàm LoadFiltersAsync giữ nguyên)
         private async Task LoadFiltersAsync()
         {
             try
@@ -66,23 +73,15 @@ namespace AppCafebookApi.View.quanly.pages
                     _danhMucList = filters.DanhMucs;
                     _nguyenLieuList = filters.NguyenLieus;
                     _donViTinhList = filters.DonViTinhs;
-
-                    // Tab 1: Lọc
                     var filterDanhMuc = new List<FilterLookupDto>(_danhMucList);
                     filterDanhMuc.Insert(0, new FilterLookupDto { Id = 0, Ten = "Tất cả Danh mục" });
                     cmbFilterDanhMuc.ItemsSource = filterDanhMuc;
                     if (cmbFilterDanhMuc.SelectedValue == null) cmbFilterDanhMuc.SelectedValue = 0;
                     if (cmbFilterTrangThai.SelectedValue == null) cmbFilterTrangThai.SelectedIndex = 0;
-
-                    // Tab 2: Quản lý Danh mục
                     lbDanhMuc.ItemsSource = _danhMucList;
-
-                    // Tab 3: Định lượng
                     var nlList = new List<FilterLookupDto>(_nguyenLieuList);
                     nlList.Insert(0, new FilterLookupDto { Id = 0, Ten = "-- Chọn Nguyên Liệu --" });
                     cmbNguyenLieu.ItemsSource = nlList;
-
-                    // Form: ComboBox Danh Mục (Smart)
                     var formDanhMuc = new List<FilterLookupDto>(_danhMucList);
                     formDanhMuc.Insert(0, new FilterLookupDto { Id = 0, Ten = "-- Chọn Danh mục --" });
                     cmbDanhMuc.ItemsSource = formDanhMuc;
@@ -94,6 +93,7 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
+        // (Hàm LoadDataGridAsync giữ nguyên)
         private async Task LoadDataGridAsync()
         {
             LoadingOverlay.Visibility = Visibility.Visible;
@@ -120,6 +120,7 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
+        // (Hàm LoadDinhLuongGridAsync giữ nguyên)
         private async Task LoadDinhLuongGridAsync(int idSanPham)
         {
             if (idSanPham == 0)
@@ -149,7 +150,11 @@ namespace AppCafebookApi.View.quanly.pages
         private void ResetForm()
         {
             _selectedSanPhamDetails = null;
-            _currentAnhBiaBase64 = null;
+
+            // SỬA: Đặt lại 2 biến quản lý file
+            _currentAnhBiaFilePath = null;
+            _deleteImageRequest = false;
+
             dgSanPham.SelectedItem = null;
             formChiTietSP.IsEnabled = true;
             panelActions.Visibility = Visibility.Visible;
@@ -162,7 +167,10 @@ namespace AppCafebookApi.View.quanly.pages
             cmbDanhMuc.Text = string.Empty;
             cmbNhomIn.SelectedIndex = 0; // "Bar"
             cmbTrangThai.SelectedIndex = 0; // "Đang bán"
-            AnhSanPhamPreview.Source = HinhAnhHelper.LoadImageFromBase64(null, HinhAnhPaths.DefaultFoodIcon);
+
+            // SỬA: Dùng HinhAnhHelper.LoadImage (với nguồn null)
+            AnhSanPhamPreview.Source = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultFoodIcon);
+
             panelDinhLuong.Visibility = Visibility.Collapsed;
             lblDinhLuongInfo.Visibility = Visibility.Visible;
             dgDinhLuong.ItemsSource = null;
@@ -178,13 +186,18 @@ namespace AppCafebookApi.View.quanly.pages
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
-                _selectedSanPhamDetails = await httpClient.GetFromJsonAsync<SanPhamUpdateRequestDto>($"api/app/sanpham/details/{selected.IdSanPham}");
+                _selectedSanPhamDetails = await httpClient.GetFromJsonAsync<SanPhamDetailDto>($"api/app/sanpham/details/{selected.IdSanPham}");
+
                 if (_selectedSanPhamDetails == null)
                 {
                     ResetForm();
                     return;
                 }
-                _currentAnhBiaBase64 = _selectedSanPhamDetails.HinhAnhBase64;
+
+                // SỬA: Đặt lại 2 biến quản lý file
+                _currentAnhBiaFilePath = null;
+                _deleteImageRequest = false;
+
                 formChiTietSP.IsEnabled = true;
                 panelActions.Visibility = Visibility.Visible;
                 btnXoa.Visibility = Visibility.Visible;
@@ -195,7 +208,9 @@ namespace AppCafebookApi.View.quanly.pages
                 cmbDanhMuc.SelectedValue = _selectedSanPhamDetails.IdDanhMuc ?? 0;
                 cmbNhomIn.Text = _selectedSanPhamDetails.NhomIn;
                 cmbTrangThai.SelectedIndex = _selectedSanPhamDetails.TrangThaiKinhDoanh ? 0 : 1;
-                AnhSanPhamPreview.Source = HinhAnhHelper.LoadImageFromBase64(_currentAnhBiaBase64, HinhAnhPaths.DefaultFoodIcon);
+
+                // SỬA: Dùng HinhAnhHelper.LoadImage với URL
+                AnhSanPhamPreview.Source = HinhAnhHelper.LoadImage(_selectedSanPhamDetails.HinhAnhUrl, HinhAnhPaths.DefaultFoodIcon);
                 await LoadDinhLuongGridAsync(_selectedSanPhamDetails.IdSanPham);
             }
             catch (Exception ex)
@@ -215,21 +230,34 @@ namespace AppCafebookApi.View.quanly.pages
             {
                 try
                 {
-                    byte[] imageBytes = File.ReadAllBytes(ofd.FileName);
-                    _currentAnhBiaBase64 = Convert.ToBase64String(imageBytes);
-                    AnhSanPhamPreview.Source = HinhAnhHelper.LoadImageFromBase64(_currentAnhBiaBase64, HinhAnhPaths.DefaultFoodIcon);
+                    // SỬA: Chỉ lưu đường dẫn file và đánh dấu
+                    _currentAnhBiaFilePath = ofd.FileName;
+                    _deleteImageRequest = false; // Đã chọn file mới, không xóa
+
+                    // SỬA: Dùng HinhAnhHelper.LoadImage (nó tự nhận diện đường dẫn file)
+                    AnhSanPhamPreview.Source = HinhAnhHelper.LoadImage(_currentAnhBiaFilePath, HinhAnhPaths.DefaultFoodIcon);
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Lỗi đọc file ảnh: {ex.Message}", "Lỗi File");
-                    _currentAnhBiaBase64 = null;
-                    AnhSanPhamPreview.Source = HinhAnhHelper.LoadImageFromBase64(null, HinhAnhPaths.DefaultFoodIcon);
+                    _currentAnhBiaFilePath = null;
+                    AnhSanPhamPreview.Source = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultFoodIcon);
                 }
             }
         }
 
+        // THÊM: Nút Xóa Ảnh
+        private void BtnXoaAnh_Click(object sender, RoutedEventArgs e)
+        {
+            _currentAnhBiaFilePath = null; // Xóa đường dẫn file
+            _deleteImageRequest = true;   // Đánh dấu yêu cầu xóa
+            AnhSanPhamPreview.Source = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultFoodIcon); // Hiển thị ảnh mặc định
+        }
+
+        // SỬA: VIẾT LẠI HOÀN TOÀN HÀM LƯU
         private async void BtnLuu_Click(object sender, RoutedEventArgs e)
         {
+            // (Phần validation giữ nguyên)
             if (string.IsNullOrWhiteSpace(txtTenSanPham.Text))
             {
                 MessageBox.Show("Tên sản phẩm không được để trống.", "Lỗi"); return;
@@ -253,28 +281,55 @@ namespace AppCafebookApi.View.quanly.pages
                     return;
                 }
 
-                var dto = new SanPhamUpdateRequestDto
+                // SỬA: Dùng MultipartFormDataContent thay vì DTO
+                using var form = new MultipartFormDataContent();
+
+                // 1. Thêm các trường dữ liệu (giống tên thuộc tính DTO)
+                form.Add(new StringContent(txtTenSanPham.Text), "TenSanPham");
+                if (danhMucId.HasValue)
+                    form.Add(new StringContent(danhMucId.Value.ToString()), "IdDanhMuc");
+                form.Add(new StringContent(donGia.ToString()), "GiaBan");
+                form.Add(new StringContent(txtMoTa.Text ?? ""), "MoTa");
+                form.Add(new StringContent((cmbTrangThai.SelectedIndex == 0).ToString()), "TrangThaiKinhDoanh");
+                form.Add(new StringContent(cmbNhomIn.Text ?? ""), "NhomIn");
+
+                bool isCreating = (_selectedSanPhamDetails == null);
+
+                // 2. Thêm file (nếu có)
+                if (!string.IsNullOrEmpty(_currentAnhBiaFilePath))
                 {
-                    TenSanPham = txtTenSanPham.Text,
-                    IdDanhMuc = danhMucId,
-                    GiaBan = donGia,
-                    MoTa = txtMoTa.Text,
-                    // SỬA LỖI NullReferenceException
-                    TrangThaiKinhDoanh = (cmbTrangThai.SelectedIndex == 0), // 0 = Đang bán, 1 = Tạm ngưng
-                    NhomIn = cmbNhomIn.Text,
-                    HinhAnhBase64 = _currentAnhBiaBase64
-                };
+                    var fileStream = File.OpenRead(_currentAnhBiaFilePath);
+                    var streamContent = new StreamContent(fileStream);
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg"); // Hoặc "image/png"
+                    form.Add(streamContent, "HinhAnhUpload", Path.GetFileName(_currentAnhBiaFilePath));
+                }
+
+                // 3. Thêm cờ Xóa ảnh (nếu có)
+                if (_deleteImageRequest)
+                {
+                    form.Add(new StringContent("true"), "XoaHinhAnh");
+                }
+
+                // Gán Id nếu là Update
+                if (!isCreating)
+                {
+                    // === SỬA LỖI CS8602 (Dòng 316) ===
+                    // Thêm '!' vì logic !isCreating đảm bảo _selectedSanPhamDetails không null
+                    form.Add(new StringContent(_selectedSanPhamDetails!.IdSanPham.ToString()), "IdSanPham");
+                }
+
 
                 HttpResponseMessage response;
-                bool isCreating = (_selectedSanPhamDetails == null);
+
                 if (isCreating)
                 {
-                    response = await httpClient.PostAsJsonAsync("api/app/sanpham", dto);
+                    response = await httpClient.PostAsync("api/app/sanpham", form);
                 }
                 else
                 {
-                    dto.IdSanPham = _selectedSanPhamDetails.IdSanPham;
-                    response = await httpClient.PutAsJsonAsync($"api/app/sanpham/{dto.IdSanPham}", dto);
+                    // === SỬA LỖI CS8602 (Dòng 328) ===
+                    // Thêm '!' (lý do tương tự)
+                    response = await httpClient.PutAsync($"api/app/sanpham/{_selectedSanPhamDetails!.IdSanPham}", form);
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -282,22 +337,27 @@ namespace AppCafebookApi.View.quanly.pages
                     await LoadDataGridAsync();
                     await LoadFiltersAsync();
 
-                    if (isCreating) // THÊM MỚI (Yêu cầu 1)
+                    if (isCreating)
                     {
-                        var newSanPham = await response.Content.ReadFromJsonAsync<SanPham>();
+                        var newSanPham = await response.Content.ReadFromJsonAsync<SanPhamDetailDto>();
+
+                        // === SỬA LỖI CS8602 (Dòng 339) ===
+                        // Thêm kiểm tra null sau khi deserialize
+                        if (newSanPham == null)
+                        {
+                            MessageBox.Show("Lỗi: API đã tạo thành công nhưng không trả về dữ liệu.", "Lỗi Phản Hồi API");
+                            return; // Thoát sớm
+                        }
+
                         MessageBox.Show($"Sản phẩm '{newSanPham.TenSanPham}' đã được tạo.\n\nVUI LÒNG THÊM ĐỊNH LƯỢNG NGUYÊN LIỆU.", "Thêm Định Lượng");
 
                         var newItemInGrid = _allSanPhamList.FirstOrDefault(s => s.IdSanPham == newSanPham.IdSanPham);
-                        dgSanPham.SelectedItem = newItemInGrid; // Tự động chọn
-
-                        // DgSanPham_SelectionChanged sẽ tự động được gọi, tải chi tiết và định lượng
-
-                        MainTabControl.SelectedIndex = 2; // Chuyển sang Tab 3 (Định lượng)
+                        dgSanPham.SelectedItem = newItemInGrid;
+                        MainTabControl.SelectedIndex = 2;
                     }
                     else // CẬP NHẬT
                     {
                         MessageBox.Show("Lưu thành công!", "Thông báo");
-                        ResetForm();
                     }
                 }
                 else
@@ -312,16 +372,17 @@ namespace AppCafebookApi.View.quanly.pages
             finally
             {
                 LoadingOverlay.Visibility = Visibility.Collapsed;
+                // SỬA: Đặt lại 2 biến quản lý file
+                _currentAnhBiaFilePath = null;
+                _deleteImageRequest = false;
             }
         }
 
         private async void BtnXoa_Click(object sender, RoutedEventArgs e)
         {
-            // (Giữ nguyên)
             if (_selectedSanPhamDetails == null) return;
             var result = MessageBox.Show($"Bạn có chắc chắn muốn xóa '{_selectedSanPhamDetails.TenSanPham}'?", "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.No) return;
-
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
@@ -351,11 +412,12 @@ namespace AppCafebookApi.View.quanly.pages
         {
             ResetForm();
         }
-
+        // ... (BtnXoa_Click, BtnLamMoiForm giữ nguyên) ...
         #endregion
 
+        // ... (Toàn bộ các Region 3, 4, 5, 6 giữ nguyên) ...
+        // (Các hàm Tab Danh Mục và Tab Định Lượng giữ nguyên)
         #region 3. Lọc / Tìm kiếm / Excel
-
         private async void Filter_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (cmbFilterDanhMuc.IsLoaded && cmbFilterTrangThai.IsLoaded)
@@ -363,12 +425,10 @@ namespace AppCafebookApi.View.quanly.pages
                 await LoadDataGridAsync();
             }
         }
-
         private async void TxtSearchSanPham_TextChanged(object sender, TextChangedEventArgs e)
         {
             await LoadDataGridAsync();
         }
-
         private async void BtnClearFilter_Click(object sender, RoutedEventArgs e)
         {
             txtSearchSanPham.Text = "";
@@ -376,10 +436,8 @@ namespace AppCafebookApi.View.quanly.pages
             cmbFilterTrangThai.SelectedIndex = 0;
             await LoadDataGridAsync();
         }
-
         private void BtnExportToExcel_Click(object sender, RoutedEventArgs e)
         {
-            // (Giữ nguyên)
             var sfd = new SaveFileDialog { Filter = "Excel Files (*.xlsx)|*.xlsx", FileName = $"DSSP_{DateTime.Now:yyyyMMdd_HHmm}.xlsx" };
             if (sfd.ShowDialog() == true)
             {
@@ -406,17 +464,13 @@ namespace AppCafebookApi.View.quanly.pages
                 }
             }
         }
-
         #endregion
-
         #region 4. Tab Quản lý Danh mục (CRUD Danh Mục)
-
         private void ResetDanhMucForm()
         {
             txtTenDanhMuc.Text = "";
             lbDanhMuc.SelectedItem = null;
         }
-
         private void LbDanhMuc_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (lbDanhMuc.SelectedItem is FilterLookupDto selected)
@@ -424,12 +478,10 @@ namespace AppCafebookApi.View.quanly.pages
                 txtTenDanhMuc.Text = selected.Ten;
             }
         }
-
         private async void BtnThemDanhMuc_Click(object sender, RoutedEventArgs e)
         {
             await CrudLookupAsync("api/app/sanpham/danhmuc", null, txtTenDanhMuc.Text, false, true);
         }
-
         private async void BtnLuuDanhMuc_Click(object sender, RoutedEventArgs e)
         {
             if (lbDanhMuc.SelectedItem is FilterLookupDto selected)
@@ -437,7 +489,6 @@ namespace AppCafebookApi.View.quanly.pages
                 await CrudLookupAsync($"api/app/sanpham/danhmuc/{selected.Id}", selected.Id, txtTenDanhMuc.Text, false, true);
             }
         }
-
         private async void BtnXoaDanhMuc_Click(object sender, RoutedEventArgs e)
         {
             if (lbDanhMuc.SelectedItem is FilterLookupDto selected)
@@ -445,28 +496,21 @@ namespace AppCafebookApi.View.quanly.pages
                 await CrudLookupAsync($"api/app/sanpham/danhmuc/{selected.Id}", selected.Id, null, true, true);
             }
         }
-
         #endregion
-
         #region 5. Tab Định Lượng
-
         private void ResetDinhLuongForm()
         {
             cmbNguyenLieu.SelectedValue = 0;
             txtSoLuongNL.Text = "0";
             cmbDonViTinhNL.ItemsSource = null;
         }
-
-        // SỰ KIỆN MỚI: Lọc ĐVT theo Nguyên liệu
         private void CmbNguyenLieu_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             int selectedNLId = 0;
-
             if (cmbNguyenLieu.SelectedItem is FilterLookupDto selectedNL)
             {
                 selectedNLId = selectedNL.Id;
             }
-            // Xử lý khi người dùng gõ
             else if (!string.IsNullOrEmpty(cmbNguyenLieu.Text))
             {
                 var matchedNL = _nguyenLieuList.FirstOrDefault(nl => nl.Ten.Equals(cmbNguyenLieu.Text, StringComparison.OrdinalIgnoreCase));
@@ -475,15 +519,13 @@ namespace AppCafebookApi.View.quanly.pages
                     selectedNLId = matchedNL.Id;
                 }
             }
-
             if (selectedNLId > 0)
             {
-                // Lọc danh sách ĐVT cho nguyên liệu này
                 var dvtChoNL = _donViTinhList.Where(d => d.IdNguyenLieu == selectedNLId).ToList();
                 cmbDonViTinhNL.ItemsSource = dvtChoNL;
                 if (dvtChoNL.Any())
                 {
-                    cmbDonViTinhNL.SelectedIndex = 0; // Chọn cái đầu tiên
+                    cmbDonViTinhNL.SelectedIndex = 0;
                 }
             }
             else
@@ -491,18 +533,15 @@ namespace AppCafebookApi.View.quanly.pages
                 cmbDonViTinhNL.ItemsSource = null;
             }
         }
-
         private void DgDinhLuong_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dgDinhLuong.SelectedItem is DinhLuongDto selected)
             {
                 cmbNguyenLieu.SelectedValue = selected.IdNguyenLieu;
-                // CmbNguyenLieu_SelectionChanged sẽ tự động kích hoạt và lọc cmbDonViTinhNL
                 cmbDonViTinhNL.SelectedValue = selected.IdDonViSuDung;
                 txtSoLuongNL.Text = selected.SoLuong.ToString(CultureInfo.InvariantCulture);
             }
         }
-
         private async void BtnLuuDinhLuong_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedSanPhamDetails == null) return;
@@ -518,22 +557,20 @@ namespace AppCafebookApi.View.quanly.pages
             {
                 MessageBox.Show("Số lượng phải là số dương.", "Lỗi"); return;
             }
-
             var dto = new DinhLuongUpdateRequestDto
             {
                 IdSanPham = _selectedSanPhamDetails.IdSanPham,
                 IdNguyenLieu = (int)cmbNguyenLieu.SelectedValue,
-                IdDonViSuDung = (int)cmbDonViTinhNL.SelectedValue, // Lấy ĐVT
+                IdDonViSuDung = (int)cmbDonViTinhNL.SelectedValue,
                 SoLuong = soLuong
             };
-
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
                 var response = await httpClient.PostAsJsonAsync("api/app/sanpham/dinhluong", dto);
                 if (response.IsSuccessStatusCode)
                 {
-                    await LoadDinhLuongGridAsync(dto.IdSanPham); // Tải lại lưới
+                    await LoadDinhLuongGridAsync(dto.IdSanPham);
                     ResetDinhLuongForm();
                 }
                 else
@@ -550,7 +587,6 @@ namespace AppCafebookApi.View.quanly.pages
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
-
         private async void BtnXoaDinhLuong_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedSanPhamDetails == null) return;
@@ -558,10 +594,8 @@ namespace AppCafebookApi.View.quanly.pages
             {
                 MessageBox.Show("Vui lòng chọn một nguyên liệu từ danh sách để xóa.", "Lỗi"); return;
             }
-
             var result = MessageBox.Show($"Xóa '{selected.TenNguyenLieu}' khỏi công thức?", "Xác nhận", MessageBoxButton.YesNo);
             if (result == MessageBoxResult.No) return;
-
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
@@ -585,25 +619,20 @@ namespace AppCafebookApi.View.quanly.pages
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
-
         #endregion
-
         #region 6. Helper Functions (Smart ComboBox, CRUD)
-
         private async Task<int?> GetOrCreateLookupIdAsync(string tenDaNhap, List<FilterLookupDto> list, string apiEndpoint, bool isDanhMuc = false)
         {
             if (string.IsNullOrWhiteSpace(tenDaNhap) || tenDaNhap.StartsWith("--"))
             {
-                if (isDanhMuc) return null; // Danh mục là bắt buộc
+                if (isDanhMuc) return null;
                 return null;
             }
-
             var item = list.FirstOrDefault(x => x.Ten.Equals(tenDaNhap, StringComparison.OrdinalIgnoreCase));
             if (item != null)
             {
                 return item.Id;
             }
-
             try
             {
                 var response = await httpClient.PostAsJsonAsync(apiEndpoint, new FilterLookupDto { Ten = tenDaNhap });
@@ -629,7 +658,6 @@ namespace AppCafebookApi.View.quanly.pages
                 return null;
             }
         }
-
         private async Task CrudLookupAsync(string endpoint, int? id, string? ten, bool isDelete = false, bool isDanhMuc = false)
         {
             LoadingOverlay.Visibility = Visibility.Visible;
@@ -680,7 +708,6 @@ namespace AppCafebookApi.View.quanly.pages
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
-
         #endregion
     }
 }

@@ -40,10 +40,10 @@ namespace CafebookApi.Controllers.App
             // Dùng CultureInfo.InvariantCulture để đảm bảo dấu chấm (.) là dấu thập phân
             var dto = new CaiDatNhanSuDto
             {
-                GioLamChuan = double.Parse(GetSetting(allSettings, "HR_GioLamChuan", "8"), CultureInfo.InvariantCulture),
-                HeSoOT = double.Parse(GetSetting(allSettings, "HR_HeSoOT", "1.5"), CultureInfo.InvariantCulture),
+                GioLamChuan = decimal.Parse(GetSetting(allSettings, "HR_GioLamChuan", "8"), CultureInfo.InvariantCulture),
+                HeSoOT = decimal.Parse(GetSetting(allSettings, "HR_HeSoOT", "1.5"), CultureInfo.InvariantCulture),
                 PhatDiTre_Phut = int.Parse(GetSetting(allSettings, "HR_PhatDiTre_Phut", "5")),
-                PhatDiTre_HeSo = double.Parse(GetSetting(allSettings, "HR_PhatDiTre_HeSo", "1.0"), CultureInfo.InvariantCulture),
+                PhatDiTre_HeSo = decimal.Parse(GetSetting(allSettings, "HR_PhatDiTre_HeSo", "1.0"), CultureInfo.InvariantCulture),
                 ChuyenCan_SoNgay = int.Parse(GetSetting(allSettings, "HR_ChuyenCan_SoNgay", "26")),
                 ChuyenCan_TienThuong = decimal.Parse(GetSetting(allSettings, "HR_ChuyenCan_TienThuong", "0"), CultureInfo.InvariantCulture),
                 PhepNam_MacDinh = int.Parse(GetSetting(allSettings, "HR_PhepNam_MacDinh", "12"))

@@ -1,0 +1,244 @@
+﻿<Window x:Class="AppCafebookApi.View.Common.PhieuLuongPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chi tiết Phiếu Lương" Height="700" Width="500"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        WindowStyle="ToolWindow" FontFamily="Segoe UI" FontSize="14"
+        Background="White"
+        Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
+        <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#66BB6A"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="#EF5350"/>
+        <SolidColorBrush x:Key="BorderGrayBrush" Color="#BDBDBD"/>
+        <SolidColorBrush x:Key="ActionBlueBrush" Color="#42A5F5"/>
+        <SolidColorBrush x:Key="ActionOrangeBrush" Color="#FFA726"/>
+        <SolidColorBrush x:Key="SubtleGrayBrush" Color="#F5F5F5"/>
+        <SolidColorBrush x:Key="PrimaryBrown" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="AccentOrange" Color="#D27D2D"/>
+        <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
+        <SolidColorBrush x:Key="WhiteText" Color="#FFFFFF"/>
+
+        <Geometry x:Key="IconConfirm">M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z</Geometry>
+        <Geometry x:Key="IconPrint">M19,8H5C3.34,8 2,9.34 2,11V17H6V21H18V17H22V11C22,9.34 20.66,8 19,8M16,19H8V14H16V19M19,12C18.45,12 18,11.55 18,11C18,10.45 18.45,10 19,10C19.55,10 20,10.45 20,11C20,11.55 19.55,12 19,12M18,3H6V7H18V3Z</Geometry>
+        <Geometry x:Key="IconClose">M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z</Geometry>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrown}"/>
+            <Setter Property="Foreground" Value="{StaticResource WhiteText}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                CornerRadius="21"
+                                Background="{TemplateBinding Background}">
+                            <Border.Effect>
+                                <DropShadowEffect ShadowDepth="2" Color="#6F4E37" Opacity="0.3" BlurRadius="10"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentOrange}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BorderGrayBrush}"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrownBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                CornerRadius="21"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SubtleGrayBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+
+            <Border x:Name="printArea" Background="White" Margin="20" Padding="25" BorderBrush="LightGray" BorderThickness="1">
+
+                <StackPanel>
+
+                    <StackPanel x:Name="headerPanel">
+                        <TextBlock Text="{Binding TenQuan}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource DarkBrownBrush}"/>
+                        <TextBlock Text="{Binding DiaChi}" FontSize="11" Foreground="{StaticResource TextGrayBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding SoDienThoai, StringFormat='SĐT: {0}'}" FontSize="11" Foreground="{StaticResource TextGrayBrush}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="PHIẾU THANH TOÁN LƯƠNG" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,20,0,15" Foreground="{StaticResource PrimaryBrownBrush}"/>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Nhân viên:" FontWeight="SemiBold" Margin="0,2,10,2"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HoTenNhanVien}" TextAlignment="Right" FontWeight="SemiBold" FontSize="16"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Kỳ lương:" FontWeight="SemiBold" Margin="0,2,10,2"/>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding Thang}"/>
+                            <TextBlock Text="/"/>
+                            <TextBlock Text="{Binding Nam}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border BorderBrush="LightGray" BorderThickness="1" CornerRadius="3" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Lương cơ bản (giờ)" Margin="0,3"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LuongCoBan, StringFormat='{}{0:N0} đ/giờ'}" TextAlignment="Right" Margin="0,3" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tổng giờ làm" Margin="0,3"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TongGioLam, StringFormat='{}{0:F2} giờ'}" TextAlignment="Right" Margin="0,3" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Các khoản thưởng" Margin="0,3"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TienThuong, StringFormat='+ {0:N0} đ'}" Foreground="{StaticResource SuccessBrush}" TextAlignment="Right" Margin="0,3" FontWeight="SemiBold"/>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Các khoản phạt" Margin="0,3"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding KhauTru, StringFormat='- {0:N0} đ'}" Foreground="{StaticResource ErrorBrush}" TextAlignment="Right" Margin="0,3" FontWeight="SemiBold"/>
+                        </Grid>
+                    </Border>
+
+                    <Grid Margin="0,15,0,20">
+                        <TextBlock Text="THỰC LÃNH" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{StaticResource DarkBrownBrush}"/>
+                        <TextBlock Text="{Binding ThucLanh, StringFormat='{}{0:N0} đ'}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentOrange}" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <Border BorderBrush="LightGray" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,0,0,20">
+                        <Grid TextElement.FontSize="12" TextElement.Foreground="{StaticResource TextGrayBrush}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Trạng thái:" Margin="0,2,10,2"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TrangThai}" FontWeight="Bold" TextAlignment="Right">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TrangThai}" Value="Đã phát">
+                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TrangThai}" Value="Đã chốt">
+                                                <Setter Property="Foreground" Value="{StaticResource ActionOrangeBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Ngày phát:" Margin="0,2,10,2"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding NgayPhat, StringFormat='dd/MM/yyyy HH:mm'}" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Người phát:" Margin="0,2,10,2"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TenNguoiPhat}" TextAlignment="Right"/>
+                        </Grid>
+                    </Border>
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                            <TextBlock Text="Người phát" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                            <TextBlock Text="(Ký, ghi rõ họ tên)" HorizontalAlignment="Center" FontSize="11" FontStyle="Italic" Foreground="{StaticResource TextGrayBrush}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                            <TextBlock Text="Người nhận" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                            <TextBlock Text="(Ký, ghi rõ họ tên)" HorizontalAlignment="Center" FontSize="11" FontStyle="Italic" Foreground="{StaticResource TextGrayBrush}"/>
+                        </StackPanel>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Background="{StaticResource SubtleGrayBrush}" BorderBrush="LightGray" BorderThickness="0,1,0,0" Padding="15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="btnXacNhanPhat" Grid.Column="0" Style="{StaticResource PrimaryButton}" 
+                        Background="{StaticResource SuccessBrush}" Click="BtnXacNhanPhat_Click" 
+                        Width="Auto" Padding="15,0" Grid.ColumnSpan="2" Margin="0,5,72,5">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconConfirm}" Fill="White" Width="23" Height="23" Margin="0,0,8,0"/>
+                        <TextBlock Text="Xác nhận Phát Lương" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="btnPrint" Grid.Column="2" Style="{StaticResource SecondaryButton}" 
+                        Content="In Phiếu" Width="100" Margin="5" Click="BtnPrint_Click"/>
+
+                <Button x:Name="btnClose" Grid.Column="3" Style="{StaticResource SecondaryButton}" 
+                        Background="{StaticResource TextGrayBrush}" Foreground="White" BorderThickness="0"
+                        Content="Đóng" Width="100" Margin="5" Click="BtnClose_Click" IsCancel="True"/>
+            </Grid>
+        </Border>
+
+        <Border x:Name="LoadingOverlay" Grid.Row="0" Grid.RowSpan="2" Background="#80FFFFFF" Visibility="Collapsed" Panel.ZIndex="100">
+            <TextBlock Text="Đang xử lý..." HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" 
+Foreground="{StaticResource DarkBrownBrush}"/>
+        </Border>
+    </Grid>
+</Window>

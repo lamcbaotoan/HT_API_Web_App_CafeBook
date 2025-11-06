@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:AppCafebookApi.View.nhanvien.pages"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
       mc:Ignorable="d" 
       d:DesignHeight="700" d:DesignWidth="1100"
       Title="SoDoBanView" FontFamily="Segoe UI" Loaded="Page_Loaded">
@@ -28,12 +29,45 @@
         <SolidColorBrush x:Key="ActionGrayBrush" Color="#BDBDBD"/>
         <SolidColorBrush x:Key="StatusBlueBrush" Color="#42A5F5"/>
         <ExponentialEase x:Key="ExpoEaseOut" EasingMode="EaseOut"/>
-        <FontFamily x:Key="FontAwesomeSolid">/Fonts/Font Awesome 6 Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
+        <FontFamily x:Key="FontAwesomeSolid">/Assets/Fonts/Font Awesome 6 Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
+
+        <Style x:Key="KhuVucToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="20,14"/>
+            <Setter Property="Margin" Value="15,0,15,5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SubtleGrayBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryBrownBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="TableCardStyle" TargetType="Button">
             <Setter Property="Width" Value="150"/>
             <Setter Property="Height" Value="130"/>
             <Setter Property="Margin" Value="15"/>
-            <Setter Property="Background" Value="{StaticResource LightCreamBrush}"/>
+            <Setter Property="Background" Value="White"/>
             <Setter Property="BorderThickness" Value="0,5,0,0"/>
             <Setter Property="BorderBrush" Value="{StaticResource StatusGreenBrush}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -54,42 +88,6 @@
                             </Border.Effect>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5"/>
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <EventTrigger RoutedEvent="MouseEnter">
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.04" Duration="0:0:0.2"/>
-                                        <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.04" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
-                            <EventTrigger RoutedEvent="MouseLeave">
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.0" Duration="0:0:0.2"/>
-                                        <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.0" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleX" To="0.98" Duration="0:0:0.05"/>
-                                            <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleY" To="0.98" Duration="0:0:0.05"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.04" Duration="0:0:0.1"/>
-                                            <DoubleAnimation Storyboard.TargetName="cardBorder" Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.04" Duration="0:0:0.1"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -100,15 +98,16 @@
                 <DataTrigger Binding="{Binding TrangThai}" Value="Đã đặt">
                     <Setter Property="BorderBrush" Value="{StaticResource StatusYellowBrush}"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding TrangThai}" Value="Bảo trì">
+                    <Setter Property="BorderBrush" Value="{StaticResource TextGrayBrush}"/>
+                    <Setter Property="Opacity" Value="0.7"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <!-- STYLE MỚI CHO CÁC NÚT THAO TÁC -->
         <Style x:Key="ActionButtonStyle" TargetType="Button">
-            <!-- Tăng Padding theo chiều dọc (giá trị thứ 2) để nút cao hơn -->
             <Setter Property="Padding" Value="12,20"/>
             <Setter Property="Margin" Value="0,5"/>
-            <!-- Tăng nhẹ FontSize để chữ to và cân đối hơn -->
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -123,102 +122,119 @@
                                 BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
     </Page.Resources>
 
-    <!-- Áp dụng animation cho Grid gốc này -->
-    <Grid x:Name="MainPanel"  >
+    <Grid x:Name="MainPanel" Background="{StaticResource LightCreamBrush}">
         <Grid.RenderTransform>
             <TranslateTransform Y="20"/>
         </Grid.RenderTransform>
         <Grid.Triggers>
-            <EventTrigger RoutedEvent="Loaded">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5"/>
-                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0:0:0.5">
-                            <DoubleAnimation.EasingFunction>
-                                <BackEase EasingMode="EaseOut" Amplitude="0.2"/>
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
         </Grid.Triggers>
 
-        <!-- Toàn bộ nội dung gốc được giữ nguyên -->
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="320"/>
         </Grid.ColumnDefinitions>
 
-        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="{StaticResource LightCreamBrush}">
-            <ItemsControl x:Name="icBan" Margin="15">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Button Style="{StaticResource TableCardStyle}" Click="BtnBan_Click">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock FontSize="28" Margin="0,0,0,8" HorizontalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="&#xf00c;"/>
-                                            <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSolid}"/>
-                                            <Setter Property="Foreground" Value="{StaticResource StatusGreenBrush}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding TrangThai}" Value="Có khách">
-                                                    <Setter Property="Text" Value="&#xf0c0;"/>
-                                                    <Setter Property="Foreground" Value="{StaticResource StatusRedBrush}"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding TrangThai}" Value="Đã đặt">
-                                                    <Setter Property="Text" Value="&#xf017;"/>
-                                                    <Setter Property="Foreground" Value="{StaticResource StatusYellowBrush}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBlock Text="{Binding SoBan}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding TrangThai}" FontSize="13" Foreground="{StaticResource TextGrayBrush}" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding TongTienHienTai, StringFormat={}{0:N0} đ}" FontSize="13" Foreground="{StaticResource StatusRedBrush}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding TrangThai}" Value="Có khách">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </StackPanel>
-                        </Button>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+        <Border Grid.Column="0" Background="{StaticResource WhiteTextBrush}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,10">
+                    <TextBlock Text="Lọc Khu Vực" FontWeight="Bold" FontSize="16" Foreground="{StaticResource DarkBrownBrush}" Margin="20,10,0,10"/>
+                    <ToggleButton x:Name="btnKhuVucAll" Content="TẤT CẢ KHU VỰC" Style="{StaticResource KhuVucToggleStyle}" IsChecked="True" Click="BtnKhuVuc_Click"/>
+                    <Separator Margin="15,5,15,10"/>
+                    <ItemsControl x:Name="icKhuVuc">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Content="{Binding TenKhuVuc}" Style="{StaticResource KhuVucToggleStyle}" Click="BtnKhuVuc_Click" DataContext="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <WrapPanel Margin="15,15,15,0">
+                    <Button Style="{StaticResource TableCardStyle}" 
+                            BorderBrush="{StaticResource AccentOrangeBrush}"
+                            ToolTip="Tạo hóa đơn Tại Quầy / Mang Về"
+                            Click="BtnDonMoi_Click">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="&#xf54e;" FontFamily="{StaticResource FontAwesomeSolid}" FontSize="28" Margin="0,0,0,8" HorizontalAlignment="Center" Foreground="{StaticResource AccentOrangeBrush}"/>
+                            <TextBlock Text="Đơn Mới" FontSize="24" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Tại Quầy / Mang Về" FontSize="13" Foreground="{StaticResource TextGrayBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <ItemsControl x:Name="icBan" Margin="15,0,15,15">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource TableCardStyle}" Click="BtnBan_Click">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock FontSize="28" Margin="0,0,0,8" HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="&#xf00c;"/>
+                                                <Setter Property="FontFamily" Value="{StaticResource FontAwesomeSolid}"/>
+                                                <Setter Property="Foreground" Value="{StaticResource StatusGreenBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Có khách">
+                                                        <Setter Property="Text" Value="&#xf0c0;"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource StatusRedBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Đã đặt">
+                                                        <Setter Property="Text" Value="&#xf017;"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource StatusYellowBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Bảo trì">
+                                                        <Setter Property="Text" Value="&#xf0ad;"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource TextGrayBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding SoBan}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TrangThai}" FontSize="13" Foreground="{StaticResource TextGrayBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TongTienHienTai, StringFormat={}{0:N0} đ}" FontSize="13" Foreground="{StaticResource StatusRedBrush}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Có khách">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Column="1" Background="#FAFFFFFF" CornerRadius="10,0,0,10">
+        <Border Grid.Column="2" Background="{StaticResource WhiteTextBrush}">
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="2" Direction="270" Color="Black" Opacity="0.05" BlurRadius="20"/>
             </Border.Effect>
+
             <Grid x:Name="panelThaoTac" Margin="25">
+
                 <StackPanel x:Name="panelChuaChon" VerticalAlignment="Center" HorizontalAlignment="Center" Opacity="0.5">
                     <Path Data="{StaticResource IconSelectTable}" Fill="{StaticResource BorderGrayBrush}" Width="60" Height="60" Stretch="Uniform"/>
                     <TextBlock Text="Chọn một bàn để bắt đầu thao tác" FontSize="16" Foreground="{StaticResource TextGrayBrush}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,20,0,0"/>
@@ -231,7 +247,6 @@
                     <TextBlock FontSize="16" Margin="0,5,0,0" Foreground="{StaticResource TextGrayBrush}">Trạng thái: <Run x:Name="runTrangThai" FontWeight="SemiBold"/></TextBlock>
                     <TextBlock x:Name="tbGhiChu" FontStyle="Italic" Foreground="{StaticResource TextGrayBrush}" Margin="0,5,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
                     <TextBlock x:Name="tbTongTienWrapper" FontSize="16" Margin="0,10,0,0" Foreground="{StaticResource DarkBrownBrush}">Tổng tiền tạm tính: <Run x:Name="runTongTien" FontWeight="Bold" Foreground="{StaticResource StatusRedBrush}"/></TextBlock>
-
                     <StackPanel Margin="0,30,0,0">
                         <Button x:Name="btnGoiMon" Padding="20,18" FontSize="16" FontWeight="Bold" Background="{StaticResource PrimaryBrownBrush}" Foreground="White" Click="BtnGoiMon_Click" Cursor="Hand">
                             <Button.Resources>
@@ -250,13 +265,10 @@
                                 <TextBlock Grid.Column="1" Text="Gọi Món / Thanh Toán" VerticalAlignment="Center" Margin="0,1,0,0"/>
                             </Grid>
                         </Button>
-
-                        <!-- Áp dụng Style cho các nút -->
                         <Button x:Name="btnChuyenBan" Content="Chuyển Bàn" Style="{StaticResource ActionButtonStyle}" Click="BtnChuyenBan_Click" Background="#F5F5F5" BorderBrush="#E0E0E0" Foreground="{StaticResource DarkBrownBrush}"/>
                         <Button x:Name="btnGopBan" Content="Gộp Bàn" Style="{StaticResource ActionButtonStyle}" Click="BtnGopBan_Click" Background="#F5F5F5" BorderBrush="#E0E0E0" Foreground="{StaticResource DarkBrownBrush}"/>
-                        <Button x:Name="btnBaoCaoSuCo" Content="Báo cáo Sự cố" Style="{StaticResource ActionButtonStyle}" Background="{StaticResource StatusYellowBrush}" BorderBrush="{StaticResource StatusYellowBrush}" Foreground="White" Margin="0,20,0,0" Click="BtnBaoCaoSuCo_Click"/>
+                        <Button x:Name="btnBaoCaoSuCo" Content="Báo cáo Sự cố" Style="{StaticResource ActionButtonStyle}" Background="{StaticResource StatusYellowBrush}" BorderBrush="{StaticResource StatusYellowBrush}" Foreground="{StaticResource DarkBrownBrush}" Margin="0,20,0,0" Click="BtnBaoCaoSuCo_Click"/>
                     </StackPanel>
-
                     <Button x:Name="btnLamMoi" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,50,0,0" Click="BtnLamMoi_Click" Style="{StaticResource ActionButtonStyle}" Background="Transparent" BorderBrush="#E0E0E0" Foreground="{StaticResource TextGrayBrush}" FontWeight="Normal">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -269,6 +281,29 @@
                             <TextBlock Grid.Column="1" Text="Làm mới Sơ đồ" VerticalAlignment="Center" Margin="0,1,0,0"/>
                         </Grid>
                     </Button>
+                </StackPanel>
+
+                <StackPanel x:Name="panelChonBan" Visibility="Collapsed" VerticalAlignment="Center">
+                    <TextBlock x:Name="selectionText" 
+                               Text="Vui lòng chọn bàn..." 
+                               Foreground="{StaticResource DarkBrownBrush}" 
+                               FontSize="18" 
+                               FontWeight="Bold"
+                               TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBlock Text="Click vào bàn hợp lệ trên sơ đồ" 
+                               Foreground="{StaticResource TextGrayBrush}" 
+                               FontSize="14" 
+                               TextAlignment="Center" Margin="0,5,0,0"/>
+
+                    <Button Content="Hủy Thao Tác" 
+                            x:Name="btnCancelSelect" 
+                            Click="BtnCancelSelect_Click"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="{StaticResource StatusRedBrush}"
+                            BorderBrush="{StaticResource StatusRedBrush}"
+                            Foreground="White"
+                            Margin="0,20,0,0"/>
+
                 </StackPanel>
             </Grid>
         </Border>

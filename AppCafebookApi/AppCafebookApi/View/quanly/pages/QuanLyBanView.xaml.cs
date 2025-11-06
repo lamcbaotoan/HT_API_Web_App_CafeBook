@@ -119,7 +119,7 @@ namespace AppCafebookApi.View.quanly.pages
             try
             {
                 _allThongBaoList = (await httpClient.GetFromJsonAsync<List<ThongBaoDto>>("api/app/thongbao/all"))
-                                       ?? new List<ThongBaoDto>();
+                                        ?? new List<ThongBaoDto>();
 
                 _allThongBaoList = _allThongBaoList.Where(t => t.LoaiThongBao == "SuCoBan").ToList();
 
@@ -153,7 +153,9 @@ namespace AppCafebookApi.View.quanly.pages
 
         private void BtnToggleSuCoHistory_Click(object sender, RoutedEventArgs e)
         {
-            _showSuCoHistory = (sender as ToggleButton).IsChecked == true;
+            // === SỬA LỖI CS8602 ===
+            // Thêm '?' để tránh lỗi nếu sender không phải là ToggleButton
+            _showSuCoHistory = (sender as ToggleButton)?.IsChecked == true;
             ApplySuCoFilter();
         }
 

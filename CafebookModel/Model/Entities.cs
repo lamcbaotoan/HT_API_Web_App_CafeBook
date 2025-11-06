@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System; // <-- Thêm
+using System.Collections.Generic; // <-- Thêm
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CafebookModel.Model.Entities
@@ -696,6 +698,8 @@ namespace CafebookModel.Model.Entities
         [ForeignKey("IdVaiTro")]
         public virtual VaiTro VaiTro { get; set; } = null!;
 
+        // --- BẮT ĐẦU SỬA LỖI ---
+
         public virtual ICollection<HoaDon> HoaDons { get; set; } = new List<HoaDon>();
         public virtual ICollection<NhatKyHuyMon> NhatKyHuyMons { get; set; } = new List<NhatKyHuyMon>();
         public virtual ICollection<PhieuNhapKho> PhieuNhapKhos { get; set; } = new List<PhieuNhapKho>();
@@ -703,10 +707,28 @@ namespace CafebookModel.Model.Entities
         public virtual ICollection<PhieuXuatHuy> PhieuXuatHuys { get; set; } = new List<PhieuXuatHuy>();
         public virtual ICollection<PhieuThueSach> PhieuThueSachs { get; set; } = new List<PhieuThueSach>();
         public virtual ICollection<LichLamViec> LichLamViecs { get; set; } = new List<LichLamViec>();
+
+        // Sửa lỗi PhieuLuong (Chỉ rõ collection này dùng FK "NhanVien")
+        [InverseProperty("NhanVien")]
         public virtual ICollection<PhieuLuong> PhieuLuongs { get; set; } = new List<PhieuLuong>();
+
+        // Thêm collection cho mối quan hệ thứ 2 (dùng FK "NguoiPhat")
+        [InverseProperty("NguoiPhat")]
+        public virtual ICollection<PhieuLuong> PhieuLuongsDaPhat { get; set; } = new List<PhieuLuong>();
+
+
+        // Sửa lỗi DonXinNghi (Chỉ rõ collection này dùng FK "NhanVien")
+        [InverseProperty("NhanVien")]
         public virtual ICollection<DonXinNghi> DonXinNghis { get; set; } = new List<DonXinNghi>();
+
+        // Sửa lỗi DonXinNghi (Chỉ rõ collection này dùng FK "NguoiDuyet")
+        [InverseProperty("NguoiDuyet")]
         public virtual ICollection<DonXinNghi> DonXinNghiNguoiDuyets { get; set; } = new List<DonXinNghi>();
+
+
         public virtual ICollection<ChatLichSu> ChatLichSus { get; set; } = new List<ChatLichSu>();
+
+        // --- KẾT THÚC SỬA LỖI ---
     }
 
     [Table("CaLamViec")]
@@ -748,8 +770,11 @@ namespace CafebookModel.Model.Entities
         public int IdLichLamViec { get; set; }
         public DateTime? GioVao { get; set; }
         public DateTime? GioRa { get; set; }
+
+        // --- SỬA LỖI TỪ double? SANG decimal? VÀ THÊM TYPE ---
+        [Column(TypeName = "decimal(18, 2)")]
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public double? SoGioLam { get; set; }
+        public decimal? SoGioLam { get; set; }
 
         [ForeignKey("IdLichLamViec")]
         public virtual LichLamViec LichLamViec { get; set; } = null!;
@@ -767,10 +792,13 @@ namespace CafebookModel.Model.Entities
         public decimal LuongCoBan { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
         public decimal TongGioLam { get; set; }
+
+        // --- SỬA LỖI KHỚP VỚI CSDL (cho phép NULL) ---
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal TienThuong { get; set; }
+        public decimal? TienThuong { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal KhauTru { get; set; }
+        public decimal? KhauTru { get; set; }
+
         [Column(TypeName = "decimal(18, 2)")]
         public decimal ThucLanh { get; set; }
         public DateTime NgayTao { get; set; }
@@ -780,6 +808,12 @@ namespace CafebookModel.Model.Entities
 
         [ForeignKey("IdNhanVien")]
         public virtual NhanVien NhanVien { get; set; } = null!;
+
+        // --- SỬA LỖI KHỚP VỚI CSDL (thêm cột mới) ---
+        public DateTime? NgayPhatLuong { get; set; }
+        public int? IdNguoiPhat { get; set; }
+        [ForeignKey("IdNguoiPhat")]
+        public virtual NhanVien? NguoiPhat { get; set; }
     }
 
     [Table("DonXinNghi")]

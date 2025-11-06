@@ -1,11 +1,11 @@
-﻿using CafebookModel.Model.ModelWeb; // Thêm DTO
+﻿// Tập tin: WebCafebookApi/Pages/TrangChuView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net.Http.Json; // Thêm
+using System.Net.Http.Json;
 
-namespace WebCafebookApi.Pages // Giả sử namespace là WebCafebookApi.Pages
+namespace WebCafebookApi.Pages
 {
-    // Đảm bảo tên class khớp với @model
     public class TrangChuViewModel : PageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -14,8 +14,6 @@ namespace WebCafebookApi.Pages // Giả sử namespace là WebCafebookApi.Pages
             _httpClientFactory = httpClientFactory;
         }
 
-        // KHAI BÁO CÁC THUỘC TÍNH MÀ .cshtml CẦN
-        // (Sửa lỗi CS1061)
         public ThongTinChungDto? Info { get; set; }
         public List<KhuyenMaiDto> Promotions { get; set; } = new();
         public List<SanPhamDto> MonNoiBat { get; set; } = new();
@@ -26,7 +24,6 @@ namespace WebCafebookApi.Pages // Giả sử namespace là WebCafebookApi.Pages
             var httpClient = _httpClientFactory.CreateClient();
             try
             {
-                // Gọi API Trang chủ
                 var response = await httpClient.GetFromJsonAsync<TrangChuDto>("http://localhost:5166/api/web/trangchu/data");
 
                 if (response != null)
@@ -39,8 +36,6 @@ namespace WebCafebookApi.Pages // Giả sử namespace là WebCafebookApi.Pages
             }
             catch (Exception)
             {
-                // Nếu API lỗi, trang vẫn hiển thị (với dữ liệu rỗng)
-                // Khởi tạo Info để tránh lỗi null ở .cshtml
                 Info = new ThongTinChungDto();
             }
         }

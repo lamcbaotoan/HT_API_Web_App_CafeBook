@@ -10,11 +10,11 @@
             displayName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "Người dùng";
         }
 
-        // SỬA LỖI BASE64: Thêm tiền tố "data:image/png;base64,"
-        var avatarBase64Claim = Context.Session.GetString("AvatarBase64");
-        var avatarSrc = string.IsNullOrEmpty(avatarBase64Claim)
+        // SỬA LỖI: Lấy "AvatarUrl" từ Session thay vì "AvatarBase64"
+        var avatarUrl = Context.Session.GetString("AvatarUrl");
+        var avatarSrc = string.IsNullOrEmpty(avatarUrl)
         ? "/images/default-avatar.png" // 1. Lấy ảnh MẶC ĐỊNH
-        : $"data:image/png;base64,{avatarBase64Claim}"; // 2. Thêm tiền tố Base64
+        : avatarUrl; // 2. Dùng thẳng URL từ API
 
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

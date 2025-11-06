@@ -8,14 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="wwwroot\images\default-avatar.png" />
-    <Content Remove="wwwroot\images\default-book-cover.png" />
-    <Content Remove="wwwroot\images\default-food-icon.png" />
+    <Compile Remove="Data\**" />
+    <Content Remove="Data\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <None Remove="Data\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
-    <Folder Include="Services\" />
+    <Content Remove="wwwroot\images\default-avatar.png" />
+    <Content Remove="wwwroot\images\default-book-cover.png" />
+    <Content Remove="wwwroot\images\default-food-icon.png" />
   </ItemGroup>
 
   <ItemGroup>

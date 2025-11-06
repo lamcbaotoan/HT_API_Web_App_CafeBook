@@ -1,31 +1,32 @@
 ﻿// File: CafebookModel/Model/ModelApp/NhanSuDto.cs (Cập nhật)
 
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CafebookModel.Model.ModelApp
 {
     /// <summary>
     /// DTO cho DataGrid chính (Danh sách Nhân Viên) - ĐÃ ĐỔI TÊN
     /// </summary>
-    public class NhanVienGridDto // <-- ĐÃ ĐỔI TÊN
+    public class NhanVienGridDto
     {
         public int IdNhanVien { get; set; }
         public string HoTen { get; set; } = string.Empty;
         public string TenVaiTro { get; set; } = string.Empty;
-        public decimal LuongCoBan { get; set; } // Lương/giờ
+        public decimal LuongCoBan { get; set; }
         public string TrangThaiLamViec { get; set; } = string.Empty;
     }
 
     /// <summary>
-    /// DTO cho Form (Thêm/Sửa) - (Giữ nguyên)
+    /// SỬA: DTO cho Form (GetDetails)
     /// </summary>
-    public class NhanVienUpdateRequestDto
+    public class NhanVienDetailDto
     {
         public int IdNhanVien { get; set; }
         public string HoTen { get; set; } = string.Empty;
         public string TenDangNhap { get; set; } = string.Empty;
-        public string? MatKhau { get; set; } // Chỉ gửi khi tạo/đổi
         public int IdVaiTro { get; set; }
         public decimal LuongCoBan { get; set; }
         public string TrangThaiLamViec { get; set; } = string.Empty;
@@ -33,7 +34,31 @@ namespace CafebookModel.Model.ModelApp
         public string? Email { get; set; }
         public string? DiaChi { get; set; }
         public DateTime NgayVaoLam { get; set; }
-        public string? AnhDaiDienBase64 { get; set; } // Hỗ trợ Avatar
+        public string? AnhDaiDienUrl { get; set; } // <-- SỬA: Dùng URL
+    }
+
+    /// <summary>
+    /// SỬA: DTO cho Form (Thêm/Sửa)
+    /// </summary>
+    public class NhanVienUpdateRequestDto
+    {
+        public int IdNhanVien { get; set; }
+        public string HoTen { get; set; } = string.Empty;
+        public string TenDangNhap { get; set; } = string.Empty;
+        public string? MatKhau { get; set; }
+        public int IdVaiTro { get; set; }
+        public decimal LuongCoBan { get; set; }
+        public string TrangThaiLamViec { get; set; } = string.Empty;
+        public string? SoDienThoai { get; set; }
+        public string? Email { get; set; }
+        public string? DiaChi { get; set; }
+        public DateTime NgayVaoLam { get; set; }
+
+        // SỬA: Xóa Base64, thêm 2 dòng này
+        [JsonIgnore]
+        public IFormFile? AnhDaiDienUpload { get; set; }
+        [JsonIgnore]
+        public bool XoaAnhDaiDien { get; set; } = false;
     }
 
     /// <summary>
@@ -197,7 +222,7 @@ namespace CafebookModel.Model.ModelApp
         public TimeSpan GioCaKetThuc { get; set; }
         public DateTime? GioVao { get; set; }
         public DateTime? GioRa { get; set; }
-        public double SoGioLam { get; set; }
+        public decimal SoGioLam { get; set; } // <-- SỬA: double -> decimal
         public string TrangThai { get; set; } = string.Empty; // "Đúng giờ", "Đi trễ", "Về sớm"
     }
 
@@ -207,6 +232,7 @@ namespace CafebookModel.Model.ModelApp
     public class ChamCongUpdateDto
     {
         public int IdChamCong { get; set; }
+        public int IdLichLamViec { get; set; } // <-- THÊM DÒNG NÀY
         public DateTime? GioVaoMoi { get; set; }
         public DateTime? GioRaMoi { get; set; }
     }
@@ -244,7 +270,7 @@ namespace CafebookModel.Model.ModelApp
         public int IdNhanVien { get; set; }
         public string HoTenNhanVien { get; set; } = string.Empty;
         public decimal LuongCoBan { get; set; } // Lương/giờ
-        public double TongGioLam { get; set; }
+        public decimal TongGioLam { get; set; }
         public decimal TienLuongGio { get; set; }
         public decimal TongThuong { get; set; } // Auto (OT) + Manual
         public decimal TongPhat { get; set; }  // Auto (Late) + Manual
@@ -270,12 +296,12 @@ namespace CafebookModel.Model.ModelApp
     public class CaiDatNhanSuDto
     {
         // Giờ làm & OT
-        public double GioLamChuan { get; set; }
-        public double HeSoOT { get; set; }
+        public decimal GioLamChuan { get; set; }
+        public decimal HeSoOT { get; set; }
 
         // Phạt đi trễ
         public int PhatDiTre_Phut { get; set; }
-        public double PhatDiTre_HeSo { get; set; }
+        public decimal PhatDiTre_HeSo { get; set; }
 
         // Thưởng chuyên cần
         public int ChuyenCan_SoNgay { get; set; }
@@ -317,7 +343,7 @@ namespace CafebookModel.Model.ModelApp
     {
         public int SoLuongNhanVien { get; set; }
         public decimal TongLuongDaTra { get; set; }
-        public double TongGioLam { get; set; }
+        public decimal TongGioLam { get; set; }
         public int TongSoNgayNghi { get; set; }
     }
 
@@ -329,7 +355,7 @@ namespace CafebookModel.Model.ModelApp
         public int IdNhanVien { get; set; }
         public string HoTenNhanVien { get; set; } = string.Empty;
         public string TenVaiTro { get; set; } = string.Empty;
-        public double TongGioLam { get; set; }
+        public decimal TongGioLam { get; set; }
         public decimal TongLuongCoBan { get; set; }
         public decimal TongThuong { get; set; }
         public decimal TongPhat { get; set; }
@@ -355,5 +381,56 @@ namespace CafebookModel.Model.ModelApp
     {
         public List<NhanVienLookupDto> NhanViens { get; set; } = new();
         public List<FilterLookupDto> VaiTros { get; set; } = new();
+    }
+
+    // (Thêm vào cuối file NhanSuDto.cs)
+
+    /// <summary>
+    /// DTO cho DataGrid ở trang QuanLyPhatLuongView
+    /// </summary>
+    public class PhatLuongListItemDto
+    {
+        public int IdPhieuLuong { get; set; }
+        public string HoTenNhanVien { get; set; } = string.Empty;
+        public string KyLuong { get; set; } = string.Empty; // "Tháng 11/2025"
+        public decimal TongGioLam { get; set; }
+        public decimal ThucLanh { get; set; }
+        public DateTime NgayChot { get; set; }
+        public string TrangThai { get; set; } = string.Empty; // "Đã chốt", "Đã phát"
+    }
+
+    /// <summary>
+    /// DTO chi tiết cho Popup PhieuLuongPreviewWindow (A5)
+    /// </summary>
+    public class PhatLuongDetailDto
+    {
+        public int IdPhieuLuong { get; set; }
+        public string HoTenNhanVien { get; set; } = string.Empty;
+        public string KyLuong { get; set; } = string.Empty; // "Tháng 11/2025"
+        public DateTime NgayBatDauKy { get; set; }
+        public DateTime NgayKetThucKy { get; set; }
+        public decimal LuongCoBan { get; set; } // Lương/giờ
+        public decimal TongGioLam { get; set; }
+        public decimal TienThuong { get; set; }
+        public decimal KhauTru { get; set; }
+        public decimal ThucLanh { get; set; }
+
+        public string TrangThai { get; set; } = string.Empty;
+        public DateTime NgayChot { get; set; }
+        public DateTime? NgayPhat { get; set; }
+        public string TenNguoiPhat { get; set; } = string.Empty; // Tên kế toán
+
+        // Thông tin cửa hàng (tải từ CaiDat)
+        public string TenQuan { get; set; } = "CAFEBOOK";
+        public string DiaChi { get; set; } = string.Empty;
+        public string SoDienThoai { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO gửi lên khi xác nhận phát lương
+    /// </summary>
+    public class XacNhanPhatDto
+    {
+        public int IdNguoiPhat { get; set; } // ID của kế toán/người bấm nút
     }
 }

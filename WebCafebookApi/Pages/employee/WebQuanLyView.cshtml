@@ -2,12 +2,11 @@
 @model WebCafebookApi.Pages.employee.WebQuanLyViewModel
 @{
     ViewData["Title"] = "Bảng điều khiển";
-    Layout = "_Layout_Employee"; // <-- Sử dụng layout nhân viên
+    Layout = "_Layout_Employee";
 
-    // Logic xử lý ảnh Base64 (giống _LoginPartial)
-    var avatarSrc = string.IsNullOrEmpty(Model.DashboardData.AnhDaiDien)
+    var avatarSrc = string.IsNullOrEmpty(Model.DashboardData.AnhDaiDienUrl)
         ? "/images/default-avatar.png"
-        : $"data:image/png;base64,{Model.DashboardData.AnhDaiDien}";
+        : Model.DashboardData.AnhDaiDienUrl;
 }
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
@@ -16,9 +15,14 @@
 }
 else
 {
+    <div class="mb-4">
+        <h1 class="page-title">@ViewData["Title"]</h1>
+        <p class="page-lead">Tổng quan hoạt động của quán trong ngày.</p>
+    </div>
+
     <div class="row g-4">
         <div class="col-lg-4 col-md-5">
-            <div class="card h-100">
+            <div class="card h-100 product-card">
                 <div class="card-body text-center d-flex flex-column justify-content-center align-items-center p-4">
                     <img src="@avatarSrc" alt="Avatar" class="rounded-circle mb-3 shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" />
                     <h3 class="card-title fw-bold mb-1">@Model.DashboardData.HoTen</h3>
@@ -38,20 +42,28 @@ else
         <div class="col-lg-8 col-md-7">
             <div class="row g-4 mb-4">
                 <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-body text-center p-4">
-                            <i class="fa-solid fa-users fa-3x mb-3 text-danger"></i>
-                            <h1 class="display-3 fw-bold mb-0" style="color: var(--cf-dark-brown);">@Model.DashboardData.TongBanDangPhucVu</h1>
-                            <p class="card-text fs-5 text-muted mb-0">Bàn Đang Phục Vụ</p>
+                    <div class="stat-card stat-red">
+                        <div class="card-body">
+                            <div class="stat-icon">
+                                <span class="material-symbols-outlined">group</span>
+                            </div>
+                            <div>
+                                <h1 class="display-5 fw-bold mb-0">@Model.DashboardData.TongBanDangPhucVu</h1>
+                                <p class="card-text fs-5 text-muted mb-0">Bàn Đang Phục Vụ</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-body text-center p-4">
-                            <i class="fa-solid fa-file-invoice fa-3x mb-3 text-primary"></i>
-                            <h1 class="display-3 fw-bold mb-0" style="color: var(--cf-dark-brown);">@Model.DashboardData.TongDonDangXuLy</h1>
-                            <p class="card-text fs-5 text-muted mb-0">Đơn Đang Xử Lý</p>
+                    <div class="stat-card stat-blue">
+                        <div class="card-body">
+                            <div class="stat-icon">
+                                <span class="material-symbols-outlined">receipt_long</span>
+                            </div>
+                            <div>
+                                <h1 class="display-5 fw-bold mb-0">@Model.DashboardData.TongDonDangXuLy</h1>
+                                <p class="card-text fs-5 text-muted mb-0">Đơn Đang Xử Lý</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -59,13 +71,10 @@ else
 
             <div class="d-grid">
                 <a asp-page="/Employee/SoDoBanView" class="btn btn-primary btn-lg p-4">
-                    <i class="fas fa-border-all me-2"></i> Bắt đầu làm việc (Sơ Đồ Bàn)
+                    <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">grid_view</span>
+                    Bắt đầu làm việc (Sơ Đồ Bàn)
                 </a>
             </div>
         </div>
     </div>
-}
-
-@section Styles {
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 }

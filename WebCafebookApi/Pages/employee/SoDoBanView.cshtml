@@ -11,11 +11,32 @@
 }
 else
 {
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+    <div class="sodoban-layout-container">
 
+        <nav class="sodoban-khuvuc-tabs">
+            <h6 class="px-3 text-muted text-uppercase small">Khu Vực</h6>
+            <ul class="nav flex-column nav-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" data-khuvuc-id="all">
+                        <span class="material-symbols-outlined">apps</span>
+                        Tất cả Khu Vực
+                    </a>
+                </li>
+                @foreach (var kv in Model.KhuVucList)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-khuvuc-id="@kv.IdKhuVuc">
+                            <span class="material-symbols-outlined">label</span>
+                            @kv.TenKhuVuc
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <div class="sodoban-content">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="page-title" style="border: none; margin: 0;">@ViewData["Title"]</h1>
                 <div class="d-none d-md-flex">
                     <div class="me-3"><span class="status-box status-trong"></span> Trống</div>
                     <div class="me-3"><span class="status-box status-co-khach"></span> Có khách</div>
@@ -24,86 +45,375 @@ else
                 </div>
             </div>
 
-            <div id="table-layout-container" class="d-flex flex-wrap" data-nhanvien-id="@Model.NhanVienId">
-                <div class="text-center w-100 p-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Đang tải...</span>
-                    </div>
-                    <p>Đang tải sơ đồ bàn...</p>
-                </div>
+            <div id="table-layout-container" class="sodoban-grid" data-nhanvien-id="@Model.NhanVienId">
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow-sm" style="position: sticky; top: 80px;">
-                <div class="card-body p-4">
-
-                    <div id="panelChuaChon" class="text-center p-5">
-                        <i class="fa-solid fa-hand-pointer fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Chọn một bàn để bắt đầu thao tác</h5>
+        <div class="sodoban-panel">
+            <div id="order-panel" class="card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <div id="panel-no-selection" class="text-center p-4">
+                        <span class="material-symbols-outlined" style="font-size: 48px; color: var(--cf-gray);">touch_app</span>
+                        <p class="text-muted mt-2">Vui lòng chọn một bàn để xem chi tiết.</p>
                     </div>
 
-                    <div id="panelDaChon" style="display: none;">
-                        <h3 class="fw-bold" style="color: var(--cf-brown);">
-                            Bàn <span id="runSoBan">...</span>
-                        </h3>
-                        <p class="fs-5 mb-2">Trạng thái: <span id="runTrangThai" class="fw-bold">...</span></p>
-                        <p id="tbGhiChu" class="fst-italic text-muted" style="display: none;"></p>
+                    <div id="order-panel-info" style="display: none;">
+                        <h3 id="ban-so-ban" class="fw-bold">Bàn 101</h3>
+                        <p id="ban-trang-thai" class="badge bg-success fs-6">Trống</p>
 
-                        <div id="tbTongTienWrapper" class="alert alert-danger" style="display: none;">
-                            <span class="fs-5">Tổng tiền tạm tính:</span><br />
-                            <span id="runTongTien" class="fs-3 fw-bold">0 đ</span>
+                        <h4 id="ban-tong-tien" class="text-danger fw-bold" style="display: none;">0 đ</h4>
+
+                        <div id="ban-ghi-chu-group" class="mt-2" style="display:none;">
+                            <label class="small fw-bold text-muted">Ghi chú:</label>
+                            <p id="ban-ghi-chu" class="fst-italic" style="color: var(--cf-text);"></p>
                         </div>
 
                         <hr class="my-3" />
 
-                        <div class="d-grid gap-3">
-                            <button id="btnGoiMon" class="btn btn-primary btn-lg p-3">
-                                <i class="fa-solid fa-utensils me-2"></i>
-                                <span>Gọi Món / Thanh Toán</span>
+                        <div id="actions-trong" class="d-grid gap-2">
+                            <button id="btnMoBan" class="btn btn-primary btn-lg p-3">
+                                <span class="material-symbols-outlined">add</span> Tạo Hóa Đơn (Mở Bàn)
                             </button>
+                        </div>
 
-                            <div class="row g-3">
+                        <div id="actions-co-khach" class="d-grid gap-2">
+                            <button id="btnGoiMon" class="btn btn-primary btn-lg p-3">
+                                <span class="material-symbols-outlined">add_shopping_cart</span> Gọi Món / Xem HĐ
+                            </button>
+                        </div>
+
+                        <div id="actions-da-dat" class="d-grid gap-2">
+                            <button id="btnKhachDen" class="btn btn-primary btn-lg p-3">
+                                <span class="material-symbols-outlined">check</span> Khách đến (Mở bàn)
+                            </button>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <div class="d-grid gap-2">
+                            <div class="row g-2">
                                 <div class="col-6 d-grid">
                                     <button id="btnChuyenBan" class="btn btn-outline-secondary p-3">
-                                        <i class="fa-solid fa-right-left me-1"></i> Chuyển Bàn
+                                        <span class="material-symbols-outlined">swap_horiz</span> Chuyển Bàn
                                     </button>
                                 </div>
                                 <div class="col-6 d-grid">
                                     <button id="btnGopBan" class="btn btn-outline-secondary p-3">
-                                        <i class="fa-solid fa-object-ungroup me-1"></i> Gộp Bàn
+                                        <span class="material-symbols-outlined">merge_type</span> Gộp Bàn
                                     </button>
                                 </div>
                             </div>
-
                             <button id="btnBaoCaoSuCo" class="btn btn-outline-warning p-3">
-                                <i class="fa-solid fa-triangle-exclamation me-2"></i> Báo cáo Sự cố
+                                <span class="material-symbols-outlined">warning</span> Báo cáo Sự cố
                             </button>
-
                             <button id="refresh-tables-btn" class="btn btn-link text-muted mt-3">
-                                <i class="fa-solid fa-sync"></i> Làm mới Sơ đồ
+                                <span class="material-symbols-outlined">refresh</span> Làm mới Sơ đồ
                             </button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
+
     </div>
+}
+
+@section Scripts {
+    <script>
+        // Truyền dữ liệu từ Model C# sang JavaScript
+        const khuVucData = @Json.Serialize(Model.KhuVucList);
+        const allTables = khuVucData.flatMap(kv => kv.bans);
+        let currentSelectedBan = null;
+
+        // Hàm render các thẻ Bàn
+        function renderTables(banList) {
+            const $container = $("#table-layout-container");
+            $container.empty();
+
+            if (!banList || banList.length === 0) {
+                $container.html('<p class="text-muted text-center w-100 p-5">Khu vực này không có bàn nào.</p>');
+                return;
+            }
+
+            banList.forEach(ban => {
+                let statusClass = "status-trong";
+                let statusText = "Trống";
+                let icon = "event_seat";
+
+                switch (ban.trangThai.toLowerCase()) {
+                    case "có khách":
+                        statusClass = "status-co-khach";
+                        statusText = "Có khách";
+                        icon = "people";
+                        break;
+                    case "đã đặt":
+                        statusClass = "status-da-dat";
+                        statusText = "Đã đặt";
+                        icon = "book_online";
+                        break;
+                    case "bảo trì":
+                        statusClass = "status-bao-tri";
+                        statusText = "Bảo trì";
+                        icon = "build";
+                        break;
+                }
+
+                // SỬA: Xóa hiển thị TongTien khỏi card
+                const cardHtml = `
+                    <div class="table-card ${statusClass}" data-ban-id="${ban.idBan}">
+                        <div class="table-icon">
+                            <span class="material-symbols-outlined">${icon}</span>
+                        </div>
+                        <h5 class="table-name">${ban.soBan}</h5>
+                        <div class="table-status">${statusText}</div>
+                    </div>
+                `;
+                const $card = $(cardHtml);
+                $card.data('ban-json', ban);
+                $container.append($card);
+            });
+        }
+
+        // SỬA: Hàm cập nhật Panel Chi tiết
+        function updatePanel(ban) {
+            currentSelectedBan = ban;
+
+            $("#panel-no-selection").hide();
+            $("#order-panel-info").show();
+
+            $("#ban-so-ban").text(ban.soBan);
+            // SỬA: Ẩn Tổng Tiền
+            $("#ban-tong-tien").hide();
+
+            // SỬA: Hiển thị Ghi chú
+            if(ban.ghiChu && ban.ghiChu.trim() !== "") {
+                $("#ban-ghi-chu").text(ban.ghiChu);
+                $("#ban-ghi-chu-group").show();
+            } else {
+                $("#ban-ghi-chu-group").hide();
+            }
+
+            // Cập nhật Trạng thái (badge)
+            const $statusBadge = $("#ban-trang-thai");
+            $statusBadge.text(ban.trangThai).removeClass('bg-success bg-danger bg-warning bg-secondary');
+
+            $("#actions-trong, #actions-co-khach, #actions-da-dat").hide();
+
+            switch (ban.trangThai.toLowerCase()) {
+                case "trống":
+                    $statusBadge.addClass('bg-success');
+                    $("#actions-trong").show();
+                    break;
+                case "có khách":
+                    $statusBadge.addClass('bg-danger');
+                    $("#actions-co-khach").show();
+                    break;
+                case "đã đặt":
+                    $statusBadge.addClass('bg-warning');
+                    $("#actions-da-dat").show();
+                    break;
+                default: // Bảo trì
+                    $statusBadge.addClass('bg-secondary');
+                    break;
+            }
+        }
+
+        // (Hàm resetPanel và logic $(document).ready() giữ nguyên)
+        function resetPanel() {
+            currentSelectedBan = null;
+            $("#panel-no-selection").show();
+            $("#order-panel-info").hide();
+            $(".table-card").removeClass("selected");
+        }
+
+        $(document).ready(function () {
+
+            // 1. Render bàn
+            renderTables(allTables);
+
+            // 2. Xử lý click Tab Khu Vực
+            $(".sodoban-khuvuc-tabs .nav-link").on("click", function (e) {
+                e.preventDefault();
+                $(".sodoban-khuvuc-tabs .nav-link").removeClass("active");
+                $(this).addClass("active");
+
+                const khuVucId = $(this).data("khuvuc-id");
+
+                if (khuVucId === "all") {
+                    renderTables(allTables);
+                } else {
+                    const selectedKhuVuc = khuVucData.find(kv => kv.idKhuVuc == khuVucId);
+                    if(selectedKhuVuc) {
+                        renderTables(selectedKhuVuc.bans);
+                    }
+                }
+                resetPanel();
+            });
+
+            // 3. Xử lý click Bàn
+            $("#table-layout-container").on("click", ".table-card", function () {
+                if ($(this).hasClass('status-bao-tri')) return;
+
+                $(".table-card").removeClass("selected");
+                $(this).addClass("selected");
+
+                const banData = $(this).data('ban-json');
+                updatePanel(banData);
+            });
+
+            // 4. Xử lý logic JS (Sử dụng API của WPF)
+            const apiBaseUrl = "http://localhost:5166";
+            const currentNhanVienId = $("#table-layout-container").data("nhanvien-id");
+
+            // Mở bàn / Khách đến / Gọi món
+            $("#btnMoBan, #btnKhachDen, #btnGoiMon").on("click", function () {
+                if (!currentSelectedBan || !currentNhanVienId) return;
+
+                // SỬA: Nút "Gọi Món" và "Mở Bàn" giờ làm cùng 1 việc
+                const actionText = $(this).attr('id') === 'btnGoiMon' ? "Gọi Món/Xem HĐ" : "Mở Bàn";
+                if(!confirm(`Bạn muốn ${actionText} cho bàn ${currentSelectedBan.soBan}?`)) return;
+
+                $(this).prop('disabled', true);
+                $.ajax({
+                    url: `${apiBaseUrl}/api/app/sodoban/createorder`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        IdBan: currentSelectedBan.idBan,
+                        IdNhanVien: currentNhanVienId,
+                        IdKhachHang: 1
+                    }),
+                    success: function (response) {
+                        alert("Thao tác thành công. Đang tải lại sơ đồ...");
+                        location.reload();
+                    },
+                    error: function (xhr) {
+                        alert(`Lỗi khi thao tác: ${xhr.responseText}`);
+                        $(this).prop('disabled', false);
+                    }
+                });
+            });
+
+            // SỬA: Xóa các nút Hủy
+
+            // Làm mới
+            $("#refresh-tables-btn").on("click", function (e) {
+                e.preventDefault();
+                location.reload();
+            });
+
+            // Các nút đang phát triển
+            $("#btnDatBan").on("click", function () { alert("Chức năng 'Đặt Bàn' đang được phát triển."); });
+            $("#btnBaoCaoSuCo").on("click", function () { alert("Chức năng 'Báo Cáo Sự Cố' đang được phát triển."); });
+            $("#btnChuyenBan").on("click", function () { alert("Chức năng 'Chuyển Bàn' đang được phát triển."); });
+            $("#btnGopBan").on("click", function () { alert("Chức năng 'Gộp Bàn' đang được phát triển."); });
+        });
+    </script>
 }
 
 @section Styles {
     <style>
+        .sodoban-layout-container {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        /* 1. Tab Khu Vực (Trái) */
+        .sodoban-khuvuc-tabs {
+            flex: 0 0 220px;
+            background-color: var(--cf-white);
+            border-radius: 12px;
+            padding: 1rem;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+            .sodoban-khuvuc-tabs .nav-link {
+                color: var(--cf-text);
+                font-weight: 500;
+                font-size: 1rem;
+                padding: 0.75rem 1rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                border-radius: 8px;
+                margin-bottom: 0.25rem;
+            }
+
+                .sodoban-khuvuc-tabs .nav-link .material-symbols-outlined {
+                    color: var(--cf-orange);
+                    font-variation-settings: 'FILL' 0;
+                    transition: all 0.2s ease;
+                }
+
+                .sodoban-khuvuc-tabs .nav-link:hover {
+                    background-color: var(--cf-cream);
+                }
+
+                .sodoban-khuvuc-tabs .nav-link.active {
+                    background-color: var(--cf-brown);
+                    color: var(--cf-white);
+                    box-shadow: 0 2px 4px var(--cf-shadow);
+                }
+
+                    .sodoban-khuvuc-tabs .nav-link.active .material-symbols-outlined {
+                        color: var(--cf-white);
+                        font-variation-settings: 'FILL' 1;
+                    }
+
+        /* 2. Content (Giữa) */
+        .sodoban-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sodoban-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        /* 3. Panel (Phải) */
+        .sodoban-panel {
+            flex: 0 0 300px;
+        }
+
+            .sodoban-panel .card {
+                background-color: var(--cf-white);
+                border-radius: 12px;
+            }
+
+            .sodoban-panel .btn {
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+
+            .sodoban-panel .btn-lg {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+
+            .sodoban-panel .material-symbols-outlined {
+                vertical-align: middle;
+                margin-right: 8px;
+                font-size: 1.25rem;
+            }
+
+        /* 4. Table Card (Ghi đè/Bổ sung từ site.css) */
         .table-card {
             border: 3px solid transparent;
+            border-top: 5px solid;
         }
 
             .table-card.selected {
                 border-color: var(--cf-orange) !important;
                 box-shadow: 0 8px 20px rgba(210, 125, 45, 0.5) !important;
             }
-    </style>
-}
 
-@section Scripts {
+            .table-card .table-icon .material-symbols-outlined {
+                font-size: 28px;
+                font-variation-settings: 'FILL' 1;
+            }
+    </style>
 }
