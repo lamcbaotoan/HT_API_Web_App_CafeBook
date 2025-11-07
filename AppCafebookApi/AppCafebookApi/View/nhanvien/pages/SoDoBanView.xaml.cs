@@ -18,6 +18,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 {
     public partial class SoDoBanView : Page
     {
+        private int? _idBanToHighlight = null; // <-- THÊM DÒNG NÀY
         // THÊM LỚP HELPER NÀY VÀO BÊN TRONG CLASS SoDoBanView
         private class CreateOrderResponseDto
         {
@@ -46,14 +47,60 @@ namespace AppCafebookApi.View.nhanvien.pages
             this.DataContext = this;
         }
 
+        // THÊM HÀM KHỞI TẠO MỚI NÀY:
+        public SoDoBanView(int idBan)
+        {
+            InitializeComponent();
+            _idBanToHighlight = idBan; // Lưu ID bàn lại
+        }
+
         #region Tải Dữ Liệu và Lọc Khu Vực
+
+        // [SoDoBanView.xaml.cs]
+        // THAY THẾ TOÀN BỘ HÀM PAGE_LOADED
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
             MainPanel.Opacity = 0.5;
             // Tải lại toàn bộ dữ liệu khi trang được tải
-            await ReloadDataAsync();
+            await ReloadDataAsync(); // [cite: 2, 66]
             MainPanel.Opacity = 1.0;
+
+            // === SỬA LỖI LOGIC HIGHLIGHT ===
+             if (_idBanToHighlight.HasValue) // 
+            {
+                var banToSelect = _allTablesCache.FirstOrDefault(b => b.IdBan == _idBanToHighlight.Value); // 
+                if (banToSelect != null)
+                {
+                    // Kiểm tra xem bàn có trong filter hiện tại không
+                    var currentItemsSource = icBan.ItemsSource as IEnumerable<BanSoDoDto>;
+                    if (currentItemsSource == null || !currentItemsSource.Any(b => b.IdBan == banToSelect.IdBan))
+                    {
+                        // Nếu KHÔNG, BỎ QUA BỘ LỌC:
+                        // 1. Reset về "Tất cả"
+                        btnKhuVucAll.IsChecked = true;
+                        UncheckOtherKhuVucButtons(btnKhuVucAll); // 
+                                                                 // 2. Áp dụng filter "Tất cả" (null)
+                        ApplyTableFilter(null); // 
+
+                        // 3. Cập nhật UI ngay lập tức để tạo container
+                        icBan.UpdateLayout();
+                    }
+
+                    // Tìm container (Button) của bàn
+                    var banContainer = icBan.ItemContainerGenerator.ContainerFromItem(banToSelect) as FrameworkElement;
+                    if (banContainer != null)
+                    {
+                        // YÊU CẦU MỚI: "Trỏ vào" (Cuộn đến)
+                        banContainer.BringIntoView();
+                    }
+
+                    // Mở Bảng điều khiển cho bàn đó
+                    ShowPanelForBan(banToSelect); // 
+                }
+                _idBanToHighlight = null; // [cite: 2, 80]
+            }
+            // === KẾT THÚC ===
         }
 
         // Đổi tên hàm Page_Loaded thành ReloadDataAsync
@@ -242,6 +289,19 @@ namespace AppCafebookApi.View.nhanvien.pages
 
             runSoBan.Text = _selectedBan.SoBan;
             runTrangThai.Text = _selectedBan.TrangThai;
+
+            // === LOGIC MỚI (YÊU CẦU 1) ===
+            // Hiển thị thông tin đặt bàn trên panel nếu bàn "Trống"
+            if (!string.IsNullOrEmpty(_selectedBan.ThongTinDatBan) && _selectedBan.TrangThai == "Trống")
+            {
+                tbThongTinDatBan.Text = _selectedBan.ThongTinDatBan;
+                tbThongTinDatBan.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                tbThongTinDatBan.Visibility = Visibility.Collapsed;
+            }
+            // === KẾT THÚC ===
 
             if (!string.IsNullOrEmpty(_selectedBan.GhiChu))
             {

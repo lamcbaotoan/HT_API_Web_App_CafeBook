@@ -46,7 +46,6 @@
             <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
-
         <Style x:Key="ActionButton" TargetType="Button">
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="Margin" Value="5"/>
@@ -73,7 +72,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="ActionToggleStyle" TargetType="ToggleButton">
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="Margin" Value="5"/>
@@ -120,32 +118,26 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-
             <TextBlock Grid.Row="0" Text="Quản lý Phiếu Đặt Bàn" FontSize="24" FontWeight="Bold" 
                        Foreground="{StaticResource DarkBrownBrush}" Margin="10,5"/>
-
             <Border Grid.Row="1" Background="White" CornerRadius="4" Padding="15" Margin="10,5">
                 <WrapPanel>
                     <TextBlock Text="Tìm SĐT/Tên:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="SemiBold"/>
                     <TextBox x:Name="txtSearch" Width="180" Style="{StaticResource FormTextBox}" KeyUp="TxtSearch_KeyUp"/>
-
                     <TextBlock Text="Ngày đặt:" VerticalAlignment="Center" Margin="15,0,5,0" FontWeight="SemiBold"/>
                     <DatePicker x:Name="dpSearchDate" Width="130" Style="{StaticResource FormDatePicker}"/>
-
                     <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="15,0,5,0" FontWeight="SemiBold"/>
                     <ComboBox x:Name="cmbSearchTrangThai" Width="120" Style="{StaticResource FormComboBox}" SelectionChanged="BtnSearch_Click">
+                        <ComboBoxItem Content="Tất cả"/>
                         <ComboBoxItem Content="Chờ xác nhận"/>
                         <ComboBoxItem Content="Đã xác nhận"/>
                     </ComboBox>
-
                     <Button x:Name="btnSearch" Content="Lọc" Style="{StaticResource ActionButton}" 
                             Background="{StaticResource PrimaryBrownBrush}" Click="BtnSearch_Click" Padding="15,8"/>
-
                     <ToggleButton x:Name="btnShowHistory" Content="Hiện Lịch Sử Hủy" Style="{StaticResource ActionToggleStyle}" 
                                   Background="{StaticResource TextGrayBrush}" Click="BtnShowHistory_Click" Margin="10,5,5,5" Padding="15,8"/>
                 </WrapPanel>
             </Border>
-
             <DataGrid Grid.Row="2" x:Name="dgPhieuDatBan" Margin="10,5" AutoGenerateColumns="False" 
                       IsReadOnly="True" SelectionMode="Single" SelectionChanged="DgPhieuDatBan_SelectionChanged"
                       ItemsSource="{Binding PhieuDatBans}" CanUserAddRows="False">
@@ -192,6 +184,7 @@
                               IsEditable="True" IsTextSearchEnabled="False"
                               KeyUp="CmbKhachHang_KeyUp"
                               SelectionChanged="CmbKhachHang_SelectionChanged"
+                              DropDownOpened="CmbKhachHang_DropDownOpened"
                               DisplayMemberPath="DisplaySdt"/>
 
                     <TextBlock Style="{StaticResource FormLabel}" Text="Email (Gõ để tìm KH)"/>
@@ -199,10 +192,18 @@
                               IsEditable="True" IsTextSearchEnabled="False"
                               KeyUp="CmbKhachHang_KeyUp"
                               SelectionChanged="CmbKhachHang_SelectionChanged"
+                              DropDownOpened="CmbKhachHang_DropDownOpened"
                               DisplayMemberPath="DisplayEmail"/>
 
                     <TextBlock Style="{StaticResource FormLabel}" Text="Tên Khách Hàng * (Tự điền nếu có)"/>
                     <TextBox x:Name="txtTenKhach" Style="{StaticResource FormTextBox}"/>
+
+                    <CheckBox x:Name="chkKhachVangLai" 
+                              Content="Khách vãng lai (Không tìm)" 
+                              FontWeight="SemiBold" 
+                              Margin="0,10,0,0"
+                              Checked="ChkKhachVangLai_Changed"
+                              Unchecked="ChkKhachVangLai_Changed"/>
 
                     <TextBlock Style="{StaticResource FormLabel}" Text="Lọc Khu Vực (Form)"/>
                     <ComboBox x:Name="cmbFilterKhuVuc_Form" Style="{StaticResource FormComboBox}"
@@ -225,8 +226,10 @@
                         </Grid.ColumnDefinitions>
                         <DatePicker Grid.Column="0" x:Name="dpThoiGianDat" Style="{StaticResource FormDatePicker}"/>
 
-                        <ComboBox Grid.Column="1" x:Name="cmbHour" Style="{StaticResource FormComboBox}" Width="60" Margin="5,0,0,0"/>
-                        <ComboBox Grid.Column="2" x:Name="cmbMinute" Style="{StaticResource FormComboBox}" Width="60" Margin="5,0,0,0"/>
+                        <ComboBox Grid.Column="1" x:Name="cmbHour" Style="{StaticResource FormComboBox}" Width="60" Margin="5,0,0,0"
+                                  IsEditable="True" KeyUp="CmbTime_KeyUp"/>
+                        <ComboBox Grid.Column="2" x:Name="cmbMinute" Style="{StaticResource FormComboBox}" Width="60" Margin="5,0,0,0"
+                                  IsEditable="True" KeyUp="CmbTime_KeyUp"/>
                     </Grid>
 
                     <TextBlock Style="{StaticResource FormLabel}" Text="Số Lượng Khách *"/>

@@ -20,32 +20,66 @@ namespace CafebookApi.Controllers.App.NhanVien
             _context = context;
         }
 
-        // (Các hàm GetSoDoBan, CreateOrder, BaoCaoSuCo, CreateOrderNoTable giữ nguyên)
+        // === HÀM ĐÃ ĐƯỢC NÂNG CẤP ===
         [HttpGet("tables")]
         public async Task<IActionResult> GetSoDoBan()
         {
+            var now = DateTime.Now;
+            var nowPlus5Minutes = now.AddMinutes(5); // Mốc thời gian 5 phút
+
             var data = await _context.Bans
                .AsNoTracking()
-               .Select(b => new BanSoDoDto
+               .Select(b => new
                {
-                   IdBan = b.IdBan,
-                   SoBan = b.SoBan,
-                   TrangThai = b.TrangThai,
-                   GhiChu = b.GhiChu,
-                   IdKhuVuc = b.IdKhuVuc,
-                   IdHoaDonHienTai = _context.HoaDons
-                                       .Where(h => h.IdBan == b.IdBan && h.TrangThai == "Chưa thanh toán")
-                                       .Select(h => (int?)h.IdHoaDon)
-                                       .FirstOrDefault(),
-                   TongTienHienTai = _context.HoaDons
-                                       .Where(h => h.IdBan == b.IdBan && h.TrangThai == "Chưa thanh toán")
-                                       .Select(h => h.ThanhTien)
-                                       .FirstOrDefault()
+                   // 1. Lấy thông tin bàn
+                   Ban = b,
+
+                   // 2. Lấy Hóa đơn hiện tại (nếu có)
+                   HoaDonHienTai = _context.HoaDons
+                       .Where(h => h.IdBan == b.IdBan && h.TrangThai == "Chưa thanh toán")
+                       .Select(h => new { h.IdHoaDon, h.ThanhTien }) // Chỉ lấy 2 trường cần
+                       .FirstOrDefault(),
+
+                   // 3. Lấy Phiếu đặt sắp tới GẦN NHẤT
+                   PhieuDatSapToi = _context.PhieuDatBans
+                       .Where(p => p.IdBan == b.IdBan &&
+                                   p.ThoiGianDat > now && // Phải là trong tương lai
+                                   (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận"))
+                       .OrderBy(p => p.ThoiGianDat) // Quan trọng: lấy cái sớm nhất
+                       .FirstOrDefault()
+               })
+               // 4. Giờ mới tạo DTO
+               .Select(data => new BanSoDoDto
+               {
+                   IdBan = data.Ban.IdBan,
+                   SoBan = data.Ban.SoBan,
+
+                   // === LOGIC TRẠNG THÁI MỚI ===
+                   TrangThai = (data.Ban.TrangThai == "Trống" &&
+                                data.PhieuDatSapToi != null &&
+                                data.PhieuDatSapToi.ThoiGianDat <= nowPlus5Minutes)
+                               ? "Đã đặt" // Tự động đổi "Trống" -> "Đã đặt" (Gần giờ)
+                               : data.Ban.TrangThai, // Giữ nguyên (Trống, Có khách, Bảo trì)
+
+                   GhiChu = data.Ban.GhiChu,
+                   IdKhuVuc = data.Ban.IdKhuVuc,
+
+                   // Gán từ HoaDonHienTai
+                   IdHoaDonHienTai = data.HoaDonHienTai != null ? (int?)data.HoaDonHienTai.IdHoaDon : null,
+                   TongTienHienTai = data.HoaDonHienTai != null ? data.HoaDonHienTai.ThanhTien : 0,
+
+                   // === LOGIC THÔNG TIN ĐẶT BÀN MỚI ===
+                   ThongTinDatBan = (data.Ban.TrangThai == "Trống" && data.PhieuDatSapToi != null)
+                                    ? $"Đặt lúc: {data.PhieuDatSapToi.ThoiGianDat:HH:mm}" // Luôn hiển thị nếu có phiếu
+                                    : null
                })
                .OrderBy(b => b.SoBan)
                .ToListAsync();
+
             return Ok(data);
         }
+
+        // (Các hàm còn lại giữ nguyên)
 
         [HttpPost("createorder/{idBan}/{idNhanVien}")]
         public async Task<IActionResult> CreateOrder(int idBan, int idNhanVien)
@@ -96,11 +130,9 @@ namespace CafebookApi.Controllers.App.NhanVien
         [HttpPost("createorder-no-table/{idNhanVien}")]
         public async Task<IActionResult> CreateOrderNoTable(int idNhanVien, [FromBody] string loaiHoaDon)
         {
-            // Sửa "Tại quầy" thành "Tại quán" để khớp với CHECK constraint
             if (loaiHoaDon != "Mang về" && loaiHoaDon != "Tại quán")
                 return BadRequest("Loại hóa đơn không hợp lệ.");
 
-            // ... (phần còn lại của hàm giữ nguyên) ...
             var nhanVien = await _context.NhanViens.FindAsync(idNhanVien);
             if (nhanVien == null) return NotFound("Nhân viên không hợp lệ.");
             var hoaDon = new HoaDon
@@ -116,13 +148,9 @@ namespace CafebookApi.Controllers.App.NhanVien
             return Ok(new { idHoaDon = hoaDon.IdHoaDon });
         }
 
-
-        // === BẮT ĐẦU NÂNG CẤP ===
-
         [HttpPost("move-table")]
         public async Task<IActionResult> MoveTable([FromBody] BanActionRequestDto dto)
         {
-            // (Hàm Chuyển Bàn giữ nguyên)
             var hoaDon = await _context.HoaDons.Include(h => h.Ban).FirstOrDefaultAsync(h => h.IdHoaDon == dto.IdHoaDonNguon);
             if (hoaDon == null) return NotFound("Không tìm thấy hóa đơn nguồn.");
             var banDich = await _context.Bans.FindAsync(dto.IdBanDich);
@@ -155,22 +183,16 @@ namespace CafebookApi.Controllers.App.NhanVien
 
             if (hoaDonNguon == null) return NotFound("Không tìm thấy hóa đơn nguồn.");
 
-            // SỬA LỖI CS0266: Kiểm tra HĐ Đích có tồn tại không
             if (!dto.IdHoaDonDich.HasValue ||
                 !await _context.HoaDons.AnyAsync(h => h.IdHoaDon == dto.IdHoaDonDich.Value))
             {
                 return NotFound("Không tìm thấy hóa đơn đích.");
             }
 
-            // Chuyển các chi tiết HĐ
             foreach (var ct in chiTietNguon)
             {
-                // SỬA LỖI CS0266: Gán .Value
                 ct.IdHoaDon = dto.IdHoaDonDich.Value;
             }
-
-            // SỬA LỖI CS1061: Xóa dòng này. CSDL (cột computed) sẽ tự tính lại tổng tiền.
-            // hoaDonDich.TongTien += tongTienGop; 
 
             if (hoaDonNguon.Ban != null)
             {

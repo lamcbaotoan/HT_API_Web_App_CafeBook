@@ -11,11 +11,25 @@ var connectionString = builder.Configuration.GetConnectionString("CafeBookConnec
 builder.Services.AddDbContext<CafebookDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// === THÊM KHỐI NÀY ĐỂ SỬA LỖI 401 ===
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin() // Cho phép bất kỳ nguồn nào
+                  .AllowAnyMethod() // Cho phép bất kỳ phương thức nào (GET, POST, PUT, v.v.)
+                  .AllowAnyHeader(); // Cho phép bất kỳ header nào
+        });
+});
+// =====================================
+
 // 2️⃣ Cấu hình controller, Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// 3️⃣ Cấu hình xác thực JWT
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -29,32 +43,32 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"]!, // <-- Thêm !
-        ValidAudience = builder.Configuration["Jwt:Audience"]!, // <-- Thêm !
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)) // <-- Thêm ! 
+        ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
+        ValidAudience = builder.Configuration["Jwt:Audience"]!,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
 var app = builder.Build();
 
-// 3️⃣ Swagger (chỉ bật khi dev)
+// 4️⃣ Swagger (chỉ bật khi dev)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 4️⃣ Cho phép truy cập file tĩnh (wwwroot)
-app.UseStaticFiles();  // <--- Quan trọng: nằm trước UseRouting()
-app.UseCors("AllowAll");
+// 5️⃣ Cho phép truy cập file tĩnh (wwwroot)
+app.UseStaticFiles();
+app.UseCors("AllowAll"); // <-- Dòng này bây giờ đã hợp lệ
 
-// 5️⃣ Hỗ trợ HTTPS redirect
+// 6️⃣ Hỗ trợ HTTPS redirect
 //app.UseHttpsRedirection();
 
 app.UseRouting();
-app.UseAuthentication();
+app.UseAuthentication(); // Phải trước UseAuthorization
 app.UseAuthorization();
 
-// 6️⃣ Map controllers
+// 7️⃣ Map controllers
 app.MapControllers();
 
 app.Run();

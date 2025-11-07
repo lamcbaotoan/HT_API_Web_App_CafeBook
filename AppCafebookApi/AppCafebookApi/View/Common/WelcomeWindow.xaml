@@ -9,7 +9,7 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
         Loaded="Window_Loaded">
-    
+
     <Window.Resources>
         <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
         <SolidColorBrush x:Key="AccentOrangeBrush" Color="#D27D2D"/>
@@ -17,7 +17,6 @@
         <SolidColorBrush x:Key="DarkTextBrush" Color="#4E342E"/>
         <SolidColorBrush x:Key="SubtleGrayBrush" Color="#BDBDBD"/>
         <SolidColorBrush x:Key="WhiteTextBrush" Color="#FFFFFF"/>
-
         <Style TargetType="ProgressBar">
             <Setter Property="Background" Value="#E0D8C6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -70,11 +69,26 @@
             </Border.Triggers>
 
             <Grid>
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Ellipse x:Name="imgAvatar" 
+                         Width="90" Height="90" 
+                         Margin="30,0,20,0"
+                         VerticalAlignment="Center"
+                         Stroke="{StaticResource PrimaryBrownBrush}"
+                         StrokeThickness="1.5">
+                    <Ellipse.Fill>
+                        <SolidColorBrush Color="#EFEBE9"/>
+                    </Ellipse.Fill>
+                </Ellipse>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock x:Name="txtWelcome" Text="CHÀO MỪNG" 
                                FontWeight="Bold" 
                                FontSize="28" 
-                               TextAlignment="Center" 
                                Margin="0,0,0,15"/>
 
                     <StackPanel VerticalAlignment="Center">
@@ -82,15 +96,13 @@
                                    Text="Xin chào, [Tên]" 
                                    FontSize="18" 
                                    FontWeight="SemiBold" 
-                                   Foreground="{StaticResource DarkTextBrush}"
-                                   HorizontalAlignment="Center"/>
+                                   Foreground="{StaticResource DarkTextBrush}"/>
                         <TextBlock x:Name="txtSub" 
                                    Text="Đang chuẩn bị không gian làm việc cho bạn..." 
                                    FontSize="13" 
                                    Foreground="{StaticResource DarkTextBrush}" Opacity="0.7"
-                                   Margin="0,6,0,12"
-                                   HorizontalAlignment="Center"/>
-                        <ProgressBar Width="280" IsIndeterminate="True"/>
+                                   Margin="0,6,0,12"/>
+                        <ProgressBar Width="280" IsIndeterminate="True" HorizontalAlignment="Left"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>

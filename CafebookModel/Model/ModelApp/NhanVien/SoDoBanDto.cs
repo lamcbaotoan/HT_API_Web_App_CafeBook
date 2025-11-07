@@ -16,6 +16,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
 
         // --- ĐÃ THÊM ---
         public int? IdKhuVuc { get; set; }
+        public string? ThongTinDatBan { get; set; }
     }
 
     /// <summary>

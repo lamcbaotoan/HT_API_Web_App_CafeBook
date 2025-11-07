@@ -1,4 +1,5 @@
-﻿using AppCafebookApi.Services;
+﻿// File: ThongTinCaNhanView.xaml.cs
+using AppCafebookApi.Services;
 using CafebookModel.Model.ModelApp.NhanVien;
 using CafebookModel.Utils;
 using Microsoft.Win32;
@@ -10,6 +11,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Threading.Tasks;
+using System.Windows.Controls.Primitives;
 
 namespace AppCafebookApi.View.nhanvien.pages
 {
@@ -26,10 +29,12 @@ namespace AppCafebookApi.View.nhanvien.pages
         private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
             await LoadDataAsync();
+            ShowPanel("LichSu");
         }
 
         private async Task LoadDataAsync()
         {
+            // (Hàm này giữ nguyên)
             try
             {
                 var response = await ApiClient.Instance.GetFromJsonAsync<ThongTinCaNhanViewDto>("api/app/nhanvien/thongtincanhan/me");
@@ -38,23 +43,16 @@ namespace AppCafebookApi.View.nhanvien.pages
                     MessageBox.Show("Không thể tải thông tin cá nhân.");
                     return;
                 }
-
                 _currentNhanVien = response.NhanVien;
-
-                // Cột trái (Hiển thị)
                 lblHoTen.Text = _currentNhanVien.HoTen;
                 lblSoDienThoai.Text = _currentNhanVien.SoDienThoai;
                 lblEmail.Text = _currentNhanVien.Email ?? "Chưa cập nhật";
                 lblDiaChi.Text = _currentNhanVien.DiaChi ?? "Chưa cập nhật";
-
-                // Cột phải (Panel Chỉnh sửa)
                 txtEditHoTen.Text = _currentNhanVien.HoTen;
                 txtEditSoDienThoai.Text = _currentNhanVien.SoDienThoai;
                 txtEditEmail.Text = _currentNhanVien.Email;
                 txtEditDiaChi.Text = _currentNhanVien.DiaChi;
                 SetAvatar(_currentNhanVien.AnhDaiDien);
-
-                // Bind thông báo lịch làm việc
                 if (response.LichLamViecHomNay != null)
                 {
                     lblThongBaoLich.Text = $"Hôm nay bạn có lịch làm việc:";
@@ -65,8 +63,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                     lblThongBaoLich.Text = "Hôm nay bạn không có ca làm việc.";
                     lblThoiGianCa.Text = "Hãy tận hưởng ngày nghỉ của mình!";
                 }
-
-                // SỬA: Bind dữ liệu vào panelLichSu
                 lblSoLanNghi.Text = response.SoLanXinNghiThangNay.ToString();
                 dgLichLamViec.ItemsSource = response.LichLamViecThangNay;
             }
@@ -78,42 +74,60 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private void SetAvatar(string? imageSource)
         {
+            // (Hàm này giữ nguyên)
             var bitmap = HinhAnhHelper.LoadImage(imageSource, HinhAnhPaths.DefaultAvatar);
             imgAvatar.Fill = new ImageBrush(bitmap);
         }
 
-        #region Quản lý Panel
-
+        #region Quản lý Panel (Đã cập nhật để dùng TabControl)
+        // (Vùng này giữ nguyên)
+        private void UncheckOtherButtons(ToggleButton? exception)
+        {
+            if (btnLichSu != null && btnLichSu != exception)
+                btnLichSu.IsChecked = false;
+            if (btnChinhSua != null && btnChinhSua != exception)
+                btnChinhSua.IsChecked = false;
+            if (btnDoiMatKhau != null && btnDoiMatKhau != exception)
+                btnDoiMatKhau.IsChecked = false;
+            if (btnVietDon != null && btnVietDon != exception)
+                btnVietDon.IsChecked = false;
+        }
         private void ShowPanel(string panelName)
         {
-            panelLichSu.Visibility = (panelName == "LichSu") ? Visibility.Visible : Visibility.Collapsed;
-            panelChinhSua.Visibility = (panelName == "ChinhSua") ? Visibility.Visible : Visibility.Collapsed;
-            panelDoiMatKhau.Visibility = (panelName == "DoiMatKhau") ? Visibility.Visible : Visibility.Collapsed;
-            panelVietDon.Visibility = (panelName == "VietDon") ? Visibility.Visible : Visibility.Collapsed;
+            switch (panelName)
+            {
+                case "LichSu":
+                    MainTabControl.SelectedItem = tabLichSu;
+                    btnLichSu.IsChecked = true;
+                    UncheckOtherButtons(btnLichSu);
+                    break;
+                case "ChinhSua":
+                    MainTabControl.SelectedItem = tabChinhSua;
+                    btnChinhSua.IsChecked = true;
+                    UncheckOtherButtons(btnChinhSua);
+                    break;
+                case "DoiMatKhau":
+                    MainTabControl.SelectedItem = tabDoiMatKhau;
+                    btnDoiMatKhau.IsChecked = true;
+                    UncheckOtherButtons(btnDoiMatKhau);
+                    break;
+                case "VietDon":
+                    MainTabControl.SelectedItem = tabVietDon;
+                    btnVietDon.IsChecked = true;
+                    UncheckOtherButtons(btnVietDon);
+                    break;
+            }
         }
-
-        private void BtnChinhSua_Click(object sender, RoutedEventArgs e)
-        {
-            ShowPanel("ChinhSua");
-        }
-
-        private void BtnDoiMatKhau_Click(object sender, RoutedEventArgs e)
-        {
-            ShowPanel("DoiMatKhau");
-        }
-
-        private void BtnVietDon_Click(object sender, RoutedEventArgs e)
-        {
-            ShowPanel("VietDon");
-        }
-
+        private void BtnLichSu_Click(object sender, RoutedEventArgs e) { ShowPanel("LichSu"); }
+        private void BtnChinhSua_Click(object sender, RoutedEventArgs e) { ShowPanel("ChinhSua"); }
+        private void BtnDoiMatKhau_Click(object sender, RoutedEventArgs e) { ShowPanel("DoiMatKhau"); }
+        private void BtnVietDon_Click(object sender, RoutedEventArgs e) { ShowPanel("VietDon"); }
         #endregion
 
         #region Logic Panel Chỉnh Sửa
-
+        // (Vùng này giữ nguyên)
         private async void BtnLuu_Click(object sender, RoutedEventArgs e)
         {
-            // (Giữ nguyên logic từ câu trả lời trước)
             if (_currentNhanVien == null) return;
             btnLuu.IsEnabled = false;
             using var formData = new MultipartFormDataContent();
@@ -159,7 +173,6 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
             btnLuu.IsEnabled = true;
         }
-
         private void BtnHuyChinhSua_Click(object sender, RoutedEventArgs e)
         {
             if (_currentNhanVien != null)
@@ -173,7 +186,6 @@ namespace AppCafebookApi.View.nhanvien.pages
             _newAvatarFilePath = null;
             ShowPanel("LichSu");
         }
-
         private void BtnChonAnh_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -187,17 +199,16 @@ namespace AppCafebookApi.View.nhanvien.pages
                 SetAvatar(_newAvatarFilePath);
             }
         }
-
         #endregion
 
         #region Logic Panel Đổi Mật Khẩu
-
+        // (Vùng này giữ nguyên, bao gồm logic "hiển thị mật khẩu")
         private async void BtnXacNhanDoiMatKhau_Click(object sender, RoutedEventArgs e)
         {
-            // (Giữ nguyên logic từ câu trả lời trước)
-            string mkCu = txtMatKhauCu.Password;
-            string mkMoi = txtMatKhauMoi.Password;
-            string xacNhan = txtXacNhanMatKhau.Password;
+            string mkCu = chkShowPassword.IsChecked == true ? txtVisibleMatKhauCu.Text : txtMatKhauCu.Password;
+            string mkMoi = chkShowPassword.IsChecked == true ? txtVisibleMatKhauMoi.Text : txtMatKhauMoi.Password;
+            string xacNhan = chkShowPassword.IsChecked == true ? txtVisibleXacNhanMatKhau.Text : txtXacNhanMatKhau.Password;
+
             if (string.IsNullOrEmpty(mkCu) || string.IsNullOrEmpty(mkMoi))
             {
                 MessageBox.Show("Vui lòng nhập đầy đủ mật khẩu.", "Thiếu thông tin"); return;
@@ -206,17 +217,17 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 MessageBox.Show("Mật khẩu mới và xác nhận không khớp.", "Lỗi"); return;
             }
+
             var request = new DoiMatKhauRequestDto { MatKhauCu = mkCu, MatKhauMoi = mkMoi };
             btnXacNhanDoiMatKhau.IsEnabled = false;
+
             try
             {
                 var response = await ApiClient.Instance.PostAsJsonAsync("api/app/nhanvien/thongtincanhan/change-password", request);
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Đổi mật khẩu thành công!", "Thành công");
-                    txtMatKhauCu.Password = "";
-                    txtMatKhauMoi.Password = "";
-                    txtXacNhanMatKhau.Password = "";
+                    ClearPasswordFields();
                     ShowPanel("LichSu");
                 }
                 else
@@ -231,28 +242,88 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
             btnXacNhanDoiMatKhau.IsEnabled = true;
         }
-
         private void BtnHuyDoiMatKhau_Click(object sender, RoutedEventArgs e)
+        {
+            ClearPasswordFields();
+            ShowPanel("LichSu");
+        }
+        private void ClearPasswordFields()
         {
             txtMatKhauCu.Password = "";
             txtMatKhauMoi.Password = "";
             txtXacNhanMatKhau.Password = "";
-            ShowPanel("LichSu");
+            txtVisibleMatKhauCu.Text = "";
+            txtVisibleMatKhauMoi.Text = "";
+            txtVisibleXacNhanMatKhau.Text = "";
+            if (chkShowPassword != null)
+                chkShowPassword.IsChecked = false;
         }
-
+        private void ChkShowPassword_Checked(object sender, RoutedEventArgs e)
+        {
+            txtVisibleMatKhauCu.Text = txtMatKhauCu.Password;
+            txtVisibleMatKhauMoi.Text = txtMatKhauMoi.Password;
+            txtVisibleXacNhanMatKhau.Text = txtXacNhanMatKhau.Password;
+            txtVisibleMatKhauCu.Visibility = Visibility.Visible;
+            txtVisibleMatKhauMoi.Visibility = Visibility.Visible;
+            txtVisibleXacNhanMatKhau.Visibility = Visibility.Visible;
+            txtMatKhauCu.Visibility = Visibility.Collapsed;
+            txtMatKhauMoi.Visibility = Visibility.Collapsed;
+            txtXacNhanMatKhau.Visibility = Visibility.Collapsed;
+        }
+        private void ChkShowPassword_Unchecked(object sender, RoutedEventArgs e)
+        {
+            txtMatKhauCu.Password = txtVisibleMatKhauCu.Text;
+            txtMatKhauMoi.Password = txtVisibleMatKhauMoi.Text;
+            txtXacNhanMatKhau.Password = txtVisibleXacNhanMatKhau.Text;
+            txtVisibleMatKhauCu.Visibility = Visibility.Collapsed;
+            txtVisibleMatKhauMoi.Visibility = Visibility.Collapsed;
+            txtVisibleXacNhanMatKhau.Visibility = Visibility.Collapsed;
+            txtMatKhauCu.Visibility = Visibility.Visible;
+            txtMatKhauMoi.Visibility = Visibility.Visible;
+            txtXacNhanMatKhau.Visibility = Visibility.Visible;
+        }
+        private void TxtMatKhauCu_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (chkShowPassword.IsChecked == true)
+                txtVisibleMatKhauCu.Text = txtMatKhauCu.Password;
+        }
+        private void TxtVisibleMatKhauCu_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (chkShowPassword.IsChecked == false)
+                txtMatKhauCu.Password = txtVisibleMatKhauCu.Text;
+        }
+        private void TxtMatKhauMoi_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (chkShowPassword.IsChecked == true)
+                txtVisibleMatKhauMoi.Text = txtMatKhauMoi.Password;
+        }
+        private void TxtVisibleMatKhauMoi_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (chkShowPassword.IsChecked == false)
+                txtMatKhauMoi.Password = txtVisibleMatKhauMoi.Text;
+        }
+        private void TxtXacNhanMatKhau_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (chkShowPassword.IsChecked == true)
+                txtVisibleXacNhanMatKhau.Text = txtXacNhanMatKhau.Password;
+        }
+        private void TxtVisibleXacNhanMatKhau_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (chkShowPassword.IsChecked == false)
+                txtXacNhanMatKhau.Password = txtVisibleXacNhanMatKhau.Text;
+        }
         #endregion
 
-        #region Logic Panel Viết Đơn
+        #region Logic Panel Viết Đơn (Đã cập nhật)
 
         private async void BtnGuiDon_Click(object sender, RoutedEventArgs e)
         {
-            // (Giữ nguyên logic từ câu trả lời trước)
-            if (cmbLoaiDon.SelectedItem == null ||
-                dpNgayBatDau.SelectedDate == null ||
+            // SỬA: Xóa kiểm tra cmbLoaiDon
+            if (dpNgayBatDau.SelectedDate == null ||
                 dpNgayKetThuc.SelectedDate == null ||
                 string.IsNullOrEmpty(txtLyDo.Text))
             {
-                MessageBox.Show("Vui lòng nhập đầy đủ thông tin.", "Thiếu thông tin"); return;
+                MessageBox.Show("Vui lòng nhập đầy đủ thông tin (Ngày bắt đầu, kết thúc và lý do).", "Thiếu thông tin"); return;
             }
             var ngayBatDau = dpNgayBatDau.SelectedDate.Value;
             var ngayKetThuc = dpNgayKetThuc.SelectedDate.Value;
@@ -260,13 +331,16 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 MessageBox.Show("Ngày kết thúc không thể trước ngày bắt đầu.", "Lỗi"); return;
             }
+
+            // SỬA: Gán "LoaiDon" là một giá trị chung
             var request = new DonXinNghiRequestDto
             {
-                LoaiDon = (cmbLoaiDon.SelectedItem as ComboBoxItem).Content.ToString(),
+                LoaiDon = "Đơn xin nghỉ", // Giá trị chung
                 LyDo = txtLyDo.Text,
                 NgayBatDau = ngayBatDau,
                 NgayKetThuc = ngayKetThuc
             };
+
             btnGuiDon.IsEnabled = false;
             try
             {
@@ -274,11 +348,11 @@ namespace AppCafebookApi.View.nhanvien.pages
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Gửi đơn thành công!", "Thành công");
-                    cmbLoaiDon.SelectedIndex = 0;
+                    // SỬA: Xóa cmbLoaiDon
                     dpNgayBatDau.SelectedDate = DateTime.Today;
                     dpNgayKetThuc.SelectedDate = DateTime.Today;
                     txtLyDo.Text = "";
-                    await LoadDataAsync(); // Tải lại (để cập nhật số lần nghỉ)
+                    await LoadDataAsync();
                     ShowPanel("LichSu");
                 }
                 else
@@ -296,13 +370,12 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private void BtnHuyGuiDon_Click(object sender, RoutedEventArgs e)
         {
-            cmbLoaiDon.SelectedIndex = 0;
+            // SỬA: Xóa cmbLoaiDon
             dpNgayBatDau.SelectedDate = DateTime.Today;
             dpNgayKetThuc.SelectedDate = DateTime.Today;
             txtLyDo.Text = "";
             ShowPanel("LichSu");
         }
-
         #endregion
     }
 }

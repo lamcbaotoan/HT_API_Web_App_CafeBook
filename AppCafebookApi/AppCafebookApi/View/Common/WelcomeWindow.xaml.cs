@@ -1,13 +1,13 @@
-﻿using AppCafebookApi.Services; // <--- THÊM DÒNG NÀY
+﻿using AppCafebookApi.Services;
 using CafebookModel.Model.Data;
-using CafebookModel.Utils; // <--- SỬ DỤNG HELPER MỚI
+using CafebookModel.Utils;
 using System;
 using System.Windows;
-using System.Windows.Media; // Thêm
-using System.Windows.Media.Imaging; // Thêm
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using System.Windows.Controls; // <-- Thêm dòng này để nhận diện StackPanel
-using System.Linq;             // <-- Thêm dòng này để nhận diện .OfType và .FirstOrDefault
+using System.Windows.Controls;
+using System.Linq;
 
 namespace AppCafebookApi.View.Common
 {
@@ -40,25 +40,13 @@ namespace AppCafebookApi.View.Common
                 );
 
                 // 2. GÁN ẢNH VÀO UI (ĐÃ SỬA)
+                // Gán trực tiếp vào Ellipse 'imgAvatar' đã thêm trong XAML
                 if (avatar != null)
                 {
-                    // Trong WelcomeWindow.xaml, không có Image, 
-                    // chúng ta gán vào <Ellipse.Fill> của <Ellipse>
-
-                    // (Giả sử Ellipse nằm trong StackPanel)
-                    var stackPanel = txtWelcome.Parent as StackPanel;
-                    if (stackPanel != null)
+                    imgAvatar.Fill = new ImageBrush(avatar)
                     {
-                        // Tìm Ellipse (là control đầu tiên trong StackPanel)
-                        var ellipse = stackPanel.Children.OfType<System.Windows.Shapes.Ellipse>().FirstOrDefault();
-                        if (ellipse != null)
-                        {
-                            ellipse.Fill = new ImageBrush(avatar)
-                            {
-                                Stretch = Stretch.UniformToFill
-                            };
-                        }
-                    }
+                        Stretch = Stretch.UniformToFill
+                    };
                 }
             }
 
@@ -76,7 +64,5 @@ namespace AppCafebookApi.View.Common
             _timer?.Stop();
             this.Close();
         }
-
-        // XÓA 2 HÀM LoadImageFromBase64 VÀ LoadImageFromPath CŨ Ở ĐÂY
     }
 }

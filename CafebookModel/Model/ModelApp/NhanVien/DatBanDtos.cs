@@ -33,6 +33,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien.DatBan
         public string? GhiChu { get; set; }
         public string TrangThai { get; set; } = "Đã xác nhận";
         public int IdNhanVienTao { get; set; }
+        public bool IsKhachVangLai { get; set; } = false;
     }
 
     // DTO dùng cho form đặt bàn của khách hàng qua web

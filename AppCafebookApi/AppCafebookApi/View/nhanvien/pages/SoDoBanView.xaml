@@ -208,6 +208,28 @@
                                     </TextBlock>
                                     <TextBlock Text="{Binding SoBan}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" HorizontalAlignment="Center"/>
                                     <TextBlock Text="{Binding TrangThai}" FontSize="13" Foreground="{StaticResource TextGrayBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ThongTinDatBan}" 
+                                               FontSize="13" 
+                                               Foreground="{StaticResource StatusYellowBrush}" 
+                                               FontWeight="SemiBold" 
+                                               HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Có khách">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Đã đặt">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TrangThai}" Value="Bảo trì">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                     <TextBlock Text="{Binding TongTienHienTai, StringFormat={}{0:N0} đ}" FontSize="13" Foreground="{StaticResource StatusRedBrush}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
@@ -245,6 +267,12 @@
                     <Separator Background="#EEEEEE"/>
                     <TextBlock FontSize="40" FontWeight="Bold" Margin="0,20,0,0" Foreground="{StaticResource PrimaryBrownBrush}">Bàn <Run x:Name="runSoBan"/></TextBlock>
                     <TextBlock FontSize="16" Margin="0,5,0,0" Foreground="{StaticResource TextGrayBrush}">Trạng thái: <Run x:Name="runTrangThai" FontWeight="SemiBold"/></TextBlock>
+                    <TextBlock x:Name="tbThongTinDatBan" 
+                               Foreground="{StaticResource StatusYellowBrush}" 
+                               FontWeight="SemiBold" 
+                               Margin="0,5,0,0" 
+                               TextWrapping="Wrap" 
+                               Visibility="Collapsed"/>
                     <TextBlock x:Name="tbGhiChu" FontStyle="Italic" Foreground="{StaticResource TextGrayBrush}" Margin="0,5,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
                     <TextBlock x:Name="tbTongTienWrapper" FontSize="16" Margin="0,10,0,0" Foreground="{StaticResource DarkBrownBrush}">Tổng tiền tạm tính: <Run x:Name="runTongTien" FontWeight="Bold" Foreground="{StaticResource StatusRedBrush}"/></TextBlock>
                     <StackPanel Margin="0,30,0,0">

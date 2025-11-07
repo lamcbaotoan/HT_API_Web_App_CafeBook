@@ -3,14 +3,19 @@ using CafebookApi.Data;
 using CafebookModel.Model.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApi;
-using CafebookModel.Utils; // <-- THÊM
+using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting; // <-- THÊM
-using Microsoft.Extensions.Configuration; // <-- THÊM
-using System.IO; // <-- THÊM
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System;
 
 namespace CafebookApi.Controllers.App
 {
@@ -19,17 +24,17 @@ namespace CafebookApi.Controllers.App
     public class TaiKhoanController : ControllerBase
     {
         private readonly CafebookDbContext _context;
-
-        // --- SỬA: THÊM CÁC BIẾN ĐỂ XỬ LÝ URL ---
         private readonly IWebHostEnvironment _env;
         private readonly string _baseUrl;
+        private readonly IConfiguration _config;
 
-        public TaiKhoanController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config) // <-- SỬA: Thêm tham số
-        {
+        public TaiKhoanController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
+        {
             _context = context;
-
-            // --- THÊM LOGIC KHỞI TẠO TỪ SANPHAMCONTROLLER ---
             _env = env;
+            _config = config;
+            _baseUrl = _config["Jwt:Issuer"] ?? "http://127.0.0.1:5166";
+
             if (string.IsNullOrEmpty(_env.WebRootPath))
             {
                 _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
@@ -38,25 +43,20 @@ namespace CafebookApi.Controllers.App
                     Directory.CreateDirectory(_env.WebRootPath);
                 }
             }
-            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url")
-                             ?? "http://127.0.0.1:5166"; // <-- Dùng 127.0.0.1
-        }
+        }
 
-        // --- THÊM HÀM HELPER GetFullImageUrl ---
-        [ApiExplorerSettings(IgnoreApi = true)]
+        [ApiExplorerSettings(IgnoreApi = true)]
         private string? GetFullImageUrl(string? relativePath)
         {
             if (string.IsNullOrEmpty(relativePath))
                 return null;
-            // Đảm bảo đường dẫn dùng "/"
-            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
         }
 
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestModel model)
         {
-            // ... (Logic kiểm tra model, truy vấn CSDL giữ nguyên) ...
             var userInput = model.TenDangNhap.Trim();
             var passInput = model.MatKhau.Trim();
 
@@ -79,22 +79,20 @@ namespace CafebookApi.Controllers.App
                 return Ok(new LoginResponseModel { Success = false, Message = "Tài khoản không có vai trò." });
             }
 
-            // Tạo DTO để trả về
-            var userDto = new NhanVienDto
+            var userDto = new NhanVienDto
             {
                 IdNhanVien = nhanVien.IdNhanVien,
                 HoTen = nhanVien.HoTen,
-
-                // SỬA: Dùng GetFullImageUrl
-                AnhDaiDien = GetFullImageUrl(nhanVien.AnhDaiDien), // Chuyển path thành URL
-
+                AnhDaiDien = GetFullImageUrl(nhanVien.AnhDaiDien),
+                // Sửa cảnh báo CS8602 (bằng cách kiểm tra null ở trên)
                 TenVaiTro = nhanVien.VaiTro.TenVaiTro,
                 DanhSachQuyen = nhanVien.VaiTro.VaiTroQuyens
                   .Select(vtq => vtq.IdQuyen)
                   .ToList()
             };
 
-            string token = "day_la_jwt_token_tam_thoi";
+            // SỬA LỖI CS1503 (Lỗi dây chuyền):
+            string token = GenerateJwtToken(nhanVien);
 
             return Ok(new LoginResponseModel
             {
@@ -103,6 +101,35 @@ namespace CafebookApi.Controllers.App
                 Token = token,
                 UserData = userDto
             });
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        // SỬA LỖI CS0118: Ghi rõ đầy đủ (fully qualify) tên class
+        private string GenerateJwtToken(CafebookModel.Model.Entities.NhanVien nhanVien)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_config["Jwt:Key"]!);
+
+            var claims = new List<Claim>
+            {
+                new Claim("IdNhanVien", nhanVien.IdNhanVien.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, nhanVien.HoTen),
+                new Claim(JwtRegisteredClaimNames.Email, nhanVien.Email ?? ""),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddDays(7),
+                // Lỗi CS1503 (BinaryReader) tự biến mất khi sửa lỗi CS0118
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }

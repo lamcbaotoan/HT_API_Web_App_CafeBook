@@ -1,4 +1,5 @@
-﻿using AppCafebookApi.Services;
+﻿// [DatBanView.xaml.cs]
+using AppCafebookApi.Services;
 using CafebookModel.Model.ModelApp.NhanVien.DatBan;
 using System;
 using System.Collections.Generic;
@@ -29,11 +30,15 @@ namespace AppCafebookApi.View.nhanvien.pages
         private List<PhieuDatBanDto> _allPhieuDatBansCache = new List<PhieuDatBanDto>();
         private List<BanDatBanDto> _allBansCache = new List<BanDatBanDto>();
         private List<KhuVucDto> _allKhuVucCache = new List<KhuVucDto>();
-        private List<KhachHangLookupDto> _customerSearchCache = new List<KhachHangLookupDto>();
+        private List<KhachHangLookupDto> _globalCustomerCache = new List<KhachHangLookupDto>();
 
         private PhieuDatBanDto? _selectedPhieu;
         private JsonSerializerOptions _jsonOptions;
         private bool _isCustomerSearchLoading = false;
+
+        private (TimeSpan Open, TimeSpan Close) _openingHours = (new TimeSpan(6, 0, 0), new TimeSpan(23, 0, 0));
+        private List<string> _validHours = new List<string>();
+        private List<string> _validMinutes = new List<string> { "00", "15", "30", "45" };
 
         static DatBanView()
         {
@@ -58,22 +63,55 @@ namespace AppCafebookApi.View.nhanvien.pages
                 PropertyNameCaseInsensitive = true
             };
 
-            cmbSearchTrangThai.SelectedIndex = 0;
+            cmbSearchTrangThai.SelectedIndex = 0; // Mặc định là "Tất cả"
             cmbTrangThai.SelectedIndex = 0;
             dpThoiGianDat.SelectedDate = DateTime.Now;
 
-            InitializeTimePickers();
+            InitializeTimePickers(false);
         }
 
-        private void InitializeTimePickers()
+        private void InitializeTimePickers(bool useCache)
         {
-            cmbHour.ItemsSource = Enumerable.Range(0, 24).Select(h => h.ToString("00"));
-            cmbMinute.ItemsSource = new List<string> { "00", "15", "30", "45" };
+            if (useCache)
+            {
+                _validHours.Clear();
+                for (int h = _openingHours.Open.Hours; h <= _openingHours.Close.Hours; h++)
+                {
+                    if (h == _openingHours.Close.Hours && _openingHours.Close.Minutes == 0)
+                    {
+                        break;
+                    }
+                    _validHours.Add(h.ToString("00"));
+                }
+            }
+            else
+            {
+                _validHours = Enumerable.Range(0, 24).Select(h => h.ToString("00")).ToList();
+            }
+
+            cmbHour.ItemsSource = _validHours;
+            cmbMinute.ItemsSource = _validMinutes;
 
             var now = DateTime.Now;
-            int minute = (now.Minute / 15) * 15;
-            cmbHour.SelectedItem = now.ToString("HH");
-            cmbMinute.SelectedItem = minute.ToString("00");
+            int minute = (now.Minute / 15 + 1) * 15;
+            DateTime roundedNow = now.Date.AddHours(now.Hour).AddMinutes(minute);
+
+            string currentHour = roundedNow.ToString("HH");
+            if (_validHours.Contains(currentHour))
+            {
+                cmbHour.Text = currentHour;
+            }
+            else if (roundedNow.TimeOfDay < _openingHours.Open)
+            {
+                cmbHour.Text = _openingHours.Open.ToString("hh");
+            }
+            else
+            {
+                cmbHour.Text = _validHours.LastOrDefault();
+            }
+
+            cmbMinute.Text = roundedNow.ToString("mm");
+            dpThoiGianDat.SelectedDate = roundedNow.Date;
         }
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -89,8 +127,11 @@ namespace AppCafebookApi.View.nhanvien.pages
             await Task.WhenAll(
                 LoadPhieuDatBansAsync(),
                 LoadAvailableBansAsync(),
-                LoadKhuVucAsync()
+                LoadKhuVucAsync(),
+                LoadOpeningHoursAsync()
             );
+
+            InitializeTimePickers(true);
 
             ApplyFilter();
             ClearForm();
@@ -103,55 +144,66 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 var data = await httpClient.GetFromJsonAsync<List<PhieuDatBanDto>>("api/app/datban/list", _jsonOptions);
                 _allPhieuDatBansCache.Clear();
-                if (data != null)
-                {
-                    _allPhieuDatBansCache = data;
-                }
+                if (data != null) _allPhieuDatBansCache = data;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi tải danh sách phiếu đặt bàn: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Lỗi tải danh sách phiếu đặt bàn: " + ex.Message); }
         }
-
         private async Task LoadAvailableBansAsync()
         {
             try
             {
                 var data = await httpClient.GetFromJsonAsync<List<BanDatBanDto>>("api/app/datban/available-bans", _jsonOptions);
-                _allBansCache.Clear();
-                AvailableBans.Clear();
+                _allBansCache.Clear(); AvailableBans.Clear();
                 if (data != null)
                 {
                     _allBansCache = data;
-                    foreach (var item in data.OrderBy(b => b.SoBan))
-                    {
-                        AvailableBans.Add(item);
-                    }
+                    foreach (var item in data.OrderBy(b => b.SoBan)) AvailableBans.Add(item);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi tải danh sách bàn: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Lỗi tải danh sách bàn: " + ex.Message); }
         }
-
         private async Task LoadKhuVucAsync()
         {
             try
             {
-                _allKhuVucCache = (await httpClient.GetFromJsonAsync<List<KhuVucDto>>("api/app/banquanly/tree"))
-                                 ?? new List<KhuVucDto>();
-
+                _allKhuVucCache = (await httpClient.GetFromJsonAsync<List<KhuVucDto>>("api/app/banquanly/tree")) ?? new List<KhuVucDto>();
                 var filterList = new List<KhuVucDto>(_allKhuVucCache);
                 filterList.Insert(0, new KhuVucDto { IdKhuVuc = 0, TenKhuVuc = "Tất cả Khu vực" });
-
                 cmbFilterKhuVuc_Form.ItemsSource = filterList;
                 cmbFilterKhuVuc_Form.SelectedIndex = 0;
             }
+            catch (Exception ex) { MessageBox.Show($"Không thể tải danh sách Khu Vực: {ex.Message}"); }
+        }
+
+        private async Task LoadOpeningHoursAsync()
+        {
+            try
+            {
+                string settingValue = await httpClient.GetStringAsync("api/app/datban/opening-hours");
+                ParseOpeningHoursClient(settingValue);
+            }
             catch (Exception ex)
             {
-                MessageBox.Show($"Không thể tải danh sách Khu Vực: {ex.Message}");
+                MessageBox.Show("Không thể tải giờ mở cửa: " + ex.Message);
+                ParseOpeningHoursClient("06:00 - 23:00");
+            }
+        }
+
+        private void ParseOpeningHoursClient(string settingValue)
+        {
+            try
+            {
+                var match = Regex.Match(settingValue, @"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})");
+                if (match.Success)
+                {
+                    TimeSpan.TryParse(match.Groups[1].Value, out TimeSpan open);
+                    TimeSpan.TryParse(match.Groups[2].Value, out TimeSpan close);
+                    _openingHours = (open, close);
+                }
+            }
+            catch
+            {
+                _openingHours = (new TimeSpan(6, 0, 0), new TimeSpan(23, 0, 0));
             }
         }
 
@@ -180,7 +232,7 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 btnShowHistory.Content = "Hiện Lịch Sử Hủy";
                 cmbSearchTrangThai.Visibility = Visibility.Visible;
-                cmbSearchTrangThai.SelectedIndex = 0; // Reset về "Chờ xác nhận"
+                cmbSearchTrangThai.SelectedIndex = 0; // Reset về "Tất cả"
             }
             ApplyFilter();
         }
@@ -188,21 +240,29 @@ namespace AppCafebookApi.View.nhanvien.pages
         private void ApplyFilter()
         {
             if (_allPhieuDatBansCache == null) return;
-
             IEnumerable<PhieuDatBanDto> filteredList;
             bool showHistory = btnShowHistory.IsChecked == true;
 
             if (showHistory)
             {
-                // 1. Chế độ xem Lịch Sử Hủy
-                filteredList = _allPhieuDatBansCache.Where(p => p.TrangThai == "Đã hủy");
+                filteredList = _allPhieuDatBansCache.Where(p =>
+                    p.TrangThai == "Đã hủy" ||
+                    p.TrangThai == "Khách đã đến");
             }
             else
             {
-                // 2. Chế độ xem Hiện Tại (Chờ, Đã xác nhận)
-                // SỬA LỖI CS1061: Dùng (SelectedItem as ComboBoxItem).Content
-                var trangThaiFilter = (cmbSearchTrangThai.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Chờ xác nhận";
-                filteredList = _allPhieuDatBansCache.Where(p => p.TrangThai == trangThaiFilter);
+                var trangThaiFilter = (cmbSearchTrangThai.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Tất cả";
+
+                if (trangThaiFilter == "Tất cả")
+                {
+                    filteredList = _allPhieuDatBansCache.Where(p =>
+                        p.TrangThai == "Chờ xác nhận" ||
+                        p.TrangThai == "Đã xác nhận");
+                }
+                else
+                {
+                    filteredList = _allPhieuDatBansCache.Where(p => p.TrangThai == trangThaiFilter);
+                }
             }
 
             var filterText = txtSearch.Text.ToLower().Trim();
@@ -212,23 +272,19 @@ namespace AppCafebookApi.View.nhanvien.pages
                     .Where(p => (p.TenKhachHang != null && p.TenKhachHang.ToLower().Contains(filterText)) ||
                                 (p.SoDienThoai != null && p.SoDienThoai.Contains(filterText)));
             }
-
             var filterDate = dpSearchDate.SelectedDate;
             if (filterDate.HasValue)
             {
                 filteredList = filteredList.Where(p => p.ThoiGianDat.Date == filterDate.Value.Date);
             }
-
-            // Sắp xếp
             if (showHistory)
             {
-                filteredList = filteredList.OrderByDescending(p => p.ThoiGianDat); // Hủy mới nhất lên đầu
+                filteredList = filteredList.OrderByDescending(p => p.ThoiGianDat);
             }
             else
             {
-                filteredList = filteredList.OrderBy(p => p.ThoiGianDat); // Chờ sớm nhất lên đầu
+                filteredList = filteredList.OrderBy(p => p.ThoiGianDat);
             }
-
             PhieuDatBans.Clear();
             foreach (var item in filteredList)
             {
@@ -243,7 +299,6 @@ namespace AppCafebookApi.View.nhanvien.pages
             dpSearchDate.SelectedDate = null;
             cmbSearchTrangThai.SelectedIndex = 0;
             btnShowHistory.IsChecked = false;
-
             await LoadAllDataAsync();
             ApplyFilter();
         }
@@ -260,17 +315,14 @@ namespace AppCafebookApi.View.nhanvien.pages
                 ClearForm();
                 return;
             }
-
             txtTenKhach.Text = _selectedPhieu.TenKhachHang;
             cmbSoDienThoai.Text = _selectedPhieu.SoDienThoai;
             cmbEmail.Text = _selectedPhieu.Email;
             dpThoiGianDat.SelectedDate = _selectedPhieu.ThoiGianDat;
-            cmbHour.SelectedItem = _selectedPhieu.ThoiGianDat.ToString("HH");
-            cmbMinute.SelectedItem = _selectedPhieu.ThoiGianDat.ToString("mm");
-
+            cmbHour.Text = _selectedPhieu.ThoiGianDat.ToString("HH");
+            cmbMinute.Text = _selectedPhieu.ThoiGianDat.ToString("mm");
             txtSoLuongKhach.Text = _selectedPhieu.SoLuongKhach.ToString();
             txtGhiChu.Text = _selectedPhieu.GhiChu;
-
             foreach (ComboBoxItem item in cmbTrangThai.Items)
             {
                 if (item.Content.ToString() == _selectedPhieu.TrangThai)
@@ -279,7 +331,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                     break;
                 }
             }
-
             var ban = _allBansCache.FirstOrDefault(b => b.IdBan == _selectedPhieu.IdBan);
             if (ban == null)
             {
@@ -289,8 +340,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 }
             }
             cmbBan.SelectedValue = _selectedPhieu.IdBan;
-
-            // YÊU CẦU 4: Hiển thị nút Xác Nhận
             if (_selectedPhieu.TrangThai == "Đã xác nhận")
             {
                 btnXacNhanDen_Form.Visibility = Visibility.Visible;
@@ -303,15 +352,36 @@ namespace AppCafebookApi.View.nhanvien.pages
                 menuXacNhanDen.IsEnabled = true;
                 menuHuyPhieu.IsEnabled = true;
             }
-            else // Đã hủy, đã đến
+            else
             {
                 btnXacNhanDen_Form.Visibility = Visibility.Collapsed;
                 menuXacNhanDen.IsEnabled = false;
                 menuHuyPhieu.IsEnabled = false;
             }
-
             btnSua.IsEnabled = true;
             btnXoa.IsEnabled = true;
+
+            _globalCustomerCache.Clear();
+            cmbSoDienThoai.ItemsSource = null;
+            cmbEmail.ItemsSource = null;
+
+            if (chkKhachVangLai == null) return;
+
+            if (_selectedPhieu != null && _selectedPhieu.IdKhachHang.HasValue && _selectedPhieu.IdKhachHang > 0)
+            {
+                chkKhachVangLai.IsChecked = false;
+                chkKhachVangLai.IsEnabled = false;
+                ToggleCustomerSearch(true);
+            }
+            else
+            {
+                chkKhachVangLai.IsEnabled = true;
+                if (_selectedPhieu != null)
+                {
+                    chkKhachVangLai.IsChecked = true;
+                    ToggleCustomerSearch(false);
+                }
+            }
         }
 
         private void ClearForm()
@@ -321,23 +391,35 @@ namespace AppCafebookApi.View.nhanvien.pages
             cmbSoDienThoai.Text = string.Empty;
             cmbEmail.Text = string.Empty;
             cmbBan.SelectedIndex = -1;
-            dpThoiGianDat.SelectedDate = DateTime.Now;
 
             var now = DateTime.Now;
-            int minute = (now.Minute / 15) * 15;
-            cmbHour.SelectedItem = now.ToString("HH");
-            cmbMinute.SelectedItem = minute.ToString("00");
+            int minute = (now.Minute / 15 + 1) * 15;
+            DateTime roundedNow = now.Date.AddHours(now.Hour).AddMinutes(minute);
+
+            dpThoiGianDat.SelectedDate = roundedNow.Date;
+            cmbHour.Text = roundedNow.ToString("HH");
+            cmbMinute.Text = roundedNow.ToString("mm");
 
             txtSoLuongKhach.Text = "1";
             cmbTrangThai.SelectedIndex = 0;
             txtGhiChu.Text = string.Empty;
-
             dgPhieuDatBan.SelectedIndex = -1;
             btnSua.IsEnabled = false;
             btnXoa.IsEnabled = false;
             btnXacNhanDen_Form.Visibility = Visibility.Collapsed;
             menuXacNhanDen.IsEnabled = false;
             menuHuyPhieu.IsEnabled = false;
+
+            _globalCustomerCache.Clear();
+            cmbSoDienThoai.ItemsSource = null;
+            cmbEmail.ItemsSource = null;
+
+            if (chkKhachVangLai != null)
+            {
+                chkKhachVangLai.IsChecked = false;
+                chkKhachVangLai.IsEnabled = true;
+                ToggleCustomerSearch(true);
+            }
         }
 
         private void BtnLamMoiForm_Click(object sender, RoutedEventArgs e)
@@ -354,23 +436,44 @@ namespace AppCafebookApi.View.nhanvien.pages
                 return false;
             }
 
+            bool isVangLai = chkKhachVangLai.IsChecked == true;
+
             if (string.IsNullOrWhiteSpace(txtTenKhach.Text) ||
                 string.IsNullOrWhiteSpace(cmbSoDienThoai.Text) ||
                 cmbBan.SelectedValue == null ||
                 dpThoiGianDat.SelectedDate == null ||
-                cmbHour.SelectedValue == null || cmbMinute.SelectedValue == null ||
+                string.IsNullOrWhiteSpace(cmbHour.Text) || string.IsNullOrWhiteSpace(cmbMinute.Text) ||
                 string.IsNullOrWhiteSpace(txtSoLuongKhach.Text))
             {
                 MessageBox.Show("Vui lòng nhập đầy đủ các trường bắt buộc (*).");
                 return false;
             }
+            if (!int.TryParse(cmbHour.Text, out int hour) || hour < 0 || hour > 23)
+            {
+                MessageBox.Show("Giờ nhập không hợp lệ (phải là số 0-23).");
+                return false;
+            }
+            if (!int.TryParse(cmbMinute.Text, out int minute) || minute < 0 || minute > 59)
+            {
+                MessageBox.Show("Phút nhập không hợp lệ (phải là số 0-59).");
+                return false;
+            }
 
-            // SỬA LỖI CS8604: Thêm kiểm tra null trước khi Parse
             DateTime selectedDate = dpThoiGianDat.SelectedDate.Value;
-            int hour = int.Parse(cmbHour.SelectedItem?.ToString() ?? "0");
-            int minute = int.Parse(cmbMinute.SelectedItem?.ToString() ?? "0");
             DateTime thoiGianDat = new DateTime(selectedDate.Year, selectedDate.Month, selectedDate.Day, hour, minute, 0);
 
+            if (thoiGianDat < DateTime.Now.AddMinutes(10))
+            {
+                MessageBox.Show("Thời gian đặt phải cách ít nhất 10 phút so với hiện tại.", "Lỗi Thời Gian");
+                return false;
+            }
+
+            var timeOfDay = thoiGianDat.TimeOfDay;
+            if (timeOfDay < _openingHours.Open || timeOfDay > _openingHours.Close)
+            {
+                MessageBox.Show($"Giờ đặt ({thoiGianDat:HH:mm}) nằm ngoài giờ mở cửa ({_openingHours.Open:hh\\:mm} - {_openingHours.Close:hh\\:mm}).");
+                return false;
+            }
             var selectedBan = cmbBan.SelectedItem as BanDatBanDto;
             int soKhach = int.Parse(txtSoLuongKhach.Text);
             if (selectedBan != null && soKhach > selectedBan.SoGhe)
@@ -379,25 +482,43 @@ namespace AppCafebookApi.View.nhanvien.pages
                 return false;
             }
 
+            string tenToSave = txtTenKhach.Text.Trim();
+            string sdtToSave = cmbSoDienThoai.Text.Trim();
+            string emailToSave = cmbEmail.Text.Trim();
+
+            KhachHangLookupDto selectedCust = null;
+            if (cmbSoDienThoai.SelectedItem != null)
+                selectedCust = cmbSoDienThoai.SelectedItem as KhachHangLookupDto;
+            else if (cmbEmail.SelectedItem != null)
+                selectedCust = cmbEmail.SelectedItem as KhachHangLookupDto;
+
+            if (!isVangLai && selectedCust != null)
+            {
+                tenToSave = selectedCust.HoTen;
+                sdtToSave = selectedCust.SoDienThoai;
+                emailToSave = selectedCust.Email;
+            }
+
             dto = new PhieuDatBanCreateUpdateDto
             {
-                TenKhachHang = txtTenKhach.Text.Trim(),
-                SoDienThoai = cmbSoDienThoai.Text.Trim(),
-                Email = cmbEmail.Text.Trim(),
+                TenKhachHang = tenToSave,
+                SoDienThoai = sdtToSave,
+                Email = emailToSave,
                 IdBan = (int)cmbBan.SelectedValue,
                 ThoiGianDat = thoiGianDat,
                 SoLuongKhach = soKhach,
                 GhiChu = txtGhiChu.Text.Trim(),
                 TrangThai = (cmbTrangThai.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Đã xác nhận",
-                IdNhanVienTao = AuthService.CurrentUser.IdNhanVien
+                IdNhanVienTao = AuthService.CurrentUser.IdNhanVien,
+                IsKhachVangLai = isVangLai
             };
             return true;
         }
 
+
         private async void BtnThem_Click(object sender, RoutedEventArgs e)
         {
             if (!ValidateForm(out var dto)) return;
-
             try
             {
                 var response = await httpClient.PostAsJsonAsync("api/app/datban/create-staff", dto);
@@ -412,10 +533,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     MessageBox.Show("Lỗi tạo phiếu: " + await response.Content.ReadAsStringAsync());
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi API: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Lỗi API: " + ex.Message); }
         }
 
         private async void BtnSua_Click(object sender, RoutedEventArgs e)
@@ -423,9 +541,7 @@ namespace AppCafebookApi.View.nhanvien.pages
             if (_selectedPhieu == null) return;
             if (!ValidateForm(out var dto)) return;
             if (dto == null) return;
-
             dto.IdPhieuDatBan = _selectedPhieu.IdPhieuDatBan;
-
             try
             {
                 var response = await httpClient.PutAsJsonAsync($"api/app/datban/update/{dto.IdPhieuDatBan}", dto);
@@ -440,36 +556,29 @@ namespace AppCafebookApi.View.nhanvien.pages
                     MessageBox.Show("Lỗi cập nhật: " + await response.Content.ReadAsStringAsync());
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi API: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Lỗi API: " + ex.Message); }
         }
 
         private async void BtnXoa_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPhieu == null)
             {
-                MessageBox.Show("Vui lòng chọn phiếu để xóa.");
-                return;
+                MessageBox.Show("Vui lòng chọn phiếu để xóa."); return;
             }
             if (MessageBox.Show($"Bạn có chắc muốn xóa phiếu của khách '{_selectedPhieu.TenKhachHang}'?",
                 "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
             {
                 return;
             }
-
             await HuyPhieu(_selectedPhieu.IdPhieuDatBan, true);
         }
 
-        // SỬA LỖI CS1061: Thêm các hàm này
         private void MenuSuaPhieu_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPhieu == null)
             {
                 MessageBox.Show("Vui lòng chọn phiếu để sửa.");
             }
-            // Dữ liệu đã được nạp lên form, không cần làm gì thêm
         }
 
         private void MenuXoaPhieu_Click(object sender, RoutedEventArgs e)
@@ -481,67 +590,75 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         #region Xử lý Context Menu và Nút Form
 
+        // === HÀM ĐÃ SỬA ===
         private async void BtnXacNhanDen_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPhieu == null) return;
             if (AuthService.CurrentUser == null)
             {
-                MessageBox.Show("Phiên đăng nhập hết hạn.");
-                return;
+                MessageBox.Show("Phiên đăng nhập hết hạn."); return;
             }
-
             if (_selectedPhieu.TrangThai != "Đã xác nhận")
             {
                 MessageBox.Show("Chỉ có thể xác nhận khách đến cho phiếu 'Đã xác nhận'.");
                 return;
             }
-
             var request = new XacNhanKhachDenRequestDto
             {
                 IdPhieuDatBan = _selectedPhieu.IdPhieuDatBan,
                 IdNhanVien = AuthService.CurrentUser.IdNhanVien
             };
-
             try
             {
                 var response = await httpClient.PostAsJsonAsync("api/app/datban/xacnhan-den", request);
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<XacNhanKhachDenResponseDto>(_jsonOptions);
-                    MessageBox.Show("Đã xác nhận khách đến. Mở giao diện gọi món...");
 
-                    var mainWindow = Application.Current.MainWindow as ManHinhNhanVien;
+                    // 1. Thông báo cho người dùng
+                    MessageBox.Show("Đã xác nhận khách đến. Chuyển đến Sơ đồ bàn...");
 
-                    if (mainWindow != null && result != null)
+                    // 2. === SỬA LỖI ĐIỀU HƯỚNG ===
+                    // Sử dụng NavigationService của Page. Đây là cách chuẩn và an toàn nhất.
+                    if (this.NavigationService != null && result != null)
                     {
-                        // SỬA: Dùng tên Frame chính xác từ ManHinhNhanVien.xaml.cs
-                        mainWindow.MainFrame.Navigate(new GoiMonView(result.IdHoaDon));
+                        this.NavigationService.Navigate(new SoDoBanView(_selectedPhieu.IdBan));
+                    }
+                    else
+                    {
+                        // Fallback (cách cũ của bạn) phòng trường hợp NavigationService bị null
+                        var mainWindow = Application.Current.MainWindow as ManHinhNhanVien;
+                        if (mainWindow != null && result != null)
+                        {
+                            mainWindow.MainFrame.Navigate(new SoDoBanView(_selectedPhieu.IdBan));
+                        }
+                        else
+                        {
+                            MessageBox.Show("Lỗi: Không tìm thấy Frame chính để điều hướng.");
+                        }
                     }
 
-                    await LoadAllDataAsync();
-                    ApplyFilter();
+                    // 3. === SỬA LỖI "ĐỨNG YÊN" ===
+                    // Xóa 2 dòng này. Chúng đang ngăn cản trang mới tải.
+                    // await LoadAllDataAsync();
+                    // ApplyFilter();
                 }
                 else
                 {
                     MessageBox.Show("Lỗi xác nhận: " + await response.Content.ReadAsStringAsync());
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi API: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Lỗi API: " + ex.Message); }
         }
 
         private async void BtnHuyPhieu_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPhieu == null) return;
-
             if (MessageBox.Show($"Bạn có chắc muốn HỦY phiếu của khách '{_selectedPhieu.TenKhachHang}'?",
                "Xác nhận hủy", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
             {
                 return;
             }
-
             await HuyPhieu(_selectedPhieu.IdPhieuDatBan, false);
         }
 
@@ -561,10 +678,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     MessageBox.Show("Lỗi hủy phiếu: " + await response.Content.ReadAsStringAsync());
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi API: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Lỗi API: " + ex.Message); }
         }
 
         #endregion
@@ -583,12 +697,10 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 AvailableBans.Clear();
                 IEnumerable<BanDatBanDto> filteredBans = _allBansCache;
-
                 if (selectedKhuVuc.IdKhuVuc > 0)
                 {
                     filteredBans = _allBansCache.Where(b => b.IdKhuVuc == selectedKhuVuc.IdKhuVuc);
                 }
-
                 foreach (var ban in filteredBans.OrderBy(b => b.SoBan))
                 {
                     AvailableBans.Add(ban);
@@ -599,20 +711,16 @@ namespace AppCafebookApi.View.nhanvien.pages
         private void CmbBan_KeyUp(object sender, KeyEventArgs e)
         {
             if (cmbBan.ItemsSource == null) cmbBan.ItemsSource = AvailableBans;
-
-            // SỬA LỖI CS1061: Thay IsLetterOrDigit bằng cách kiểm tra phím điều hướng
             if (e.Key == Key.Enter || e.Key == Key.Tab || e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Escape)
             {
-                return; // Không lọc khi nhấn các phím này
+                return;
             }
-
             string searchText = cmbBan.Text.ToLower();
             var selectedKhuVucId = (int?)cmbFilterKhuVuc_Form.SelectedValue;
-
+            if (selectedKhuVucId == null) selectedKhuVucId = 0;
             var filteredBans = _allBansCache
                 .Where(b => (selectedKhuVucId == 0 || b.IdKhuVuc == selectedKhuVucId))
-                .Where(b => b.SoBan.ToLower().Contains(searchText));
-
+                .Where(b => b.SoBan != null && b.SoBan.ToLower().Contains(searchText));
             AvailableBans.Clear();
             foreach (var ban in filteredBans.OrderBy(b => b.SoBan))
             {
@@ -623,19 +731,45 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void CmbKhachHang_KeyUp(object sender, KeyEventArgs e)
         {
+            if (chkKhachVangLai.IsChecked == true)
+            {
+                cmbSoDienThoai.ItemsSource = null;
+                cmbEmail.ItemsSource = null;
+                return;
+            }
+
             if (_isCustomerSearchLoading) return;
+            if (e.Key == Key.Enter || e.Key == Key.Tab || e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Escape)
+            {
+                return;
+            }
 
             var cmb = sender as ComboBox;
-            if (cmb == null || cmb.Text.Length < 3) return;
+            if (cmb == null) return;
+
+            string searchText = cmb.Text;
+            if (searchText.Length < 3)
+            {
+                cmb.ItemsSource = null;
+                _globalCustomerCache.Clear();
+                return;
+            }
+
+            if (cmb.SelectedItem is KhachHangLookupDto selected)
+            {
+                bool isSdtBox = cmb.Name == "cmbSoDienThoai";
+                if (isSdtBox && selected.DisplaySdt == searchText) return;
+                if (!isSdtBox && selected.DisplayEmail == searchText) return;
+            }
 
             _isCustomerSearchLoading = true;
             try
             {
-                var results = await SearchCustomerAsync(cmb.Text);
+                var results = await SearchCustomerAsync(searchText);
                 if (results != null)
                 {
-                    _customerSearchCache = results;
-                    cmb.ItemsSource = results;
+                    _globalCustomerCache = results;
+                    cmb.ItemsSource = _globalCustomerCache;
                     cmb.IsDropDownOpen = true;
                 }
             }
@@ -643,6 +777,26 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 _isCustomerSearchLoading = false;
             }
+        }
+
+        private void CmbKhachHang_DropDownOpened(object sender, EventArgs e)
+        {
+            if (chkKhachVangLai.IsChecked == true)
+            {
+                cmbSoDienThoai.IsDropDownOpen = false;
+                cmbEmail.IsDropDownOpen = false;
+                return;
+            }
+
+            var cmb = sender as ComboBox;
+            if (cmb == null || _isCustomerSearchLoading) return;
+
+            if (_globalCustomerCache.Count == 0 && cmb.Text.Length < 3)
+            {
+                cmb.ItemsSource = null;
+                return;
+            }
+            cmb.ItemsSource = _globalCustomerCache;
         }
 
         private async Task<List<KhachHangLookupDto>> SearchCustomerAsync(string query)
@@ -657,7 +811,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private void CmbKhachHang_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isCustomerSearchLoading || e.AddedItems.Count == 0) return;
+            if (_isCustomerSearchLoading || e.AddedItems.Count == 0 || chkKhachVangLai.IsChecked == true) return;
 
             var selectedCustomer = e.AddedItems[0] as KhachHangLookupDto;
             if (selectedCustomer != null)
@@ -668,8 +822,13 @@ namespace AppCafebookApi.View.nhanvien.pages
                 cmbSoDienThoai.Text = selectedCustomer.SoDienThoai;
                 cmbEmail.Text = selectedCustomer.Email;
 
-                cmbSoDienThoai.ItemsSource = _customerSearchCache;
-                cmbEmail.ItemsSource = _customerSearchCache;
+                var lockedList = new List<KhachHangLookupDto> { selectedCustomer };
+                cmbSoDienThoai.ItemsSource = lockedList;
+                cmbEmail.ItemsSource = lockedList;
+                _globalCustomerCache = lockedList;
+
+                cmbSoDienThoai.SelectedItem = selectedCustomer;
+                cmbEmail.SelectedItem = selectedCustomer;
 
                 _isCustomerSearchLoading = false;
             }
@@ -677,17 +836,64 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private void TxtSoDienThoai_TextChanged(object sender, TextChangedEventArgs e) { }
 
+        private void CmbTime_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter || e.Key == Key.Tab || e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Escape)
+            {
+                return;
+            }
+            var cmb = sender as ComboBox;
+            if (cmb == null) return;
+            var source = (cmb.Name == "cmbHour") ? _validHours : _validMinutes;
+            string searchText = cmb.Text;
+            var filteredList = source.Where(t => t.StartsWith(searchText)).ToList();
+            cmb.ItemsSource = filteredList;
+            cmb.IsDropDownOpen = true;
+        }
+
+        private void ChkKhachVangLai_Changed(object sender, RoutedEventArgs e)
+        {
+            if (chkKhachVangLai == null) return;
+            bool isVangLai = chkKhachVangLai.IsChecked == true;
+            ToggleCustomerSearch(!isVangLai);
+        }
+
+        private void ToggleCustomerSearch(bool enable)
+        {
+            if (enable)
+            {
+                if (cmbSoDienThoai.Text == "N/A") cmbSoDienThoai.Text = "";
+                cmbSoDienThoai.IsReadOnly = false;
+                cmbEmail.IsReadOnly = false;
+            }
+            else
+            {
+                _isCustomerSearchLoading = true;
+                _globalCustomerCache.Clear();
+                cmbSoDienThoai.ItemsSource = null;
+                cmbEmail.ItemsSource = null;
+                cmbSoDienThoai.IsDropDownOpen = false;
+                cmbEmail.IsDropDownOpen = false;
+
+                cmbSoDienThoai.SelectedItem = null;
+                cmbEmail.SelectedItem = null;
+
+                cmbSoDienThoai.IsReadOnly = false;
+                cmbEmail.IsReadOnly = false;
+
+                _isCustomerSearchLoading = false;
+            }
+        }
+
         #endregion
     }
 
-    // SỬA LỖI XDG0008: Di chuyển Converter ra ngoài class
     public class TrangThaiDatBanToBrushConverter : System.Windows.Data.IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string? trangThai = value as string;
             if (trangThai == null) return Brushes.Gray;
-
             switch (trangThai)
             {
                 case "Chờ xác nhận":

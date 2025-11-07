@@ -134,7 +134,7 @@
                         <Separator Margin="15,20" Background="{StaticResource HoverBrownBrush}"/>
 
                         <ToggleButton x:Name="btnThongTinCaNhan" Content="Thông tin cá nhân" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconProfile}" Click="BtnThongTinCaNhan_Click"/>
-                        <ToggleButton x:Name="btnChamCong" Content="Chấm công (Check-in/Out)" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconClock}" Click="BtnChamCong_Click"/>
+                        <ToggleButton x:Name="btnChamCong" Content="Chấm công" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconClock}" Click="BtnChamCong_Click"/>
                         <ToggleButton x:Name="btnLichLamViecCuaToi" Content="Xem Lịch Làm Việc" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconCalendarView}" Click="BtnLichLamViecCuaToi_Click"/>
                         <ToggleButton x:Name="btnPhieuLuongCuaToi" Content="Xem Phiếu Lương" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconPayroll}" Click="BtnPhieuLuongCuaToi_Click"/>
                     </StackPanel>
