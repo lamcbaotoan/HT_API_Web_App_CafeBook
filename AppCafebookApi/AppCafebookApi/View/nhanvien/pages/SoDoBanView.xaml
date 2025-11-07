@@ -13,7 +13,8 @@
         <Geometry x:Key="IconSelectTable">M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z</Geometry>
         <Geometry x:Key="IconRefresh">M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z</Geometry>
         <Geometry x:Key="IconMenu">M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z</Geometry>
-
+        <FontFamily x:Key="FontAwesomeSolid">/Fonts/Font Awesome 6 Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
+        
         <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
         <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
         <SolidColorBrush x:Key="AccentOrangeBrush" Color="#D27D2D"/>
@@ -29,7 +30,6 @@
         <SolidColorBrush x:Key="ActionGrayBrush" Color="#BDBDBD"/>
         <SolidColorBrush x:Key="StatusBlueBrush" Color="#42A5F5"/>
         <ExponentialEase x:Key="ExpoEaseOut" EasingMode="EaseOut"/>
-        <FontFamily x:Key="FontAwesomeSolid">/Assets/Fonts/Font Awesome 6 Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
 
         <Style x:Key="KhuVucToggleStyle" TargetType="ToggleButton">
             <Setter Property="Background" Value="Transparent"/>

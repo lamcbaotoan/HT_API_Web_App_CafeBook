@@ -1,0 +1,279 @@
+﻿<Page x:Class="AppCafebookApi.View.nhanvien.pages.DatBanView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:AppCafebookApi.View.nhanvien.pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="700" d:DesignWidth="1100"
+      Title="DatBanView" FontFamily="Segoe UI" Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
+        <SolidColorBrush x:Key="AccentOrangeBrush" Color="#D27D2D"/>
+        <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
+        <SolidColorBrush x:Key="WhiteTextBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="SubtleGrayBrush" Color="#EEEEEE"/>
+        <SolidColorBrush x:Key="BorderGrayBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="StatusGreenBrush" Color="#66BB6A"/>
+        <SolidColorBrush x:Key="StatusRedBrush" Color="#EF5350"/>
+        <SolidColorBrush x:Key="StatusYellowBrush" Color="#FFA726"/>
+        <SolidColorBrush x:Key="StatusBlueBrush" Color="#42A5F5"/>
+        <FontFamily x:Key="FontAwesomeSolid">/Fonts/Font Awesome 6 Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
+        <Style TargetType="TextBlock" x:Key="FormLabel">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+        </Style>
+        <Style TargetType="TextBox" x:Key="FormTextBox">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style TargetType="ComboBox" x:Key="FormComboBox">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style TargetType="DatePicker" x:Key="FormDatePicker">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="4" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ActionToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" CornerRadius="4" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <local:TrangThaiDatBanToBrushConverter x:Key="TrangThaiBrushConverter"/>
+
+    </Page.Resources>
+
+    <Grid Background="{StaticResource LightCreamBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="350"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Quản lý Phiếu Đặt Bàn" FontSize="24" FontWeight="Bold" 
+                       Foreground="{StaticResource DarkBrownBrush}" Margin="10,5"/>
+
+            <Border Grid.Row="1" Background="White" CornerRadius="4" Padding="15" Margin="10,5">
+                <WrapPanel>
+                    <TextBlock Text="Tìm SĐT/Tên:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtSearch" Width="180" Style="{StaticResource FormTextBox}" KeyUp="TxtSearch_KeyUp"/>
+
+                    <TextBlock Text="Ngày đặt:" VerticalAlignment="Center" Margin="15,0,5,0" FontWeight="SemiBold"/>
+                    <DatePicker x:Name="dpSearchDate" Width="130" Style="{StaticResource FormDatePicker}"/>
+
+                    <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="15,0,5,0" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="cmbSearchTrangThai" Width="120" Style="{StaticResource FormComboBox}" SelectionChanged="BtnSearch_Click">
+                        <ComboBoxItem Content="Chờ xác nhận"/>
+                        <ComboBoxItem Content="Đã xác nhận"/>
+                    </ComboBox>
+
+                    <Button x:Name="btnSearch" Content="Lọc" Style="{StaticResource ActionButton}" 
+                            Background="{StaticResource PrimaryBrownBrush}" Click="BtnSearch_Click" Padding="15,8"/>
+
+                    <ToggleButton x:Name="btnShowHistory" Content="Hiện Lịch Sử Hủy" Style="{StaticResource ActionToggleStyle}" 
+                                  Background="{StaticResource TextGrayBrush}" Click="BtnShowHistory_Click" Margin="10,5,5,5" Padding="15,8"/>
+                </WrapPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2" x:Name="dgPhieuDatBan" Margin="10,5" AutoGenerateColumns="False" 
+                      IsReadOnly="True" SelectionMode="Single" SelectionChanged="DgPhieuDatBan_SelectionChanged"
+                      ItemsSource="{Binding PhieuDatBans}" CanUserAddRows="False">
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="✅ Xác nhận khách đến" Click="BtnXacNhanDen_Click" x:Name="menuXacNhanDen"/>
+                        <MenuItem Header="🚫 Hủy phiếu" Click="BtnHuyPhieu_Click" x:Name="menuHuyPhieu"/>
+                        <Separator />
+                        <MenuItem Header="✏️ Sửa phiếu" Click="MenuSuaPhieu_Click"/>
+                        <MenuItem Header="❌ Xóa phiếu" Click="MenuXoaPhieu_Click"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Trạng thái" Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="10" Padding="8,3" Margin="5"
+                                        Background="{Binding TrangThai, Converter={StaticResource TrangThaiBrushConverter}}">
+                                    <TextBlock Text="{Binding TrangThai}" FontWeight="SemiBold" 
+                                               Foreground="White" HorizontalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Thời Gian Đặt" Binding="{Binding ThoiGianDat, StringFormat='HH:mm dd/MM/yy'}" Width="*"/>
+                    <DataGridTextColumn Header="Tên Khách Hàng" Binding="{Binding TenKhachHang}" Width="*"/>
+                    <DataGridTextColumn Header="Số ĐT" Binding="{Binding SoDienThoai}" Width="*"/>
+                    <DataGridTextColumn Header="Bàn" Binding="{Binding SoBan}" Width="Auto"/>
+                    <DataGridTextColumn Header="Khu Vực" Binding="{Binding TenKhuVuc}" Width="*"/>
+                    <DataGridTextColumn Header="SL Khách" Binding="{Binding SoLuongKhach}" Width="Auto"/>
+                    <DataGridTextColumn Header="Ghi Chú" Binding="{Binding GhiChu}" Width="2*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <Border Grid.Column="1" Background="White" Margin="0,10,10,10" CornerRadius="4">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="20">
+                    <TextBlock Text="Thông Tin Phiếu" FontSize="20" FontWeight="Bold" 
+                               Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Số Điện Thoại * (Gõ để tìm KH)"/>
+                    <ComboBox x:Name="cmbSoDienThoai" Style="{StaticResource FormComboBox}"
+                              IsEditable="True" IsTextSearchEnabled="False"
+                              KeyUp="CmbKhachHang_KeyUp"
+                              SelectionChanged="CmbKhachHang_SelectionChanged"
+                              DisplayMemberPath="DisplaySdt"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Email (Gõ để tìm KH)"/>
+                    <ComboBox x:Name="cmbEmail" Style="{StaticResource FormComboBox}"
+                              IsEditable="True" IsTextSearchEnabled="False"
+                              KeyUp="CmbKhachHang_KeyUp"
+                              SelectionChanged="CmbKhachHang_SelectionChanged"
+                              DisplayMemberPath="DisplayEmail"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Tên Khách Hàng * (Tự điền nếu có)"/>
+                    <TextBox x:Name="txtTenKhach" Style="{StaticResource FormTextBox}"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Lọc Khu Vực (Form)"/>
+                    <ComboBox x:Name="cmbFilterKhuVuc_Form" Style="{StaticResource FormComboBox}"
+                              DisplayMemberPath="TenKhuVuc" SelectedValuePath="IdKhuVuc"
+                              SelectionChanged="CmbFilterKhuVuc_Form_SelectionChanged"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Bàn * (Gõ để tìm bàn)"/>
+                    <ComboBox x:Name="cmbBan" Style="{StaticResource FormComboBox}"
+                              ItemsSource="{Binding AvailableBans}" DisplayMemberPath="HienThi" 
+                              SelectedValuePath="IdBan"
+                              IsEditable="True" IsTextSearchEnabled="False"
+                              KeyUp="CmbBan_KeyUp"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Thời Gian Đặt *"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <DatePicker Grid.Column="0" x:Name="dpThoiGianDat" Style="{StaticResource FormDatePicker}"/>
+
+                        <ComboBox Grid.Column="1" x:Name="cmbHour" Style="{StaticResource FormComboBox}" Width="60" Margin="5,0,0,0"/>
+                        <ComboBox Grid.Column="2" x:Name="cmbMinute" Style="{StaticResource FormComboBox}" Width="60" Margin="5,0,0,0"/>
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Số Lượng Khách *"/>
+                    <TextBox x:Name="txtSoLuongKhach" Style="{StaticResource FormTextBox}" PreviewTextInput="NumberValidationTextBox"/>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Trạng Thái *"/>
+                    <ComboBox x:Name="cmbTrangThai" Style="{StaticResource FormComboBox}">
+                        <ComboBoxItem Content="Đã xác nhận"/>
+                        <ComboBoxItem Content="Chờ xác nhận"/>
+                        <ComboBoxItem Content="Đã hủy"/>
+                        <ComboBoxItem Content="Khách đã đến"/>
+                    </ComboBox>
+
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Ghi Chú"/>
+                    <TextBox x:Name="txtGhiChu" Style="{StaticResource FormTextBox}" Height="60" 
+                             TextWrapping="Wrap" AcceptsReturn="True"/>
+
+                    <Button x:Name="btnXacNhanDen_Form" Content="✅ Xác Nhận Khách Đến" Style="{StaticResource ActionButton}" 
+                            Background="{StaticResource StatusGreenBrush}" Margin="5,15,5,5"
+                            Click="BtnXacNhanDen_Click" Visibility="Collapsed"/>
+
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="btnThem" Content="Thêm" Grid.Column="0" 
+                                Style="{StaticResource ActionButton}" Background="{StaticResource StatusGreenBrush}"
+                                Click="BtnThem_Click"/>
+                        <Button x:Name="btnSua" Content="Sửa" Grid.Column="1" 
+                                Style="{StaticResource ActionButton}" Background="{StaticResource StatusBlueBrush}"
+                                Click="BtnSua_Click"/>
+                        <Button x:Name="btnXoa" Content="Xóa" Grid.Column="2" 
+                                Style="{StaticResource ActionButton}" Background="{StaticResource StatusRedBrush}"
+                                Click="BtnXoa_Click"/>
+                    </Grid>
+                    <Button x:Name="btnLamMoiForm" Content="Làm Mới Form" Style="{StaticResource ActionButton}" 
+                            Background="{StaticResource TextGrayBrush}" Margin="5,10,5,5"
+                            Click="BtnLamMoiForm_Click"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Border x:Name="LoadingOverlay" Grid.ColumnSpan="2" Background="#80FFFFFF" Visibility="Collapsed">
+            <TextBlock Text="Đang tải..." HorizontalAlignment="Center" VerticalAlignment="Center" 
+                       FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource DarkBrownBrush}"/>
+        </Border>
+    </Grid>
+</Page>

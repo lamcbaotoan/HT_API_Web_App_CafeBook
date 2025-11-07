@@ -597,9 +597,12 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private Frame? FindParentFrame()
         {
-            var mainFrame = Application.Current.Windows.OfType<Window>()
-                           .FirstOrDefault(w => w.Title == "NhanVienWindow")
-                           ?.FindName("MainFrame") as Frame;
+            // 1. Lấy cửa sổ (Window) hiện tại mà Page này đang nằm trong đó.
+            var currentWindow = Window.GetWindow(this);
+            if (currentWindow == null) return null;
+
+            // 2. Tìm Frame có tên "MainFrame" bên trong cửa sổ đó.
+            var mainFrame = currentWindow.FindName("MainFrame") as Frame;
             return mainFrame;
         }
 

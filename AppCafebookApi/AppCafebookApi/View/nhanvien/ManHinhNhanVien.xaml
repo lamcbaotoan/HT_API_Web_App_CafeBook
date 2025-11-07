@@ -128,8 +128,8 @@
                     <StackPanel>
                         <ToggleButton x:Name="btnSoDoBan" Content="Sơ đồ bàn" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconDashboard}" Click="BtnSoDoBan_Click" IsChecked="True"/>
                         <ToggleButton x:Name="btnDatBan" Content="Quản lý Đặt bàn" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconBooking}" Click="BtnDatBan_Click"/>
-                        <ToggleButton x:Name="btnGiaoHang" Content="Đơn Giao Hàng" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconDelivery}" Click="BtnGiaoHang_Click"/>
                         <ToggleButton x:Name="btnThueSach" Content="Quản lý Thuê Sách" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconBook}" Click="BtnThueSach_Click"/>
+                        <ToggleButton x:Name="btnGiaoHang" Content="Đơn Giao Hàng" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconDelivery}" Click="BtnGiaoHang_Click"/>
 
                         <Separator Margin="15,20" Background="{StaticResource HoverBrownBrush}"/>
 

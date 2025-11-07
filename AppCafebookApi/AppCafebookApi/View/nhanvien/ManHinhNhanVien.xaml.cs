@@ -114,8 +114,11 @@ namespace AppCafebookApi.View.nhanvien
         private void BtnDatBan_Click(object sender, RoutedEventArgs e)
         {
             // (Chuyển btnDatBanSach thành btnDatBan cho nhất quán)
+            NavigateToPage(sender as ToggleButton, new DatBanView());
+            /*
             MessageBox.Show("Chức năng 'Đặt Bàn' đang được phát triển.");
             ResetToDefaultPage(sender);
+            */
         }
 
         // === CÁC HÀM CLICK MỚI ===
@@ -136,9 +139,12 @@ namespace AppCafebookApi.View.nhanvien
 
         private void BtnThongTinCaNhan_Click(object sender, RoutedEventArgs e)
         {
+            NavigateToPage(sender as ToggleButton, new AppCafebookApi.View.nhanvien.pages.ThongTinCaNhanView());
+            /*
             // TODO: NavigateToPage(sender as ToggleButton, new ThongTinCaNhanView());
             MessageBox.Show("Chức năng 'Thông tin cá nhân & Đổi Mật khẩu' đang được phát triển.");
             ResetToDefaultPage(sender);
+            */
         }
 
         private async void BtnChamCong_Click(object sender, RoutedEventArgs e)

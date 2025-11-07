@@ -10,6 +10,7 @@ namespace AppCafebookApi.Services
     {
         // 1. Lưu trữ thông tin người dùng hiện tại
         public static NhanVienDto? CurrentUser { get; private set; }
+        public static string? AuthToken { get; private set; }
 
         // 2. Cấu hình HttpClient
         private static readonly HttpClient _httpClient;
@@ -39,6 +40,7 @@ namespace AppCafebookApi.Services
                     if (loginResponse != null && loginResponse.Success)
                     {
                         CurrentUser = loginResponse.UserData; // Lưu người dùng
+                        AuthToken = loginResponse.Token ?? string.Empty; // Nếu API trả về token thì lưu lại để dùng cho các request sau
                     }
                     return loginResponse ?? new LoginResponseModel { Success = false, Message = "Không thể đọc phản hồi." };
                 }
@@ -88,7 +90,9 @@ namespace AppCafebookApi.Services
         public static void Logout()
         {
             CurrentUser = null;
+            AuthToken = null;//mới
         }
+
 
         // 2. HÀM KIỂM TRA MỘT QUYỀN
         public static bool CoQuyen(string idQuyen)

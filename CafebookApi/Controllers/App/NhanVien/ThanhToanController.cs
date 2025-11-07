@@ -227,6 +227,10 @@ namespace CafebookApi.Controllers.App.NhanVien
                 {
                     chiTiet.IdHoaDon = hoaDonThanhToan.IdHoaDon;
                     tongTienTach += chiTiet.ThanhTien;
+
+                    // SỬA LỖI: Xóa chi tiết này khỏi collection 'ChiTietHoaDons'
+                    // của 'hoaDonGoc' đang được EF theo dõi (tracked)
+                    hoaDonGoc.ChiTietHoaDons.Remove(chiTiet);
                 }
                 hoaDonThanhToan.TongTienGoc = tongTienTach;
 
@@ -235,6 +239,9 @@ namespace CafebookApi.Controllers.App.NhanVien
                 {
                     phuThu.IdHoaDon = hoaDonThanhToan.IdHoaDon;
                     tongPhuThuTach += phuThu.SoTien;
+
+                    // SỬA LỖI: Tương tự, xóa phụ thu khỏi collection
+                    hoaDonGoc.ChiTietPhuThuHoaDons.Remove(phuThu);
                 }
                 foreach (var ptMoi in phuThuMoi)
                 {
@@ -251,6 +258,11 @@ namespace CafebookApi.Controllers.App.NhanVien
                 }
                 hoaDonThanhToan.TongPhuThu = tongPhuThuTach;
 
+                // SỬA LỖI: Tính toán lại tổng tiền gốc dựa trên
+                // collection 'ChiTietHoaDons' đã được cập nhật thủ công
+                hoaDonGoc.TongTienGoc = hoaDonGoc.ChiTietHoaDons.Sum(c => c.ThanhTien);
+                hoaDonGoc.TongPhuThu = hoaDonGoc.ChiTietPhuThuHoaDons.Sum(pt => pt.SoTien);
+                /*
                 // ### BẮT ĐẦU SỬA LỖI ###
                 // Cập nhật lại hóa đơn gốc DỰA TRÊN CÁC MÓN CÒN LẠI
                 var chiTietConLai = hoaDonGoc.ChiTietHoaDons.Except(chiTietTach).ToList();
@@ -259,6 +271,7 @@ namespace CafebookApi.Controllers.App.NhanVien
                 var phuThuConLai = hoaDonGoc.ChiTietPhuThuHoaDons.Except(phuThuDaApDungGoc).ToList();
                 hoaDonGoc.TongPhuThu = phuThuConLai.Sum(pt => pt.SoTien);
                 // ### KẾT THÚC SỬA LỖI ###
+                */
             }
 
             decimal giamGiaKM = 0;
