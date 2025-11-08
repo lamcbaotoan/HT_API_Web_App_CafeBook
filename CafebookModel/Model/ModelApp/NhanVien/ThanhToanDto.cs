@@ -20,6 +20,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int IdKhachHang { get; set; }
         public string DisplayText { get; set; } = string.Empty;
         public KhachHang KhachHangData { get; set; } = null!;
+        public bool IsNew { get; set; } // <-- THÊM DÒNG NÀY
     }
 
     /// <summary>

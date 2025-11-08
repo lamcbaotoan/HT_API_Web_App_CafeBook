@@ -21,6 +21,7 @@ namespace AppCafebookApi.View.nhanvien.pages
         private readonly int _idHoaDonGoc;
         private static readonly HttpClient _httpClient;
         private bool _isDataLoading = true;
+        private bool _isSettingCustomer = false; // Cờ để tránh vòng lặp sự kiện
 
         // Dùng 4 Collection để quản lý
         private ObservableCollection<ChiTietDto> _itemsGoc = new ObservableCollection<ChiTietDto>();
@@ -30,7 +31,8 @@ namespace AppCafebookApi.View.nhanvien.pages
         private List<PhuThu> _phuThusKhaDung = new List<PhuThu>();
         private List<KhachHangTimKiemDto> _allKhachHangs = new List<KhachHangTimKiemDto>();
 
-        private List<KhuyenMaiDto> _availableKms = new List<KhuyenMaiDto>();
+        // SỬA: Dùng DTO chính từ Model
+        private List<KhuyenMaiHienThiDto> _availableKms = new List<KhuyenMaiHienThiDto>();
 
         // Trạng thái thanh toán
         private HoaDonInfoDto _hoaDonInfo = null!;
@@ -50,6 +52,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         // Thông tin quán
         private string _tenQuan = "", _diaChi = "", _sdt = "", _wifi = "";
+        private Brush _defaultBorderBrush; // THÊM MỚI: Lưu màu nền mặc định
 
         static ThanhToanView()
         {
@@ -65,6 +68,7 @@ namespace AppCafebookApi.View.nhanvien.pages
             dgTach.ItemsSource = _itemsTach;
             dgPhuThuTach.ItemsSource = _phuThuTach;
             lbPhuThuKhaDung.ItemsSource = _phuThusKhaDung;
+            _defaultBorderBrush = borderKhachHang.Background; // THÊM MỚI: Lưu màu nền
         }
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -98,12 +102,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                 lbPhuThuKhaDung.ItemsSource = _phuThusKhaDung;
 
                 _allKhachHangs = response.KhachHangsList;
-                cmbTimKhachHang.ItemsSource = _allKhachHangs;
                 _currentKhachHang = response.KhachHang;
-                if (_currentKhachHang != null)
-                {
-                    cmbTimKhachHang.SelectedValue = _currentKhachHang.IdKhachHang;
-                }
 
                 _tiLeDoiDiem = response.DiemTichLuy_DoiVND;
                 _tiLeNhanDiem = response.DiemTichLuy_NhanVND;
@@ -113,7 +112,8 @@ namespace AppCafebookApi.View.nhanvien.pages
                 _sdt = response.SoDienThoai;
                 _wifi = response.WifiMatKhau;
 
-                UpdateKhachHangUI();
+                // Cập nhật UI khách hàng theo logic mới
+                SetKhachHangUI(_currentKhachHang);
 
                 _currentKhuyenMaiId = response.IdKhuyenMaiDaApDung;
                 await UpdateKhuyenMaiUI();
@@ -335,58 +335,190 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         #endregion
 
-        #region Logic Khách hàng & Điểm
+        #region Logic Khách hàng & Điểm (Đã cải tiến)
 
-        private void CmbTimKhachHang_TextChanged(object sender, TextChangedEventArgs e)
+        // HÀM MỚI: Xử lý khi gõ text (Search-as-you-type)
+        private void TxtTimKhachHang_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (cmbTimKhachHang.IsDropDownOpen)
+            if (_isSettingCustomer) return; // Nếu đang set text thì không tìm kiếm
+
+            string query = txtTimKhachHang.Text.ToLower();
+
+            if (string.IsNullOrEmpty(query))
             {
-                string query = cmbTimKhachHang.Text.ToLower();
-                if (string.IsNullOrEmpty(query))
-                {
-                    cmbTimKhachHang.ItemsSource = _allKhachHangs;
-                }
-                else
-                {
-                    cmbTimKhachHang.ItemsSource = _allKhachHangs
-                        .Where(kh => kh.DisplayText.ToLower().Contains(query))
-                        .ToList();
-                }
+                lbKhachHangResults.Visibility = Visibility.Collapsed;
+                return;
             }
-        }
 
-        private void CmbTimKhachHang_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (cmbTimKhachHang.SelectedItem is KhachHangTimKiemDto selected)
+            // Lọc danh sách DTO, nhưng cung cấp đối tượng KhachHang cho ListBox (để khớp DataTemplate XAML)
+            var filteredList = _allKhachHangs
+                .Where(khDto => khDto.DisplayText.ToLower().Contains(query))
+                .Select(khDto => khDto.KhachHangData)
+                .ToList();
+
+            if (filteredList.Any())
             {
-                _currentKhachHang = selected.KhachHangData;
+                lbKhachHangResults.ItemsSource = filteredList;
+                lbKhachHangResults.Visibility = Visibility.Visible;
             }
             else
             {
-                _currentKhachHang = null;
+                lbKhachHangResults.Visibility = Visibility.Collapsed;
             }
-            UpdateKhachHangUI();
         }
 
-        private void BtnTimKhachHang_Click(object sender, RoutedEventArgs e) { }
-
-        private void UpdateKhachHangUI()
+        // HÀM MỚI: Xử lý khi chọn một khách hàng từ danh sách
+        private void LbKhachHangResults_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (lbKhachHangResults.SelectedItem is KhachHang selectedKh)
+            {
+                SetKhachHangUI(selectedKh); // Sử dụng helper
+            }
+        }
+
+        // HÀM MỚI: Xử lý khi bấm phím Enter (chọn hoặc tạo mới)
+        private async void TxtTimKhachHang_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                e.Handled = true; // Ngăn tiếng "bíp"
+                await HandleFindOrCreateCustomer();
+            }
+        }
+
+        // SỬA LẠI HÀM TxtTimKhachHang_LostFocus (dòng 316)
+        private async void TxtTimKhachHang_LostFocus(object sender, RoutedEventArgs e)
+        {
+            // THÊM DÒNG NÀY: Nếu chuột đang trên nút Thanh Toán, không chạy
+            // Vì nút thanh toán sẽ tự gọi logic này
+            if (btnXacNhanThanhToan.IsMouseOver) return;
+
+            await Task.Delay(150);
+            if (lbKhachHangResults.IsKeyboardFocusWithin || lbKhachHangResults.IsFocused)
+            {
+                return;
+            }
+            await HandleFindOrCreateCustomer();
+        }
+
+        // THÊM HÀM MỚI NÀY (vào khu vực #region Logic Khách hàng & Điểm)
+        // Xử lý Req 1: Bấm nút "X" để hủy chọn khách hàng
+        private void BtnHuyKhachHang_Click(object sender, RoutedEventArgs e)
+        {
+            SetKhachHangUI(null);
+            txtTimKhachHang.Text = ""; // Xóa luôn text tìm kiếm
+        }
+
+        // THAY THẾ HÀM CŨ HandleFindOrCreateCustomer bằng hàm này
+        private async Task HandleFindOrCreateCustomer()
+        {
+            if (_isSettingCustomer) return;
+            if (lbKhachHangResults.Visibility == Visibility.Visible)
+            {
+                lbKhachHangResults.Visibility = Visibility.Collapsed;
+            }
+
+            string query = txtTimKhachHang.Text;
+
             if (_currentKhachHang != null)
             {
+                var khDto = _allKhachHangs.FirstOrDefault(kh => kh.IdKhachHang == _currentKhachHang.IdKhachHang);
+                if (khDto != null && khDto.DisplayText.Equals(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                SetKhachHangUI(null);
+                return;
+            }
+
+            btnXacNhanThanhToan.IsEnabled = false;
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/app/nhanvien/thanhtoan/find-or-create-customer", query);
+                if (response.IsSuccessStatusCode)
+                {
+                    // SỬA: Đọc về DTO mới
+                    var resultDto = await response.Content.ReadFromJsonAsync<KhachHangTimKiemDto>();
+
+                    if (resultDto != null)
+                    {
+                        if (!_allKhachHangs.Any(kh => kh.IdKhachHang == resultDto.IdKhachHang))
+                        {
+                            _allKhachHangs.Add(resultDto);
+                        }
+                        SetKhachHangUI(resultDto.KhachHangData); // Cập nhật UI
+
+                        // SỬA: Xử lý Req 2 (Hiển thị là tạo mới)
+                        if (resultDto.IsNew)
+                        {
+                            lblTenKhachHang.Text = $"{resultDto.KhachHangData.HoTen} (Tài khoản mới)";
+                            // Đổi màu nền để nhân viên chú ý
+                            borderKhachHang.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF8F5E00"));
+                        }
+                    }
+                    else
+                    {
+                        SetKhachHangUI(null); // Là khách vãng lai
+                        _isSettingCustomer = true;
+                        txtTimKhachHang.Text = query; // Giữ lại tên đã gõ
+                        _isSettingCustomer = false;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Không thể tìm hoặc tạo khách hàng. Sử dụng khách vãng lai.", "Lỗi API");
+                    SetKhachHangUI(null);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi API khách hàng: {ex.Message}");
+                SetKhachHangUI(null);
+            }
+            btnXacNhanThanhToan.IsEnabled = true;
+        }
+
+        // THAY THẾ HÀM CŨ SetKhachHangUI bằng hàm này
+        private void SetKhachHangUI(KhachHang? khachHang)
+        {
+            _currentKhachHang = khachHang;
+            _isSettingCustomer = true;
+            borderKhachHang.Background = _defaultBorderBrush; // SỬA: Luôn reset màu nền
+
+            if (_currentKhachHang != null)
+            {
+                var khDto = _allKhachHangs.FirstOrDefault(kh => kh.IdKhachHang == _currentKhachHang.IdKhachHang);
+
                 borderKhachHang.Visibility = Visibility.Visible;
+                btnHuyKhachHang.Visibility = Visibility.Visible; // SỬA: Hiển thị nút Hủy
                 lblTenKhachHang.Text = _currentKhachHang.HoTen;
                 lblDiemHienCo.Text = $"{_currentKhachHang.DiemTichLuy} điểm (Tương đương {_currentKhachHang.DiemTichLuy * _tiLeDoiDiem:N0} đ)";
                 txtDiemSuDung.IsEnabled = true;
                 btnApDungDiem.IsEnabled = true;
+
+                txtTimKhachHang.Text = khDto?.DisplayText ?? _currentKhachHang.HoTen;
             }
-            else
+            else // Khách vãng lai
             {
                 borderKhachHang.Visibility = Visibility.Collapsed;
+                btnHuyKhachHang.Visibility = Visibility.Collapsed; // SỬA: Ẩn nút Hủy
+                lblTenKhachHang.Text = "Khách vãng lai";
                 txtDiemSuDung.IsEnabled = false;
                 btnApDungDiem.IsEnabled = false;
                 txtDiemSuDung.Text = "0";
+
+                if (!txtTimKhachHang.IsFocused)
+                {
+                    txtTimKhachHang.Text = "";
+                }
             }
+
+            lbKhachHangResults.Visibility = Visibility.Collapsed;
+            _isSettingCustomer = false;
             UpdateTachTotals();
         }
 
@@ -406,18 +538,12 @@ namespace AppCafebookApi.View.nhanvien.pages
             try
             {
                 var kms = await _httpClient.GetFromJsonAsync<List<KhuyenMaiHienThiDto>>($"api/app/nhanvien/khuyenmai/available/{_idHoaDonGoc}");
-                _availableKms = kms?.Select(k => new KhuyenMaiDto
-                {
-                    IdKhuyenMai = k.IdKhuyenMai,
-                    TenKhuyenMai = k.TenChuongTrinh,
-                    LoaiGiamGia = k.LoaiGiamGia,
-                    GiaTriGiam = k.GiaTriGiam
-                }).ToList() ?? new List<KhuyenMaiDto>();
+                _availableKms = kms ?? new List<KhuyenMaiHienThiDto>();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Không thể tải danh sách KM: {ex.Message}");
-                _availableKms = new List<KhuyenMaiDto>();
+                _availableKms = new List<KhuyenMaiHienThiDto>();
             }
         }
 
@@ -434,7 +560,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                 }
                 else
                 {
-                    btnChonKhuyenMai.Content = km.TenKhuyenMai;
+                    btnChonKhuyenMai.Content = km.TenChuongTrinh;
                 }
                 btnHuyKhuyenMai.Visibility = Visibility.Visible;
             }
@@ -470,8 +596,15 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         #endregion
 
+        // THAY THẾ TOÀN BỘ HÀM BtnXacNhanThanhToan_Click (dòng 506)
         private async void BtnXacNhanThanhToan_Click(object sender, RoutedEventArgs e)
         {
+            // *** BƯỚC 1: FIX RACE CONDITION ***
+            // Buộc chạy và đợi logic tìm/tạo khách hàng hoàn tất
+            // TRƯỚC KHI xây dựng request thanh toán.
+            await HandleFindOrCreateCustomer();
+            // *** KẾT THÚC FIX ***
+
             if (!_itemsTach.Any())
             {
                 MessageBox.Show("Vui lòng chuyển ít nhất 1 món qua 'Hóa đơn thanh toán'.", "Chưa chọn món");
@@ -509,6 +642,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                 PhuongThucThanhToan = _currentPhuongThuc,
                 KhachDua = khachDua,
                 DiemSuDung = _currentDiemSuDung,
+                // _currentKhachHang LÚC NÀY ĐÃ ĐƯỢC CẬP NHẬT
                 IdKhachHang = _currentKhachHang?.IdKhachHang
             };
 
@@ -533,7 +667,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                         SoBan = _hoaDonInfo.SoBan,
                         ThoiGianTao = DateTime.Now,
                         TenNhanVien = AuthService.CurrentUser?.HoTen ?? "Nhân viên",
-                        TenKhachHang = _currentKhachHang?.HoTen ?? "Khách vãng lai",
+                        TenKhachHang = _currentKhachHang?.HoTen ?? "Khách vãng lai", // Đã đúng
                         Items = _itemsTach.ToList(),
                         Surcharges = _phuThuTach.ToList(),
                         TongTienGoc = _currentTienGocTach,
@@ -568,11 +702,9 @@ namespace AppCafebookApi.View.nhanvien.pages
                 }
                 else
                 {
-                    // ### BẮT ĐẦU SỬA LỖI ###
                     string errorMessage = await response.Content.ReadAsStringAsync();
                     MessageBox.Show(errorMessage, "Lỗi Thanh Toán");
 
-                    // Nếu lỗi là "Đã xử lý", điều hướng về Sơ đồ bàn
                     if (errorMessage.Contains("Hóa đơn này đã được xử lý"))
                     {
                         var mainFrame = FindParentFrame();
@@ -585,7 +717,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                             }
                         }
                     }
-                    // ### KẾT THÚC SỬA LỖI ###
                 }
             }
             catch (Exception ex)
@@ -597,11 +728,8 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private Frame? FindParentFrame()
         {
-            // 1. Lấy cửa sổ (Window) hiện tại mà Page này đang nằm trong đó.
             var currentWindow = Window.GetWindow(this);
             if (currentWindow == null) return null;
-
-            // 2. Tìm Frame có tên "MainFrame" bên trong cửa sổ đó.
             var mainFrame = currentWindow.FindName("MainFrame") as Frame;
             return mainFrame;
         }

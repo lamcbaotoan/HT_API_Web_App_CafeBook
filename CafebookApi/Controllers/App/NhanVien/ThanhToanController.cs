@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail; // THÊM MỚI để kiểm tra email
 using System.Threading.Tasks;
 
 namespace CafebookApi.Controllers.App.NhanVien
@@ -115,7 +116,8 @@ namespace CafebookApi.Controllers.App.NhanVien
                 .Select(kh => new KhachHangTimKiemDto
                 {
                     IdKhachHang = kh.IdKhachHang,
-                    DisplayText = kh.HoTen + " - " + (kh.SoDienThoai ?? kh.Email),
+                    // SỬA: Chỉ dùng HoTen và SoDienThoai
+                    DisplayText = kh.HoTen + (kh.SoDienThoai != null ? $" - {kh.SoDienThoai}" : ""),
                     KhachHangData = kh
                 }).ToListAsync();
 
@@ -138,14 +140,73 @@ namespace CafebookApi.Controllers.App.NhanVien
             });
         }
 
-        [HttpGet("find-customer")]
-        public async Task<IActionResult> FindCustomer([FromQuery] string query)
+        // Trong file: ThanhToanController.cs
+        // THAY THẾ HÀM CŨ BẰNG HÀM NÀY:
+
+        [HttpPost("find-or-create-customer")]
+        public async Task<IActionResult> FindOrCreateCustomer([FromBody] string query)
         {
-            if (string.IsNullOrEmpty(query)) return BadRequest();
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return Ok(null); // Không nhập -> Khách vãng lai
+            }
+
+            // 1. Chỉ tìm kiếm theo SĐT
             var khachHang = await _context.KhachHangs
-                .FirstOrDefaultAsync(kh => kh.SoDienThoai == query || kh.Email == query || kh.HoTen.Contains(query));
-            if (khachHang == null) return NotFound("Không tìm thấy khách hàng.");
-            return Ok(khachHang);
+                .FirstOrDefaultAsync(kh => kh.SoDienThoai == query);
+
+            if (khachHang != null)
+            {
+                // 1.1. Nếu tìm thấy, trả về
+                var khDto = new KhachHangTimKiemDto
+                {
+                    IdKhachHang = khachHang.IdKhachHang,
+                    DisplayText = khachHang.HoTen + $" - {khachHang.SoDienThoai}",
+                    KhachHangData = khachHang,
+                    IsNew = false
+                };
+                return Ok(khDto);
+            }
+
+            // 2. Không tìm thấy -> Kiểm tra xem có phải SĐT hợp lệ không
+            if (IsValidPhone(query))
+            {
+                // 2.1. Nếu là SĐT hợp lệ -> Tạo tài khoản mới
+                var newKhachHang = new KhachHang
+                {
+                    HoTen = $"Khách SĐT {query}",
+                    SoDienThoai = query,
+
+                    // === SỬA LỖI DATABASE (UNIQUE KEY) ===
+                    // Cung cấp giá trị mặc định duy nhất thay vì NULL
+                    Email = $"{query}@temp.cafebook.com",
+                    TenDangNhap = query,
+                    // === KẾT THÚC SỬA LỖI ===
+                    MatKhau = "123456", // Mật khẩu tạm thời
+                    TaiKhoanTam = true,
+                    NgayTao = DateTime.Now,
+                    DiemTichLuy = 0,
+                    BiKhoa = false
+                };
+
+                _context.KhachHangs.Add(newKhachHang);
+                await _context.SaveChangesAsync(); // Dòng 185 (dòng gây lỗi) giờ sẽ chạy được
+
+                // 3. Đóng gói DTO cho khách hàng vừa tạo
+                var newKhachHangDto = new KhachHangTimKiemDto
+                {
+                    IdKhachHang = newKhachHang.IdKhachHang,
+                    DisplayText = newKhachHang.HoTen + $" - {newKhachHang.SoDienThoai}",
+                    KhachHangData = newKhachHang,
+                    IsNew = true
+                };
+                return Ok(newKhachHangDto);
+            }
+            else
+            {
+                // 2.3. Nếu là Tên hoặc Email -> KHÔNG TẠO, coi như khách vãng lai
+                return Ok(null);
+            }
         }
 
         [HttpPost("pay")]
@@ -227,9 +288,6 @@ namespace CafebookApi.Controllers.App.NhanVien
                 {
                     chiTiet.IdHoaDon = hoaDonThanhToan.IdHoaDon;
                     tongTienTach += chiTiet.ThanhTien;
-
-                    // SỬA LỖI: Xóa chi tiết này khỏi collection 'ChiTietHoaDons'
-                    // của 'hoaDonGoc' đang được EF theo dõi (tracked)
                     hoaDonGoc.ChiTietHoaDons.Remove(chiTiet);
                 }
                 hoaDonThanhToan.TongTienGoc = tongTienTach;
@@ -239,8 +297,6 @@ namespace CafebookApi.Controllers.App.NhanVien
                 {
                     phuThu.IdHoaDon = hoaDonThanhToan.IdHoaDon;
                     tongPhuThuTach += phuThu.SoTien;
-
-                    // SỬA LỖI: Tương tự, xóa phụ thu khỏi collection
                     hoaDonGoc.ChiTietPhuThuHoaDons.Remove(phuThu);
                 }
                 foreach (var ptMoi in phuThuMoi)
@@ -258,20 +314,8 @@ namespace CafebookApi.Controllers.App.NhanVien
                 }
                 hoaDonThanhToan.TongPhuThu = tongPhuThuTach;
 
-                // SỬA LỖI: Tính toán lại tổng tiền gốc dựa trên
-                // collection 'ChiTietHoaDons' đã được cập nhật thủ công
                 hoaDonGoc.TongTienGoc = hoaDonGoc.ChiTietHoaDons.Sum(c => c.ThanhTien);
                 hoaDonGoc.TongPhuThu = hoaDonGoc.ChiTietPhuThuHoaDons.Sum(pt => pt.SoTien);
-                /*
-                // ### BẮT ĐẦU SỬA LỖI ###
-                // Cập nhật lại hóa đơn gốc DỰA TRÊN CÁC MÓN CÒN LẠI
-                var chiTietConLai = hoaDonGoc.ChiTietHoaDons.Except(chiTietTach).ToList();
-                hoaDonGoc.TongTienGoc = chiTietConLai.Sum(c => c.ThanhTien);
-
-                var phuThuConLai = hoaDonGoc.ChiTietPhuThuHoaDons.Except(phuThuDaApDungGoc).ToList();
-                hoaDonGoc.TongPhuThu = phuThuConLai.Sum(pt => pt.SoTien);
-                // ### KẾT THÚC SỬA LỖI ###
-                */
             }
 
             decimal giamGiaKM = 0;
@@ -355,7 +399,6 @@ namespace CafebookApi.Controllers.App.NhanVien
 
             bool hoaDonGocDaThanhToanHet = false;
 
-            // Logic kiểm tra (đã sửa ở trên) sẽ khiến hoaDonGoc.TongTienGoc == 0
             if (isFullPayment || (hoaDonGoc.TongTienGoc == 0 && hoaDonGoc.TongPhuThu == 0))
             {
                 hoaDonGocDaThanhToanHet = true;
@@ -378,7 +421,7 @@ namespace CafebookApi.Controllers.App.NhanVien
             });
         }
 
-        #region Hàm Helper (Trừ kho, Tính KM)
+        #region Hàm Helper (Trừ kho, Tính KM, Validate)
 
         private async Task TruKho(int idNhanVien, ICollection<ChiTietHoaDon> chiTietList)
         {
@@ -438,6 +481,25 @@ namespace CafebookApi.Controllers.App.NhanVien
                 giamGia = km.GiaTriGiam;
             }
             return await Task.FromResult(giamGia);
+        }
+
+        // --- HÀM HELPER MỚI ---
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsValidPhone(string phone)
+        {
+            return phone.All(char.IsDigit) && phone.Length >= 9 && phone.Length <= 11;
         }
 
         #endregion
