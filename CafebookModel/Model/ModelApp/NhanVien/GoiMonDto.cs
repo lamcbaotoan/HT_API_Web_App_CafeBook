@@ -84,11 +84,25 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public string PhuongThucThanhToan { get; set; } = default!;
     }
 
-    // THÊM DTO MỚI NÀY VÀO TRƯỚC LỚP GoiMonController
-    // (Hoặc thêm vào file GoiMonDto.cs nếu bạn muốn)
     public class ApplyPromotionRequest
     {
         public int IdHoaDon { get; set; }
         public int? IdKhuyenMai { get; set; }
+    }
+
+    // DTO này dùng chung cho cả Phiếu Tạm Tính và Phiếu Bếp
+    public class PhieuGoiMonPrintDto
+    {
+        public string IdPhieu { get; set; } = string.Empty;
+        public string TenQuan { get; set; } = string.Empty;
+        public string DiaChiQuan { get; set; } = string.Empty;
+        public string SdtQuan { get; set; } = string.Empty;
+        public DateTime NgayTao { get; set; }
+        public string TenNhanVien { get; set; } = string.Empty;
+        public string SoBan { get; set; } = string.Empty;
+        public List<ChiTietDto> ChiTiet { get; set; } = new List<ChiTietDto>();
+        public decimal TongTienGoc { get; set; }
+        public decimal GiamGia { get; set; }
+        public decimal ThanhTien { get; set; }
     }
 }

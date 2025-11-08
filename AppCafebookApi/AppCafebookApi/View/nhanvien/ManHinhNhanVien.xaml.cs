@@ -83,7 +83,7 @@ namespace AppCafebookApi.View.nhanvien
             // Thêm các nút mới vào danh sách
             var navButtons = new List<ToggleButton>
             {
-                btnSoDoBan, btnDatBan, btnGiaoHang, btnThueSach,
+                btnSoDoBan, btnCheBien, btnDatBan, btnGiaoHang, btnThueSach, // Thêm btnCheBien
                 btnThongTinCaNhan, btnChamCong, btnLichLamViecCuaToi, btnPhieuLuongCuaToi
             };
 
@@ -128,6 +128,10 @@ namespace AppCafebookApi.View.nhanvien
             // TODO: NavigateToPage(sender as ToggleButton, new GiaoHangView());
             MessageBox.Show("Chức năng 'Đơn Giao Hàng' đang được phát triển.");
             ResetToDefaultPage(sender);
+        }
+        private void BtnCheBien_Click(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(sender as ToggleButton, new CheBienView());
         }
 
         private void BtnThueSach_Click(object sender, RoutedEventArgs e)

@@ -26,6 +26,9 @@
     <Compile Update="View\Common\InputDialogWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Common\PhieuGoiMonPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Common\PhieuLuongPreviewWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -33,6 +36,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\Common\PhieuTraPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\CheBienView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\nhanvien\pages\DatBanView.xaml.cs">

@@ -38,10 +38,48 @@ namespace AppCafebookApi.Controllers.app.NhanVien
             _config = config;
         }
 
+        // === HÀM MỚI (ĐƯỢC DI CHUYỂN TỪ SODOBANCONTROLLER) ===
+        /// <summary>
+        /// Tự động huỷ phiếu trễ 15 phút (Public API)
+        /// </summary>
+        [HttpPost("auto-cancel-late")]
+        public async Task<IActionResult> AutoCancelLateReservationsAsync()
+        {
+            var now = DateTime.Now;
+            var timeLimit = now.AddMinutes(-15);
+
+            var lateReservations = await _context.PhieuDatBans
+                .Include(p => p.Ban)
+                .Where(p => (p.TrangThai == "Đã đặt" || p.TrangThai == "Chờ xác nhận") && // Hủy cả phiếu chờ
+                            p.ThoiGianDat < timeLimit)
+                .ToListAsync();
+
+            if (lateReservations.Any())
+            {
+                foreach (var phieu in lateReservations)
+                {
+                    phieu.TrangThai = "Đã hủy";
+                    phieu.GhiChu = (phieu.GhiChu ?? "") + " (Tự động hủy do trễ 15 phút)";
+
+                    if (phieu.Ban != null && phieu.Ban.TrangThai == "Đã đặt") // Chỉ reset bàn "Đã đặt"
+                    {
+                        phieu.Ban.TrangThai = "Trống";
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return Ok(new { message = $"Đã tự động hủy {lateReservations.Count} phiếu bị trễ." });
+            }
+            return Ok(new { message = "Không có phiếu nào bị trễ." });
+        }
+        // === KẾT THÚC HÀM MỚI ===
+
         #region GET Endpoints
         [HttpGet("list")]
         public async Task<ActionResult<IEnumerable<PhieuDatBanDto>>> GetDatBanList()
         {
+            // === SỬA: GỌI HÀM DỌN DẸP TRƯỚC KHI TẢI LIST ===
+            await AutoCancelLateReservationsAsync();
+            // === KẾT THÚC SỬA ===
             var list = await _context.PhieuDatBans
                 .Include(p => p.KhachHang)
                 .Include(p => p.Ban).ThenInclude(b => b.KhuVuc)
@@ -84,14 +122,17 @@ namespace AppCafebookApi.Controllers.app.NhanVien
         [HttpGet("search-customer")]
         public async Task<ActionResult<IEnumerable<KhachHangLookupDto>>> SearchCustomer([FromQuery] string query)
         {
-            if (string.IsNullOrEmpty(query) || query.Length < 3)
+            // SỬA DÒNG NÀY:
+            if (string.IsNullOrEmpty(query)) //
+            // THAY VÌ DÒNG CŨ: if (string.IsNullOrEmpty(query) || query.Length < 3)
             {
                 return Ok(new List<KhachHangLookupDto>());
             }
+            var queryLower = query.ToLower(); // Sửa: Thêm .ToLower()
             var results = await _context.KhachHangs
                 .Where(kh => (kh.SoDienThoai != null && kh.SoDienThoai.Contains(query)) ||
-                             (kh.Email != null && kh.Email.Contains(query)) ||
-                             kh.HoTen.Contains(query))
+                             (kh.Email != null && kh.Email.ToLower().Contains(queryLower)) || // Sửa: Thêm .ToLower()
+                             kh.HoTen.ToLower().Contains(queryLower)) // Sửa: Thêm .ToLower()
                 .Select(kh => new KhachHangLookupDto
                 {
                     IdKhachHang = kh.IdKhachHang,
@@ -128,171 +169,265 @@ namespace AppCafebookApi.Controllers.app.NhanVien
         {
             KhachHang khachHang = null;
 
-            // SỬA ĐỔI: Chỉ tìm/tạo KH nếu không phải là khách vãng lai
-            if (!dto.IsKhachVangLai)
+            // SỬA ĐỔI: Thay thế hoàn toàn logic IsKhachVangLai
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                try
+                // 1. XỬ LÝ KHÁCH HÀNG (Logic "Tìm hoặc Tạo")
+                if (string.IsNullOrWhiteSpace(dto.TenKhachHang) || string.IsNullOrWhiteSpace(dto.SoDienThoai))
                 {
-                    khachHang = await FindOrCreateKhachHang(dto.TenKhachHang, dto.SoDienThoai, dto.Email);
+                    return BadRequest("Tên khách hàng và Số điện thoại là bắt buộc.");
                 }
-                catch (Exception ex)
+
+                string? sdt = dto.SoDienThoai;
+                string? email = dto.Email;
+
+                if (!string.IsNullOrWhiteSpace(sdt))
                 {
-                    // Trả về lỗi nếu FindOrCreateKhachHang thất bại (ví dụ: Email trùng)
-                    return BadRequest(ex.Message);
+                    khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.SoDienThoai == sdt);
                 }
-            }
-            // Nếu IsKhachVangLai == true, thì khachHang sẽ là null
-
-            var ban = await _context.Bans.FindAsync(dto.IdBan);
-            if (ban == null) return BadRequest("Bàn không tồn tại.");
-            if (ban.TrangThai == "Có khách") return BadRequest("Bàn đang có khách, không thể đặt.");
-
-            var openingHours = await GetAndParseOpeningHours();
-            if (!IsTimeValid(dto.ThoiGianDat, openingHours))
-            {
-                return BadRequest($"Giờ đặt ({dto.ThoiGianDat:HH:mm}) nằm ngoài giờ mở cửa ({openingHours.Open:hh\\:mm} - {openingHours.Close:hh\\:mm}).");
-            }
-            if (dto.SoLuongKhach > ban.SoGhe)
-            {
-                return BadRequest($"Số lượng khách ({dto.SoLuongKhach}) vượt quá số ghế của bàn ({ban.SoGhe}).");
-            }
-
-            // Logic kiểm tra xung đột (chồng chéo slot + 5 phút đệm)
-            DateTime newSlotStart = dto.ThoiGianDat;
-            DateTime newSlotEnd = dto.ThoiGianDat.AddHours(ReservationSlotHours);
-
-            var conflict = await _context.PhieuDatBans
-                .Where(p => p.IdBan == dto.IdBan &&
-                            (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận"))
-                .ToListAsync();
-
-            foreach (var p in conflict)
-            {
-                DateTime existingSlotStart = p.ThoiGianDat.AddMinutes(-ReservationBufferMinutes);
-                DateTime existingSlotEnd = p.ThoiGianDat.AddHours(ReservationSlotHours).AddMinutes(ReservationBufferMinutes);
-
-                if (newSlotStart < existingSlotEnd && existingSlotStart < newSlotEnd)
+                if (khachHang == null && !string.IsNullOrWhiteSpace(email))
                 {
-                    return Conflict($"Xung đột! Bàn này đã có phiếu đặt lúc {p.ThoiGianDat:HH:mm} (có 5 phút đệm).");
+                    khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.Email == email);
                 }
+
+                if (khachHang == null) // Tạo mới
+                {
+                    if (!string.IsNullOrWhiteSpace(sdt) && await _context.KhachHangs.AnyAsync(k => k.SoDienThoai == sdt))
+                    {
+                        return Conflict("Số điện thoại này đã tồn tại.");
+                    }
+                    if (!string.IsNullOrWhiteSpace(email) && await _context.KhachHangs.AnyAsync(k => k.Email == email))
+                    {
+                        return Conflict("Email này đã tồn tại.");
+                    }
+
+                    string tenDangNhap;
+                    if (!string.IsNullOrWhiteSpace(sdt)) { tenDangNhap = sdt; }
+                    else if (!string.IsNullOrWhiteSpace(email)) { tenDangNhap = email; }
+                    else { tenDangNhap = $"temp_{Guid.NewGuid().ToString("N")[..12]}"; }
+
+                    var newKH = new KhachHang
+                    {
+                        HoTen = dto.TenKhachHang,
+                        SoDienThoai = sdt,
+                        Email = email,
+                        NgayTao = DateTime.Now,
+                        DiemTichLuy = 0,
+                        BiKhoa = false,
+                        TenDangNhap = tenDangNhap,
+                        MatKhau = "123456", // Mật khẩu mặc định
+                        TaiKhoanTam = true
+                    };
+                    _context.KhachHangs.Add(newKH);
+                    await _context.SaveChangesAsync(); // Lưu KH để lấy ID
+                    khachHang = newKH;
+                }
+                else // Cập nhật khách tìm thấy
+                {
+                    khachHang.HoTen = dto.TenKhachHang;
+                    khachHang.Email = email; // Cập nhật Email nếu có
+                }
+
+                // 2. XỬ LÝ ĐẶT BÀN (Giữ nguyên)
+                var ban = await _context.Bans.FindAsync(dto.IdBan);
+                if (ban == null) return BadRequest("Bàn không tồn tại.");
+                if (ban.TrangThai == "Có khách") return BadRequest("Bàn đang có khách, không thể đặt.");
+
+                var openingHours = await GetAndParseOpeningHours();
+                if (!IsTimeValid(dto.ThoiGianDat, openingHours))
+                {
+                    return BadRequest($"Giờ đặt ({dto.ThoiGianDat:HH:mm}) nằm ngoài giờ mở cửa ({openingHours.Open:hh\\:mm} - {openingHours.Close:hh\\:mm}).");
+                }
+                if (dto.SoLuongKhach > ban.SoGhe)
+                {
+                    return BadRequest($"Số lượng khách ({dto.SoLuongKhach}) vượt quá số ghế của bàn ({ban.SoGhe}).");
+                }
+
+                // Logic kiểm tra xung đột (chồng chéo slot + 5 phút đệm)
+                DateTime newSlotStart = dto.ThoiGianDat;
+                DateTime newSlotEnd = dto.ThoiGianDat.AddHours(ReservationSlotHours);
+
+                var conflict = await _context.PhieuDatBans
+                    .Where(p => p.IdBan == dto.IdBan &&
+                                (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận"))
+                    .ToListAsync();
+
+                foreach (var p in conflict)
+                {
+                    DateTime existingSlotStart = p.ThoiGianDat.AddMinutes(-ReservationBufferMinutes);
+                    DateTime existingSlotEnd = p.ThoiGianDat.AddHours(ReservationSlotHours).AddMinutes(ReservationBufferMinutes);
+
+                    if (newSlotStart < existingSlotEnd && existingSlotStart < newSlotEnd)
+                    {
+                        return Conflict($"Xung đột! Bàn này đã có phiếu đặt lúc {p.ThoiGianDat:HH:mm} (có 5 phút đệm).");
+                    }
+                }
+
+                // 3. TẠO PHIẾU
+                var phieu = new PhieuDatBan
+                {
+                    IdKhachHang = khachHang?.IdKhachHang, // Gán ID khách hàng đã tìm/tạo
+                    IdBan = dto.IdBan,
+                    HoTenKhach = dto.TenKhachHang, // Luôn lưu tên/SĐT từ form (Snapshot)
+                    SdtKhach = dto.SoDienThoai,
+                    ThoiGianDat = dto.ThoiGianDat,
+                    SoLuongKhach = dto.SoLuongKhach,
+                    GhiChu = dto.GhiChu,
+                    TrangThai = dto.TrangThai
+                };
+                _context.PhieuDatBans.Add(phieu);
+               //ban.TrangThai = "Đã đặt";
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Gửi email
+                var emailNguoiNhan = khachHang?.Email ?? dto.Email;
+                if (!string.IsNullOrEmpty(emailNguoiNhan))
+                {
+                    var khachInfo = new KhachHang { HoTen = dto.TenKhachHang, Email = emailNguoiNhan };
+                    _ = SendConfirmationEmailAsync(phieu, khachInfo, ban.SoBan);
+                }
+                return Ok(new { idPhieuDatBan = phieu.IdPhieuDatBan });
             }
-
-            var phieu = new PhieuDatBan
+            catch (Exception ex)
             {
-                IdKhachHang = khachHang?.IdKhachHang, // Sẽ là null nếu là khách vãng lai
-                IdBan = dto.IdBan,
-                HoTenKhach = dto.TenKhachHang, // Luôn lưu tên/SĐT từ form
-                SdtKhach = dto.SoDienThoai,
-                ThoiGianDat = dto.ThoiGianDat,
-                SoLuongKhach = dto.SoLuongKhach,
-                GhiChu = dto.GhiChu,
-                TrangThai = dto.TrangThai
-            };
-            _context.PhieuDatBans.Add(phieu);
-            ban.TrangThai = "Đã đặt";
-
-            // Chỉ SaveChanges 1 lần ở đây (cho Phiếu, Bàn, và Khách (nếu có))
-            await _context.SaveChangesAsync();
-
-            // Gửi email
-            var emailNguoiNhan = khachHang?.Email ?? dto.Email;
-            if (!string.IsNullOrEmpty(emailNguoiNhan))
-            {
-                var khachInfo = new KhachHang { HoTen = dto.TenKhachHang, Email = emailNguoiNhan };
-                _ = SendConfirmationEmailAsync(phieu, khachInfo, ban.SoBan);
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Lỗi nội bộ: {ex.Message} \nChi tiết: {ex.InnerException?.Message}");
             }
-            return Ok(new { idPhieuDatBan = phieu.IdPhieuDatBan });
         }
 
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateDatBan(int id, PhieuDatBanCreateUpdateDto dto)
         {
-            var phieu = await _context.PhieuDatBans
-                .Include(p => p.KhachHang)
-                .Include(p => p.Ban)
-                .FirstOrDefaultAsync(p => p.IdPhieuDatBan == id);
-
-            if (phieu == null) return NotFound("Không tìm thấy phiếu đặt.");
-
-            var openingHours = await GetAndParseOpeningHours();
-            if (!IsTimeValid(dto.ThoiGianDat, openingHours))
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return BadRequest($"Giờ đặt ({dto.ThoiGianDat:HH:mm}) nằm ngoài giờ mở cửa ({openingHours.Open:hh\\:mm} - {openingHours.Close:hh\\:mm}).");
+                var phieu = await _context.PhieuDatBans
+                    .Include(p => p.KhachHang)
+                    .Include(p => p.Ban)
+                    .FirstOrDefaultAsync(p => p.IdPhieuDatBan == id);
+
+                if (phieu == null) return NotFound("Không tìm thấy phiếu đặt.");
+
+                var openingHours = await GetAndParseOpeningHours();
+                if (!IsTimeValid(dto.ThoiGianDat, openingHours))
+                {
+                    return BadRequest($"Giờ đặt ({dto.ThoiGianDat:HH:mm}) nằm ngoài giờ mở cửa ({openingHours.Open:hh\\:mm} - {openingHours.Close:hh\\:mm}).");
+                }
+
+                string oldTrangThai = phieu.TrangThai;
+
+                // SỬA ĐỔI: Logic "Find or Create" tương tự như Create
+                KhachHang khachHang = null;
+                if (string.IsNullOrWhiteSpace(dto.TenKhachHang) || string.IsNullOrWhiteSpace(dto.SoDienThoai))
+                {
+                    return BadRequest("Tên khách hàng và Số điện thoại là bắt buộc.");
+                }
+                string? sdt = dto.SoDienThoai;
+                string? email = dto.Email;
+
+                if (!string.IsNullOrWhiteSpace(sdt)) { khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.SoDienThoai == sdt); }
+                if (khachHang == null && !string.IsNullOrWhiteSpace(email)) { khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.Email == email); }
+
+                if (khachHang == null) // Tạo mới
+                {
+                    if (!string.IsNullOrWhiteSpace(sdt) && await _context.KhachHangs.AnyAsync(k => k.SoDienThoai == sdt)) { return Conflict("Số điện thoại này đã tồn tại."); }
+                    if (!string.IsNullOrWhiteSpace(email) && await _context.KhachHangs.AnyAsync(k => k.Email == email)) { return Conflict("Email này đã tồn tại."); }
+
+                    string tenDangNhap;
+                    if (!string.IsNullOrWhiteSpace(sdt)) { tenDangNhap = sdt; }
+                    else if (!string.IsNullOrWhiteSpace(email)) { tenDangNhap = email; }
+                    else { tenDangNhap = $"temp_{Guid.NewGuid().ToString("N")[..12]}"; }
+
+                    var newKH = new KhachHang
+                    {
+                        HoTen = dto.TenKhachHang,
+                        SoDienThoai = sdt,
+                        Email = email,
+                        NgayTao = DateTime.Now,
+                        DiemTichLuy = 0,
+                        BiKhoa = false,
+                        TenDangNhap = tenDangNhap,
+                        MatKhau = "123456",
+                        TaiKhoanTam = true
+                    };
+                    _context.KhachHangs.Add(newKH);
+                    await _context.SaveChangesAsync();
+                    khachHang = newKH;
+                }
+                else // Cập nhật
+                {
+                    khachHang.HoTen = dto.TenKhachHang;
+                    khachHang.Email = email;
+                }
+                // Kết thúc SỬA ĐỔI
+
+                phieu.IdKhachHang = khachHang?.IdKhachHang;
+                phieu.HoTenKhach = dto.TenKhachHang;
+                phieu.SdtKhach = dto.SoDienThoai;
+
+                if (phieu.IdBan != dto.IdBan)
+                {
+                    var oldBan = await _context.Bans.FindAsync(phieu.IdBan);
+                    if (oldBan != null) oldBan.TrangThai = "Trống";
+                    var newBan = await _context.Bans.FindAsync(dto.IdBan);
+                    if (newBan == null) return BadRequest("Bàn mới không tồn tại.");
+                    if (newBan.TrangThai == "Có khách") return BadRequest("Bàn mới đang có khách.");
+                    if (dto.SoLuongKhach > newBan.SoGhe)
+                    {
+                        return BadRequest($"Số lượng khách ({dto.SoLuongKhach}) vượt quá số ghế của bàn mới ({newBan.SoGhe}).");
+                    }
+                    //newBan.TrangThai = "Đã đặt";
+                    phieu.IdBan = dto.IdBan;
+                }
+
+                // Kiểm tra xung đột khi Sửa
+                DateTime newSlotStart = dto.ThoiGianDat;
+                DateTime newSlotEnd = dto.ThoiGianDat.AddHours(ReservationSlotHours);
+                var conflict = await _context.PhieuDatBans
+                    .Where(p => p.IdBan == dto.IdBan &&
+                                p.IdPhieuDatBan != id && // Loại trừ chính nó
+                                (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận"))
+                    .ToListAsync();
+
+                foreach (var p in conflict)
+                {
+                    DateTime existingSlotStart = p.ThoiGianDat.AddMinutes(-ReservationBufferMinutes);
+                    DateTime existingSlotEnd = p.ThoiGianDat.AddHours(ReservationSlotHours).AddMinutes(ReservationBufferMinutes);
+                    if (newSlotStart < existingSlotEnd && existingSlotStart < newSlotEnd)
+                    {
+                        return Conflict($"Xung đột! Bàn này đã có phiếu đặt lúc {p.ThoiGianDat:HH:mm} (có 5 phút đệm).");
+                    }
+                }
+
+                phieu.ThoiGianDat = dto.ThoiGianDat;
+                phieu.SoLuongKhach = dto.SoLuongKhach;
+                phieu.GhiChu = dto.GhiChu;
+                phieu.TrangThai = dto.TrangThai;
+
+                // Lưu tất cả thay đổi
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Gửi email
+                if (oldTrangThai == "Chờ xác nhận" && dto.TrangThai == "Đã xác nhận")
+                {
+                    var emailNguoiNhan = khachHang?.Email ?? dto.Email;
+                    if (!string.IsNullOrEmpty(emailNguoiNhan) && phieu.Ban != null)
+                    {
+                        var khachInfo = new KhachHang { HoTen = dto.TenKhachHang, Email = emailNguoiNhan };
+                        _ = SendConfirmationEmailAsync(phieu, khachInfo, phieu.Ban.SoBan);
+                    }
+                }
+                return Ok();
             }
-
-            string oldTrangThai = phieu.TrangThai;
-
-            KhachHang khachHang = null;
-            // SỬA ĐỔI: Logic tương tự Create
-            if (!dto.IsKhachVangLai)
+            catch (Exception ex)
             {
-                try
-                {
-                    khachHang = await FindOrCreateKhachHang(dto.TenKhachHang, dto.SoDienThoai, dto.Email);
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(ex.Message);
-                }
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Lỗi nội bộ: {ex.Message} \nChi tiết: {ex.InnerException?.Message}");
             }
-
-            phieu.IdKhachHang = khachHang?.IdKhachHang;
-            phieu.HoTenKhach = dto.TenKhachHang;
-            phieu.SdtKhach = dto.SoDienThoai;
-
-            if (phieu.IdBan != dto.IdBan)
-            {
-                var oldBan = await _context.Bans.FindAsync(phieu.IdBan);
-                if (oldBan != null) oldBan.TrangThai = "Trống";
-                var newBan = await _context.Bans.FindAsync(dto.IdBan);
-                if (newBan == null) return BadRequest("Bàn mới không tồn tại.");
-                if (newBan.TrangThai == "Có khách") return BadRequest("Bàn mới đang có khách.");
-                if (dto.SoLuongKhach > newBan.SoGhe)
-                {
-                    return BadRequest($"Số lượng khách ({dto.SoLuongKhach}) vượt quá số ghế của bàn mới ({newBan.SoGhe}).");
-                }
-                newBan.TrangThai = "Đã đặt";
-                phieu.IdBan = dto.IdBan;
-            }
-
-            // Kiểm tra xung đột khi Sửa
-            DateTime newSlotStart = dto.ThoiGianDat;
-            DateTime newSlotEnd = dto.ThoiGianDat.AddHours(ReservationSlotHours);
-            var conflict = await _context.PhieuDatBans
-                .Where(p => p.IdBan == dto.IdBan &&
-                            p.IdPhieuDatBan != id && // Loại trừ chính nó
-                            (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận"))
-                .ToListAsync();
-
-            foreach (var p in conflict)
-            {
-                DateTime existingSlotStart = p.ThoiGianDat.AddMinutes(-ReservationBufferMinutes);
-                DateTime existingSlotEnd = p.ThoiGianDat.AddHours(ReservationSlotHours).AddMinutes(ReservationBufferMinutes);
-                if (newSlotStart < existingSlotEnd && existingSlotStart < newSlotEnd)
-                {
-                    return Conflict($"Xung đột! Bàn này đã có phiếu đặt lúc {p.ThoiGianDat:HH:mm} (có 5 phút đệm).");
-                }
-            }
-
-            phieu.ThoiGianDat = dto.ThoiGianDat;
-            phieu.SoLuongKhach = dto.SoLuongKhach;
-            phieu.GhiChu = dto.GhiChu;
-            phieu.TrangThai = dto.TrangThai;
-
-            // Lưu tất cả thay đổi
-            await _context.SaveChangesAsync();
-
-            // Gửi email
-            if (oldTrangThai == "Chờ xác nhận" && dto.TrangThai == "Đã xác nhận")
-            {
-                var emailNguoiNhan = khachHang?.Email ?? dto.Email;
-                if (!string.IsNullOrEmpty(emailNguoiNhan) && phieu.Ban != null)
-                {
-                    var khachInfo = new KhachHang { HoTen = dto.TenKhachHang, Email = emailNguoiNhan };
-                    _ = SendConfirmationEmailAsync(phieu, khachInfo, phieu.Ban.SoBan);
-                }
-            }
-            return Ok();
         }
 
         [HttpPost("xacnhan-den")]
@@ -355,7 +490,8 @@ namespace AppCafebookApi.Controllers.app.NhanVien
             KhachHang khachHang = null;
             try
             {
-                khachHang = await FindOrCreateKhachHang(dto.TenKhachHang, dto.SoDienThoai, dto.Email);
+                // Dùng helper cũ vì logic web khác
+                khachHang = await FindOrCreateKhachHangWeb(dto.TenKhachHang, dto.SoDienThoai, dto.Email);
             }
             catch (Exception ex)
             {
@@ -404,7 +540,7 @@ namespace AppCafebookApi.Controllers.app.NhanVien
                 TrangThai = "Chờ xác nhận"
             };
             _context.PhieuDatBans.Add(phieu);
-            ban.TrangThai = "Đã đặt";
+            //ban.TrangThai = "Đã đặt";
 
             // Lưu lần 1 (Phiếu, Bàn, Khách hàng (nếu có))
             await _context.SaveChangesAsync();
@@ -429,13 +565,11 @@ namespace AppCafebookApi.Controllers.app.NhanVien
 
         #region Helpers (Khách hàng, Email, Giờ)
 
-        // SỬA ĐỔI: Thêm lại hàm FindOrCreateKhachHang
-        private async Task<KhachHang> FindOrCreateKhachHang(string ten, string sdt, string? email)
+        // SỬA ĐỔI: Đổi tên helper này thành Web để tránh nhầm lẫn
+        private async Task<KhachHang> FindOrCreateKhachHangWeb(string ten, string sdt, string? email)
         {
-            // SĐT là bắt buộc để tìm/tạo
             if (string.IsNullOrWhiteSpace(sdt) || sdt == "N/A")
             {
-                // Không thể tìm/tạo khách mà không có SĐT
                 return null;
             }
 
@@ -444,39 +578,31 @@ namespace AppCafebookApi.Controllers.app.NhanVien
 
             if (khachHang == null)
             {
-                // Không tìm thấy SĐT -> Tạo mới
                 khachHang = new KhachHang
                 {
                     HoTen = ten,
                     SoDienThoai = sdt,
-                    Email = email, // email có thể là null
+                    Email = email,
                     DiemTichLuy = 0,
                     NgayTao = DateTime.Now,
                     BiKhoa = false
+                    // Logic TenDangNhap/MatKhau của Web/App khách có thể khác
                 };
                 _context.KhachHangs.Add(khachHang);
                 try
                 {
-                    // SaveChanges được gọi ở đây (hoặc trong hàm cha)
-                    // Chúng ta sẽ để hàm cha (Create/Update) gọi SaveChanges
+                    await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601))
                 {
-                    // Bắt lỗi UNIQUE KEY (ví dụ: Email NULL hoặc Email bị trùng)
-                    // Lỗi này xảy ra do thiết kế CSDL của bạn.
-                    // Cách xử lý tốt nhất là thay đổi CSDL để cho phép nhiều Email NULL:
-                    // ví dụ: CREATE UNIQUE INDEX UQ_Email ON KhachHang(Email) WHERE Email IS NOT NULL;
-
-                    // Ném lỗi để hàm cha bắt
-                    throw new Exception($"Lỗi CSDL: Không thể tạo khách hàng. SĐT hoặc Email có thể đã tồn tại, hoặc CSDL đang chặn Email rỗng. (Mã lỗi: {sqlEx.Number})");
+                    throw new Exception($"Lỗi CSDL: Không thể tạo khách hàng. SĐT hoặc Email có thể đã tồn tại. (Mã lỗi: {sqlEx.Number})");
                 }
             }
             else
             {
-                // Tìm thấy -> Cập nhật tên và email
                 khachHang.HoTen = ten;
                 khachHang.Email = string.IsNullOrEmpty(email) ? khachHang.Email : email;
-                // Hàm cha sẽ gọi SaveChanges
+                await _context.SaveChangesAsync();
             }
             return khachHang;
         }

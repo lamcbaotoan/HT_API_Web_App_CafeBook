@@ -6,26 +6,85 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using CafebookModel.Model.ModelApp.NhanVien;
+using System.Collections.Generic; // Thêm
+using System.Net.Http; // <-- THÊM MỚI
 
 namespace CafebookApi.Controllers.App.NhanVien
 {
+
+
     [Route("api/app/sodoban")]
     [ApiController]
     public class SoDoBanController : ControllerBase
     {
         private readonly CafebookDbContext _context;
-
-        public SoDoBanController(CafebookDbContext context)
+        private readonly IHttpClientFactory _clientFactory;
+        public SoDoBanController(CafebookDbContext context, IHttpClientFactory clientFactory) // <-- SỬA HÀM KHỞI TẠO
         {
             _context = context;
+            _clientFactory = clientFactory; // <-- THÊM MỚI
         }
 
-        // === HÀM ĐÃ ĐƯỢC NÂNG CẤP ===
+        /// <summary>
+        /// THÊM HÀM MỚI: Tự động huỷ phiếu trễ 15 phút
+        /// </summary>
+        private async Task AutoCancelLateReservationsAsync()
+        {
+            var now = DateTime.Now;
+            // Xác định mốc thời gian (bất kỳ phiếu nào trước 15 phút)
+            var timeLimit = now.AddMinutes(-15);
+
+            // 1. Tìm tất cả các phiếu "Đã đặt" bị trễ quá 15 phút
+            var lateReservations = await _context.PhieuDatBans
+                .Include(p => p.Ban) // Phải Include Bàn để cập nhật trạng thái Bàn
+                .Where(p => p.TrangThai == "Đã đặt" &&
+                            p.ThoiGianDat < timeLimit)
+                .ToListAsync();
+
+            if (lateReservations.Any())
+            {
+                foreach (var phieu in lateReservations)
+                {
+                    // 2. Cập nhật trạng thái phiếu
+                    phieu.TrangThai = "Đã hủy";
+                    phieu.GhiChu = (phieu.GhiChu ?? "") + " (Tự động hủy do trễ 15 phút)";
+
+                    // 3. Cập nhật trạng thái bàn (chỉ khi bàn đó có liên kết)
+                    if (phieu.Ban != null)
+                    {
+                        phieu.Ban.TrangThai = "Trống";
+                    }
+                }
+
+                // 4. Lưu tất cả thay đổi vào CSDL
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        // === HÀM ĐÃ ĐƯỢC NÂNG CẤP (10 PHÚT) ===
         [HttpGet("tables")]
         public async Task<IActionResult> GetSoDoBan()
         {
+            // === SỬA BƯỚC NÀY ===
+            // Chạy logic tự động huỷ TRƯỚC KHI lấy sơ đồ bàn
+            // Bằng cách gọi API của DatBanController
+            try
+            {
+                var client = _clientFactory.CreateClient();
+                // API này chạy trên cùng máy chủ (localhost)
+                var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5166/api/app/datban/auto-cancel-late");
+                await client.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nhưng vẫn tiếp tục tải sơ đồ bàn
+                Console.WriteLine($"Loi khi goi auto-cancel API: {ex.Message}");
+            }
+            // === KẾT THÚC SỬA ===
+
             var now = DateTime.Now;
-            var nowPlus5Minutes = now.AddMinutes(5); // Mốc thời gian 5 phút
+            // SỬA: Đổi mốc thời gian thành 10 phút
+            var nowPlus10Minutes = now.AddMinutes(10); // Mốc thời gian 10 phút
 
             var data = await _context.Bans
                .AsNoTracking()
@@ -37,15 +96,15 @@ namespace CafebookApi.Controllers.App.NhanVien
                    // 2. Lấy Hóa đơn hiện tại (nếu có)
                    HoaDonHienTai = _context.HoaDons
                        .Where(h => h.IdBan == b.IdBan && h.TrangThai == "Chưa thanh toán")
-                       .Select(h => new { h.IdHoaDon, h.ThanhTien }) // Chỉ lấy 2 trường cần
+                       .Select(h => new { h.IdHoaDon, h.ThanhTien })
                        .FirstOrDefault(),
 
                    // 3. Lấy Phiếu đặt sắp tới GẦN NHẤT
                    PhieuDatSapToi = _context.PhieuDatBans
                        .Where(p => p.IdBan == b.IdBan &&
-                                   p.ThoiGianDat > now && // Phải là trong tương lai
+                                   p.ThoiGianDat > now && // Logic này vẫn đúng, chỉ tìm phiếu tương lai
                                    (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận"))
-                       .OrderBy(p => p.ThoiGianDat) // Quan trọng: lấy cái sớm nhất
+                       .OrderBy(p => p.ThoiGianDat)
                        .FirstOrDefault()
                })
                // 4. Giờ mới tạo DTO
@@ -54,10 +113,11 @@ namespace CafebookApi.Controllers.App.NhanVien
                    IdBan = data.Ban.IdBan,
                    SoBan = data.Ban.SoBan,
 
-                   // === LOGIC TRẠNG THÁI MỚI ===
+                   // === LOGIC TRẠNG THÁI MỚI (10 PHÚT) ===
                    TrangThai = (data.Ban.TrangThai == "Trống" &&
                                 data.PhieuDatSapToi != null &&
-                                data.PhieuDatSapToi.ThoiGianDat <= nowPlus5Minutes)
+                                // SỬA: Dùng mốc 10 phút
+                                data.PhieuDatSapToi.ThoiGianDat <= nowPlus10Minutes)
                                ? "Đã đặt" // Tự động đổi "Trống" -> "Đã đặt" (Gần giờ)
                                : data.Ban.TrangThai, // Giữ nguyên (Trống, Có khách, Bảo trì)
 

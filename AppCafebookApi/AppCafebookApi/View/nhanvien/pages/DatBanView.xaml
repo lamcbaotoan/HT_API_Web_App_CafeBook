@@ -22,6 +22,7 @@
         <SolidColorBrush x:Key="StatusYellowBrush" Color="#FFA726"/>
         <SolidColorBrush x:Key="StatusBlueBrush" Color="#42A5F5"/>
         <FontFamily x:Key="FontAwesomeSolid">/Fonts/Font Awesome 6 Free-Solid-900.otf#Font Awesome 6 Free Solid</FontFamily>
+
         <Style TargetType="TextBlock" x:Key="FormLabel">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -46,6 +47,7 @@
             <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
         <Style x:Key="ActionButton" TargetType="Button">
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="Margin" Value="5"/>
@@ -176,39 +178,40 @@
         <Border Grid.Column="1" Background="White" Margin="0,10,10,10" CornerRadius="4">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="20">
-                    <TextBlock Text="Thông Tin Phiếu" FontSize="20" FontWeight="Bold" 
+                    <TextBlock Text="Thông Tin Phiếu" FontSize="20" 
+                               FontWeight="Bold" 
                                Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
 
+                    <TextBlock Style="{StaticResource FormLabel}" Text="Tên Khách Hàng *"/>
+                    <TextBox x:Name="txtTenKhach" Style="{StaticResource FormTextBox}" 
+                             TextChanged="TxtKhachInfo_TextChanged"/>
+
                     <TextBlock Style="{StaticResource FormLabel}" Text="Số Điện Thoại * (Gõ để tìm KH)"/>
-                    <ComboBox x:Name="cmbSoDienThoai" Style="{StaticResource FormComboBox}"
-                              IsEditable="True" IsTextSearchEnabled="False"
-                              KeyUp="CmbKhachHang_KeyUp"
-                              SelectionChanged="CmbKhachHang_SelectionChanged"
-                              DropDownOpened="CmbKhachHang_DropDownOpened"
-                              DisplayMemberPath="DisplaySdt"/>
+                    <TextBox x:Name="txtSdtKH" Style="{StaticResource FormTextBox}" 
+                             TextChanged="TxtKhachInfo_TextChanged"
+                             ToolTip="Nếu SĐT đã tồn tại, phiếu sẽ tự động gán cho khách cũ."/>
 
                     <TextBlock Style="{StaticResource FormLabel}" Text="Email (Gõ để tìm KH)"/>
-                    <ComboBox x:Name="cmbEmail" Style="{StaticResource FormComboBox}"
-                              IsEditable="True" IsTextSearchEnabled="False"
-                              KeyUp="CmbKhachHang_KeyUp"
-                              SelectionChanged="CmbKhachHang_SelectionChanged"
-                              DropDownOpened="CmbKhachHang_DropDownOpened"
-                              DisplayMemberPath="DisplayEmail"/>
+                    <TextBox x:Name="txtEmailKH" Style="{StaticResource FormTextBox}"
+                             TextChanged="TxtKhachInfo_TextChanged"/>
 
-                    <TextBlock Style="{StaticResource FormLabel}" Text="Tên Khách Hàng * (Tự điền nếu có)"/>
-                    <TextBox x:Name="txtTenKhach" Style="{StaticResource FormTextBox}"/>
-
-                    <CheckBox x:Name="chkKhachVangLai" 
-                              Content="Khách vãng lai (Không tìm)" 
-                              FontWeight="SemiBold" 
-                              Margin="0,10,0,0"
-                              Checked="ChkKhachVangLai_Changed"
-                              Unchecked="ChkKhachVangLai_Changed"/>
-
+                    <ListBox x:Name="lbKhachHangResults" MaxHeight="100" 
+                             Visibility="Collapsed" Margin="0,5,0,0"
+                             SelectionChanged="LbKhachHangResults_SelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding HoTen}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding SoDienThoai}" Foreground="Gray" FontSize="11"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                     <TextBlock Style="{StaticResource FormLabel}" Text="Lọc Khu Vực (Form)"/>
                     <ComboBox x:Name="cmbFilterKhuVuc_Form" Style="{StaticResource FormComboBox}"
                               DisplayMemberPath="TenKhuVuc" SelectedValuePath="IdKhuVuc"
                               SelectionChanged="CmbFilterKhuVuc_Form_SelectionChanged"/>
+
 
                     <TextBlock Style="{StaticResource FormLabel}" Text="Bàn * (Gõ để tìm bàn)"/>
                     <ComboBox x:Name="cmbBan" Style="{StaticResource FormComboBox}"

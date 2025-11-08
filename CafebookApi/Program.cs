@@ -26,6 +26,7 @@ builder.Services.AddCors(options =>
 
 // 2️⃣ Cấu hình controller, Swagger
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

@@ -63,6 +63,7 @@ namespace CafebookApi.Data
         public DbSet<PhieuThuongPhat> PhieuThuongPhats { get; set; }
         public DbSet<PhieuTraSach> PhieuTraSachs { get; set; }
         public DbSet<ChiTietPhieuTra> ChiTietPhieuTras { get; set; }
+        public DbSet<TrangThaiCheBien> TrangThaiCheBiens { get; set; }
 
         // --- Cấu hình Khóa (Fluent API) ---
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -85,6 +86,29 @@ namespace CafebookApi.Data
             modelBuilder.Entity<DeXuatSach>().HasKey(c => new { c.IdSachGoc, c.IdSachDeXuat, c.LoaiDeXuat });
             modelBuilder.Entity<ChiTietPhieuTra>().HasKey(c => new { c.IdPhieuTra, c.IdSach });
 
+
+            // THÊM MỚI CẤU HÌNH CHO TrangThaiCheBien
+            modelBuilder.Entity<TrangThaiCheBien>(e =>
+            {
+                e.HasOne(cb => cb.ChiTietHoaDon)
+                 .WithMany() // Không cần collection ngược
+                 .HasForeignKey(cb => cb.IdChiTietHoaDon)
+                 .OnDelete(DeleteBehavior.Cascade); // Xóa CTHD thì xóa luôn phiếu bếp
+
+                e.HasOne(cb => cb.HoaDon)
+                 .WithMany() // Không cần collection ngược
+                 .HasForeignKey(cb => cb.IdHoaDon)
+                 .OnDelete(DeleteBehavior.NoAction); // Không cascade
+
+                e.HasOne(cb => cb.SanPham)
+                 .WithMany() // Không cần collection ngược
+                 .HasForeignKey(cb => cb.IdSanPham)
+                 .OnDelete(DeleteBehavior.NoAction); // Không cascade
+
+                // Thêm Index
+                e.HasIndex(cb => new { cb.TrangThai, cb.NhomIn })
+                 .IncludeProperties(cb => cb.ThoiGianGoi);
+            });
             // --- SỬA LỖI: THÊM CẤU HÌNH KHÓA NGOẠI CHO PHIẾU THUÊ ---
             modelBuilder.Entity<PhieuThueSach>(e =>
             {
