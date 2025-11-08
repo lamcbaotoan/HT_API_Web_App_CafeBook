@@ -1,4 +1,5 @@
-﻿using CafebookModel.Model.Entities;
+﻿// Tập tin: CafebookApi/Data/CafebookDbContext.cs
+using CafebookModel.Model.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CafebookApi.Data
@@ -37,6 +38,9 @@ namespace CafebookApi.Data
         public DbSet<TheLoai> TheLoais { get; set; }
         public DbSet<TacGia> TacGias { get; set; }
         public DbSet<NhaXuatBan> NhaXuatBans { get; set; }
+        public DbSet<SachTacGia> SachTacGias { get; set; }
+        public DbSet<SachTheLoai> SachTheLoais { get; set; }
+        public DbSet<SachNhaXuatBan> SachNhaXuatBans { get; set; }
         public DbSet<Sach> Sachs { get; set; }
         public DbSet<PhieuThueSach> PhieuThueSachs { get; set; }
         public DbSet<ChiTietPhieuThue> ChiTietPhieuThues { get; set; }
@@ -55,13 +59,17 @@ namespace CafebookApi.Data
         public DbSet<DeXuatSanPham> DeXuatSanPhams { get; set; }
         public DbSet<DeXuatSach> DeXuatSachs { get; set; }
         public DbSet<ThongBao> ThongBaos { get; set; }
-        public DbSet<DonViChuyenDoi> DonViChuyenDois { get; set; } // <-- THÊM DÒNG NÀY
+        public DbSet<DonViChuyenDoi> DonViChuyenDois { get; set; }
         public DbSet<PhieuThuongPhat> PhieuThuongPhats { get; set; }
+        public DbSet<PhieuTraSach> PhieuTraSachs { get; set; }
+        public DbSet<ChiTietPhieuTra> ChiTietPhieuTras { get; set; }
+
         // --- Cấu hình Khóa (Fluent API) ---
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.UseCollation("Vietnamese_CI_AS");
+
             // Cấu hình Khóa chính tổng hợp (Composite Primary Keys)
             modelBuilder.Entity<ChiTietPhuThuHoaDon>().HasKey(c => new { c.IdHoaDon, c.IdPhuThu });
             modelBuilder.Entity<DinhLuong>().HasKey(c => new { c.IdSanPham, c.IdNguyenLieu });
@@ -72,8 +80,90 @@ namespace CafebookApi.Data
             modelBuilder.Entity<ChiTietPhieuThue>().HasKey(c => new { c.IdPhieuThueSach, c.IdSach });
             modelBuilder.Entity<VaiTro_Quyen>().HasKey(c => new { c.IdVaiTro, c.IdQuyen });
             modelBuilder.Entity<DeXuatSanPham>().HasKey(c => new { c.IdSanPhamGoc, c.IdSanPhamDeXuat, c.LoaiDeXuat });
+
+            // SỬA LỖI & TỐI ƯU: Bỏ comment và thêm HasKey cho DeXuatSach
             modelBuilder.Entity<DeXuatSach>().HasKey(c => new { c.IdSachGoc, c.IdSachDeXuat, c.LoaiDeXuat });
-            // === THÊM CẤU HÌNH MỚI NÀY (ĐỂ GIẢI QUYẾT XUNG ĐỘT FK) ===
+            modelBuilder.Entity<ChiTietPhieuTra>().HasKey(c => new { c.IdPhieuTra, c.IdSach });
+
+            // --- SỬA LỖI: THÊM CẤU HÌNH KHÓA NGOẠI CHO PHIẾU THUÊ ---
+            modelBuilder.Entity<PhieuThueSach>(e =>
+            {
+                e.HasOne(p => p.KhachHang)
+                 .WithMany(k => k.PhieuThueSachs)
+                 .HasForeignKey(p => p.IdKhachHang) // Chỉ rõ FK là IdKhachHang
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                e.HasOne(p => p.NhanVien)
+                 .WithMany(n => n.PhieuThueSachs)
+                 .HasForeignKey(p => p.IdNhanVien) // Chỉ rõ FK là IdNhanVien
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            modelBuilder.Entity<ChiTietPhieuThue>(e =>
+            {
+                // (Khóa chính đã được định nghĩa ở trên)
+                // e.HasKey(c => new { c.IdPhieuThueSach, c.IdSach });
+
+                e.HasOne(ct => ct.PhieuThueSach)
+                 .WithMany(p => p.ChiTietPhieuThues)
+                 .HasForeignKey(ct => ct.IdPhieuThueSach) // Chỉ rõ FK
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                e.HasOne(ct => ct.Sach)
+                 .WithMany(s => s.ChiTietPhieuThues)
+                 .HasForeignKey(ct => ct.IdSach) // Chỉ rõ FK
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // --- THÊM CẤU HÌNH MỚI CHO PHIẾU TRẢ SÁCH ---
+            modelBuilder.Entity<PhieuTraSach>()
+               .HasOne(pt => pt.PhieuThueSach)
+               .WithMany(p => p.PhieuTraSachs)
+               .HasForeignKey(pt => pt.IdPhieuThueSach)
+               .OnDelete(DeleteBehavior.NoAction); // Tránh cascade
+
+            modelBuilder.Entity<PhieuTraSach>()
+               .HasOne(pt => pt.NhanVien)
+               .WithMany(nv => nv.PhieuTraSachs)
+               .HasForeignKey(pt => pt.IdNhanVien)
+               .OnDelete(DeleteBehavior.NoAction); // Tránh cascade
+            // --- KẾT THÚC THÊM MỚI ---
+
+            // Cấu hình N-N cho Sách (Đã đúng)
+            modelBuilder.Entity<SachTacGia>(e =>
+            {
+                e.HasKey(st => new { st.IdSach, st.IdTacGia });
+                e.HasOne(st => st.Sach)
+                    .WithMany(s => s.SachTacGias)
+                    .HasForeignKey(st => st.IdSach);
+                e.HasOne(st => st.TacGia)
+                    .WithMany(t => t.SachTacGias)
+                    .HasForeignKey(st => st.IdTacGia);
+            });
+
+            modelBuilder.Entity<SachTheLoai>(e =>
+            {
+                e.HasKey(st => new { st.IdSach, st.IdTheLoai });
+                e.HasOne(st => st.Sach)
+                    .WithMany(s => s.SachTheLoais)
+                    .HasForeignKey(st => st.IdSach);
+                e.HasOne(st => st.TheLoai)
+                    .WithMany(t => t.SachTheLoais)
+                    .HasForeignKey(st => st.IdTheLoai);
+            });
+
+            modelBuilder.Entity<SachNhaXuatBan>(e =>
+            {
+                e.HasKey(sn => new { sn.IdSach, sn.IdNhaXuatBan });
+                e.HasOne(sn => sn.Sach)
+                    .WithMany(s => s.SachNhaXuatBans)
+                    .HasForeignKey(sn => sn.IdSach);
+                e.HasOne(sn => sn.NhaXuatBan)
+                    .WithMany(n => n.SachNhaXuatBans)
+                    .HasForeignKey(sn => sn.IdNhaXuatBan);
+            });
+
+            // Cấu hình quan hệ N-1 phức tạp (Đã đúng)
             modelBuilder.Entity<PhieuThuongPhat>()
                 .HasOne(p => p.NhanVien)
                 .WithMany() // Không tạo collection
@@ -90,25 +180,21 @@ namespace CafebookApi.Data
                 .HasOne(p => p.PhieuLuong)
                 .WithMany() // Không tạo collection
                 .HasForeignKey(p => p.IdPhieuLuong)
-                .OnDelete(DeleteBehavior.SetNull); // Nếu xóa phiếu lương, set null
-            // --- THÊM 2 DÒNG NÀY ĐỂ SỬA WARNING ---
-            modelBuilder.Entity<Sach>()
-                .Property(s => s.GiaBia)
-                .HasColumnType("decimal(18, 2)");
-            // --- THÊM 2 DÒNG NÀY ĐỂ SỬA WARNING ---
-            // <-- THÊM KHÓA NGOẠI MỚI CHO DINHLUONG (NẾU CHƯA CÓ) -->
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Cấu hình DinhLuong (Đã đúng)
             modelBuilder.Entity<DinhLuong>()
                 .HasOne(d => d.DonViSuDung)
                 .WithMany(dv => dv.DinhLuongs)
                 .HasForeignKey(d => d.IdDonViSuDung)
-                .OnDelete(DeleteBehavior.NoAction); // Rất quan trọng
+                .OnDelete(DeleteBehavior.NoAction);
 
-            // Cấu hình Quan hệ đặc biệt (ví dụ: Tự tham chiếu)
+            // Cấu hình Tự tham chiếu (Đã đúng)
             modelBuilder.Entity<DanhMuc>()
                 .HasOne(d => d.DanhMucCha)
                 .WithMany(d => d.DanhMucCons)
                 .HasForeignKey(d => d.IdDanhMucCha)
-                .OnDelete(DeleteBehavior.NoAction); // Tránh lỗi self-referencing cascade
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<DonXinNghi>()
                 .HasOne(d => d.NguoiDuyet)
@@ -116,7 +202,7 @@ namespace CafebookApi.Data
                 .HasForeignKey(d => d.IdNguoiDuyet)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // Cấu hình Quan hệ cho DeXuatSanPham
+            // Cấu hình DeXuat (Tránh lỗi cascade)
             modelBuilder.Entity<DeXuatSanPham>()
                 .HasOne(d => d.SanPhamGoc)
                 .WithMany(p => p.DeXuatSanPhamGocs)
@@ -129,7 +215,7 @@ namespace CafebookApi.Data
                 .HasForeignKey(d => d.IdSanPhamDeXuat)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // Cấu hình Quan hệ cho DeXuatSach
+            // SỬA LỖI & TỐI ƯU: Bỏ comment cấu hình DeXuatSach
             modelBuilder.Entity<DeXuatSach>()
                .HasOne(d => d.SachGoc)
                .WithMany(p => p.DeXuatSachGocs)
@@ -142,8 +228,7 @@ namespace CafebookApi.Data
                 .HasForeignKey(d => d.IdSachDeXuat)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // Tắt ON DELETE CASCADE cho các khóa ngoại gây lỗi (nếu cần)
-            // Ví dụ: Bảng NhatKyHuyMon
+            // Cấu hình Tắt Cascade khác (Đã đúng)
             modelBuilder.Entity<NhatKyHuyMon>()
                 .HasOne(n => n.HoaDon)
                 .WithMany(h => h.NhatKyHuyMons)
@@ -155,6 +240,11 @@ namespace CafebookApi.Data
                 .WithMany(nv => nv.NhatKyHuyMons)
                 .HasForeignKey(n => n.IdNhanVienHuy)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Cấu hình bổ sung (Đã đúng)
+            modelBuilder.Entity<Sach>()
+                .Property(s => s.GiaBia)
+                .HasColumnType("decimal(18, 2)");
         }
     }
 }

@@ -11,12 +11,12 @@ using CafebookModel.Model.ModelApp;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Win32;
-using System.IO; // <-- THÊM
+using System.IO;
 using AppCafebookApi.Services;
 using CafebookModel.Utils;
 using AppCafebookApi.View.common;
 using CafebookModel.Model.Entities;
-using System.Net.Http.Headers; // <-- THÊM
+using System.Net.Http.Headers;
 
 namespace AppCafebookApi.View.quanly.pages
 {
@@ -24,14 +24,10 @@ namespace AppCafebookApi.View.quanly.pages
     {
         private static readonly HttpClient httpClient;
         private List<SachDto> _allSachList = new List<SachDto>();
-
         private SachDetailDto? _selectedSachDetails = null;
+        private string? _currentAnhBiaFilePath = null;
+        private bool _deleteImageRequest = false;
 
-        // SỬA: Đã xóa Base64, dùng 2 biến này để quản lý file upload
-        private string? _currentAnhBiaFilePath = null; // Lưu đường dẫn file cục bộ
-        private bool _deleteImageRequest = false;     // Đánh dấu yêu cầu xóa ảnh
-
-        // Cache
         private List<FilterLookupDto> _theLoaiList = new List<FilterLookupDto>();
         private List<FilterLookupDto> _tacGiaList = new List<FilterLookupDto>();
         private List<FilterLookupDto> _nhaXuatBanList = new List<FilterLookupDto>();
@@ -53,11 +49,10 @@ namespace AppCafebookApi.View.quanly.pages
         {
             await LoadFiltersAsync();
             await LoadDataGridAsync();
-            await LoadRentalsAsync();
+            await LoadRentalsAsync(null, null);
             ResetForm();
         }
 
-        // ... (Hàm LoadFiltersAsync, LoadDataGridAsync, LoadRentalsAsync giữ nguyên) ...
         #region 1. Tải Dữ Liệu
         private async Task LoadFiltersAsync()
         {
@@ -69,19 +64,19 @@ namespace AppCafebookApi.View.quanly.pages
                     _theLoaiList = filters.TheLoais;
                     _tacGiaList = filters.TacGias;
                     _nhaXuatBanList = filters.NhaXuatBans;
+
+                    // Bộ lọc (Grid)
                     var filterTheLoai = new List<FilterLookupDto>(_theLoaiList);
                     filterTheLoai.Insert(0, new FilterLookupDto { Id = 0, Ten = "Tất cả Thể loại" });
                     cmbFilterTheLoai.ItemsSource = filterTheLoai;
                     if (cmbFilterTheLoai.SelectedValue == null) cmbFilterTheLoai.SelectedValue = 0;
-                    var formTheLoai = new List<FilterLookupDto>(_theLoaiList);
-                    formTheLoai.Insert(0, new FilterLookupDto { Id = 0, Ten = "-- Chọn Thể loại --" });
-                    cmbTheLoai.ItemsSource = formTheLoai;
-                    var formTacGia = new List<FilterLookupDto>(_tacGiaList);
-                    formTacGia.Insert(0, new FilterLookupDto { Id = 0, Ten = "-- Chọn Tác giả --" });
-                    cmbTacGia.ItemsSource = formTacGia;
-                    var formNXB = new List<FilterLookupDto>(_nhaXuatBanList);
-                    formNXB.Insert(0, new FilterLookupDto { Id = 0, Ten = "-- Chọn NXB --" });
-                    cmbNhaXuatBan.ItemsSource = formNXB;
+
+                    // SỬA: Form (Cột phải) - Gán nguồn cho ComboBox
+                    cmbAddTheLoai.ItemsSource = _theLoaiList;
+                    cmbAddTacGia.ItemsSource = _tacGiaList;
+                    cmbAddNXB.ItemsSource = _nhaXuatBanList;
+
+                    // Tab Danh mục
                     lbTacGia.ItemsSource = _tacGiaList;
                     lbTheLoai.ItemsSource = _theLoaiList;
                     lbNhaXuatBan.ItemsSource = _nhaXuatBanList;
@@ -93,6 +88,7 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
+        // (LoadDataGridAsync và LoadRentalsAsync giữ nguyên)
         private async Task LoadDataGridAsync()
         {
             LoadingOverlay.Visibility = Visibility.Visible;
@@ -113,12 +109,22 @@ namespace AppCafebookApi.View.quanly.pages
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
-
-        private async Task LoadRentalsAsync()
+        private async Task LoadRentalsAsync(DateTime? fromDate, DateTime? toDate)
         {
             try
             {
-                var rentalData = await httpClient.GetFromJsonAsync<SachRentalsDto>("api/app/sach/rentals");
+                string url = "api/app/sach/rentals";
+                var queryParams = new List<string>();
+                if (fromDate.HasValue)
+                    queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+                if (toDate.HasValue)
+                    queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+
+                if (queryParams.Count > 0)
+                    url += "?" + string.Join("&", queryParams);
+
+                var rentalData = await httpClient.GetFromJsonAsync<SachRentalsDto>(url);
+
                 if (rentalData != null)
                 {
                     dgSachQuaHan.ItemsSource = rentalData.SachQuaHan;
@@ -136,8 +142,6 @@ namespace AppCafebookApi.View.quanly.pages
         private void ResetForm()
         {
             _selectedSachDetails = null;
-
-            // SỬA: Đặt lại 2 biến quản lý file
             _currentAnhBiaFilePath = null;
             _deleteImageRequest = false;
 
@@ -150,16 +154,19 @@ namespace AppCafebookApi.View.quanly.pages
             txtNamXuatBan.Text = "";
             txtSoLuongTong.Text = "1";
             txtMoTa.Text = "";
-            cmbTacGia.SelectedValue = 0;
-            cmbTacGia.Text = string.Empty;
-            cmbTheLoai.SelectedValue = 0;
-            cmbTheLoai.Text = string.Empty;
-            cmbNhaXuatBan.SelectedValue = 0;
-            cmbNhaXuatBan.Text = string.Empty;
             txtGiaBia.Text = "0";
             txtViTri.Text = "";
 
-            // SỬA: Dùng HinhAnhHelper.LoadImage (với nguồn null)
+            // SỬA: Xóa văn bản của TextBox
+            txtTacGiaList.Text = string.Empty;
+            txtTheLoaiList.Text = string.Empty;
+            txtNXBList.Text = string.Empty;
+
+            // SỬA: Xóa lựa chọn ComboBox
+            cmbAddTacGia.SelectedItem = null;
+            cmbAddTheLoai.SelectedItem = null;
+            cmbAddNXB.SelectedItem = null;
+
             AnhBiaPreview.Source = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultBookCover);
         }
 
@@ -180,8 +187,7 @@ namespace AppCafebookApi.View.quanly.pages
                     ResetForm();
                     return;
                 }
-                //MessageBox.Show($"URL nhận được từ API:\n{_selectedSachDetails.AnhBiaUrl}", "DEBUG URL");
-                // SỬA: Đặt lại 2 biến quản lý file
+
                 _currentAnhBiaFilePath = null;
                 _deleteImageRequest = false;
 
@@ -194,13 +200,30 @@ namespace AppCafebookApi.View.quanly.pages
                 txtNamXuatBan.Text = _selectedSachDetails.NamXuatBan?.ToString() ?? "";
                 txtSoLuongTong.Text = _selectedSachDetails.SoLuongTong.ToString();
                 txtMoTa.Text = _selectedSachDetails.MoTa;
-                cmbTacGia.SelectedValue = _selectedSachDetails.IdTacGia ?? 0;
-                cmbTheLoai.SelectedValue = _selectedSachDetails.IdTheLoai ?? 0;
-                cmbNhaXuatBan.SelectedValue = _selectedSachDetails.IdNhaXuatBan ?? 0;
                 txtGiaBia.Text = _selectedSachDetails.GiaBia?.ToString("F0") ?? "0";
                 txtViTri.Text = _selectedSachDetails.ViTri;
 
-                // SỬA: Dùng HinhAnhHelper.LoadImage với URL
+                // SỬA: Đặt văn bản cho TextBox dựa trên List<int>
+                var tacGiaNames = _tacGiaList
+                    .Where(t => _selectedSachDetails.IdTacGias.Contains(t.Id))
+                    .Select(t => t.Ten);
+                txtTacGiaList.Text = string.Join(", ", tacGiaNames);
+
+                var theLoaiNames = _theLoaiList
+                    .Where(t => _selectedSachDetails.IdTheLoais.Contains(t.Id))
+                    .Select(t => t.Ten);
+                txtTheLoaiList.Text = string.Join(", ", theLoaiNames);
+
+                var nxbNames = _nhaXuatBanList
+                    .Where(t => _selectedSachDetails.IdNhaXuatBans.Contains(t.Id))
+                    .Select(t => t.Ten);
+                txtNXBList.Text = string.Join(", ", nxbNames);
+
+                // Xóa lựa chọn ComboBox
+                cmbAddTacGia.SelectedItem = null;
+                cmbAddTheLoai.SelectedItem = null;
+                cmbAddNXB.SelectedItem = null;
+
                 AnhBiaPreview.Source = HinhAnhHelper.LoadImage(_selectedSachDetails.AnhBiaUrl, HinhAnhPaths.DefaultBookCover);
             }
             catch (Exception ex)
@@ -213,6 +236,7 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
+        // (BtnChonAnh_Click và BtnXoaAnh_Click giữ nguyên)
         private void BtnChonAnh_Click(object sender, RoutedEventArgs e)
         {
             var ofd = new OpenFileDialog { Filter = "Image files|*.png;*.jpg;*.jpeg", Title = "Chọn ảnh bìa sách" };
@@ -220,11 +244,8 @@ namespace AppCafebookApi.View.quanly.pages
             {
                 try
                 {
-                    // SỬA: Chỉ lưu đường dẫn file
                     _currentAnhBiaFilePath = ofd.FileName;
-                    _deleteImageRequest = false; // Đã chọn file mới
-
-                    // SỬA: Dùng HinhAnhHelper.LoadImage (tự nhận diện đường dẫn file)
+                    _deleteImageRequest = false;
                     AnhBiaPreview.Source = HinhAnhHelper.LoadImage(_currentAnhBiaFilePath, HinhAnhPaths.DefaultBookCover);
                 }
                 catch (Exception ex)
@@ -235,22 +256,20 @@ namespace AppCafebookApi.View.quanly.pages
                 }
             }
         }
-
-        // THÊM: Nút Xóa Ảnh
         private void BtnXoaAnh_Click(object sender, RoutedEventArgs e)
         {
-            _currentAnhBiaFilePath = null; // Xóa đường dẫn file
-            _deleteImageRequest = true;   // Đánh dấu yêu cầu xóa
-            AnhBiaPreview.Source = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultBookCover); // Hiển thị ảnh mặc định
+            _currentAnhBiaFilePath = null;
+            _deleteImageRequest = true;
+            AnhBiaPreview.Source = HinhAnhHelper.LoadImage(null, HinhAnhPaths.DefaultBookCover);
         }
         #endregion
 
         #region 3. Lọc / Form
+        // (Các hàm trong Region này giữ nguyên)
         private async void TxtSearchSach_TextChanged(object sender, TextChangedEventArgs e)
         {
             await LoadDataGridAsync();
         }
-
         private async void CmbFilterTheLoai_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (cmbFilterTheLoai.IsLoaded)
@@ -258,14 +277,12 @@ namespace AppCafebookApi.View.quanly.pages
                 await LoadDataGridAsync();
             }
         }
-
         private async void BtnClearFilter_Click(object sender, RoutedEventArgs e)
         {
             txtSearchSach.Text = "";
             cmbFilterTheLoai.SelectedValue = 0;
             await LoadDataGridAsync();
         }
-
         private void BtnLamMoiForm_Click(object sender, RoutedEventArgs e)
         {
             ResetForm();
@@ -274,7 +291,7 @@ namespace AppCafebookApi.View.quanly.pages
 
         #region 4. Lưu/Xóa Sách
 
-        // SỬA: VIẾT LẠI HOÀN TOÀN HÀM LƯU
+        // SỬA: BtnLuu_Click (dùng logic "Smart TextBox")
         private async void BtnLuu_Click(object sender, RoutedEventArgs e)
         {
             // (Validation giữ nguyên)
@@ -298,33 +315,44 @@ namespace AppCafebookApi.View.quanly.pages
             LoadingOverlay.Visibility = Visibility.Visible;
             try
             {
-                // (Helper GetOrCreateLookupIdAsync giữ nguyên)
-                int? tacGiaId = await GetOrCreateLookupIdAsync(cmbTacGia.Text, _tacGiaList, "api/app/sach/tacgia");
-                int? theLoaiId = await GetOrCreateLookupIdAsync(cmbTheLoai.Text, _theLoaiList, "api/app/sach/theloai");
-                int? nhaXuatBanId = await GetOrCreateLookupIdAsync(cmbNhaXuatBan.Text, _nhaXuatBanList, "api/app/sach/nhaxuatban");
+                // SỬA: Xử lý chuỗi tên để lấy List<int>
+                // Tự động tạo mới nếu tên không tồn tại
+                var tacGiaIds = await ProcessNameListAsync(txtTacGiaList.Text, "api/app/sach/tacgia", _tacGiaList);
+                var theLoaiIds = await ProcessNameListAsync(txtTheLoaiList.Text, "api/app/sach/theloai", _theLoaiList);
+                var nxbIds = await ProcessNameListAsync(txtNXBList.Text, "api/app/sach/nhaxuatban", _nhaXuatBanList);
 
-                // SỬA: Dùng MultipartFormDataContent thay vì DTO
+                // Nếu ProcessNameListAsync trả về null (do lỗi), dừng lại
+                if (tacGiaIds == null || theLoaiIds == null || nxbIds == null)
+                {
+                    LoadingOverlay.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
                 using var form = new MultipartFormDataContent();
 
-                // 1. Thêm các trường dữ liệu (tên phải khớp với DTO)
+                // 1. Thêm các trường dữ liệu (Giữ nguyên)
                 form.Add(new StringContent(txtTenSach.Text), "TenSach");
-                if (theLoaiId.HasValue)
-                    form.Add(new StringContent(theLoaiId.Value.ToString()), "IdTheLoai");
-                if (tacGiaId.HasValue)
-                    form.Add(new StringContent(tacGiaId.Value.ToString()), "IdTacGia");
-                if (nhaXuatBanId.HasValue)
-                    form.Add(new StringContent(nhaXuatBanId.Value.ToString()), "IdNhaXuatBan");
-
                 if (int.TryParse(txtNamXuatBan.Text, out int nam))
                     form.Add(new StringContent(nam.ToString()), "NamXuatBan");
-
                 form.Add(new StringContent(txtMoTa.Text ?? ""), "MoTa");
                 form.Add(new StringContent(soLuong.ToString()), "SoLuongTong");
-
                 if (decimal.TryParse(txtGiaBia.Text, out decimal gia))
                     form.Add(new StringContent(gia.ToString()), "GiaBia");
-
                 form.Add(new StringContent(txtViTri.Text ?? ""), "ViTri");
+
+                // SỬA: Thêm các List<int> đã được xử lý
+                foreach (var id in tacGiaIds)
+                {
+                    form.Add(new StringContent(id.ToString()), "IdTacGias");
+                }
+                foreach (var id in theLoaiIds)
+                {
+                    form.Add(new StringContent(id.ToString()), "IdTheLoais");
+                }
+                foreach (var id in nxbIds)
+                {
+                    form.Add(new StringContent(id.ToString()), "IdNhaXuatBans");
+                }
 
                 bool isCreating = (_selectedSachDetails == null);
 
@@ -333,23 +361,18 @@ namespace AppCafebookApi.View.quanly.pages
                 {
                     var fileStream = File.OpenRead(_currentAnhBiaFilePath);
                     var streamContent = new StreamContent(fileStream);
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg"); // Hoặc image/png
-                    // Tên "AnhBiaUpload" phải khớp với tham số ở Controller
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
                     form.Add(streamContent, "AnhBiaUpload", Path.GetFileName(_currentAnhBiaFilePath));
                 }
 
                 // 3. Thêm cờ Xóa ảnh (nếu có)
                 if (_deleteImageRequest)
                 {
-                    // Tên "XoaAnhBia" phải khớp với tham số ở Controller
                     form.Add(new StringContent("true"), "XoaAnhBia");
                 }
 
-                // Gán Id nếu là Update
                 if (!isCreating)
                 {
-                    // === SỬA LỖI CS8602 (Dòng 351) ===
-                    // Thêm '!' vì logic !isCreating đảm bảo _selectedSachDetails không null
                     form.Add(new StringContent(_selectedSachDetails!.IdSach.ToString()), "IdSach");
                 }
 
@@ -361,31 +384,25 @@ namespace AppCafebookApi.View.quanly.pages
                 }
                 else
                 {
-                    // === SỬA LỖI CS8602 (Dòng 362) ===
-                    // Thêm '!' (lý do tương tự)
                     response = await httpClient.PutAsync($"api/app/sach/{_selectedSachDetails!.IdSach}", form);
                 }
 
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Lưu thành công!", "Thông báo");
+
+                    // SỬA: Tải lại Filters để cập nhật các mục vừa tạo mới
                     await LoadFiltersAsync();
                     await LoadDataGridAsync();
 
                     if (isCreating)
                     {
                         var newSach = await response.Content.ReadFromJsonAsync<SachDetailDto>();
-
-                        // === SỬA LỖI CS8602 (Dòng 374) ===
-                        // Thêm kiểm tra null sau khi deserialize
-                        if (newSach == null)
+                        if (newSach != null)
                         {
-                            MessageBox.Show("Lỗi: API đã tạo thành công nhưng không trả về dữ liệu.", "Lỗi Phản Hồi API");
-                            return; // Thoát sớm
+                            var newItemInGrid = _allSachList.FirstOrDefault(s => s.IdSach == newSach.IdSach);
+                            dgSach.SelectedItem = newItemInGrid;
                         }
-
-                        var newItemInGrid = _allSachList.FirstOrDefault(s => s.IdSach == newSach.IdSach);
-                        dgSach.SelectedItem = newItemInGrid; // Tự động chọn
                     }
                 }
                 else
@@ -400,46 +417,70 @@ namespace AppCafebookApi.View.quanly.pages
             finally
             {
                 LoadingOverlay.Visibility = Visibility.Collapsed;
-                // SỬA: Đặt lại cache file
                 _currentAnhBiaFilePath = null;
                 _deleteImageRequest = false;
             }
         }
 
-        // (Hàm GetOrCreateLookupIdAsync giữ nguyên)
-        private async Task<int?> GetOrCreateLookupIdAsync(string tenDaNhap, List<FilterLookupDto> list, string apiEndpoint)
+        // THÊM: Hàm Helper để xử lý logic "Smart TextBox"
+        /// <summary>
+        /// Xử lý chuỗi tên (cách nhau bằng dấu phẩy),
+        /// tự động tạo mới nếu tên chưa có trong cache.
+        /// </summary>
+        /// <returns>Danh sách ID hoặc null nếu có lỗi.</returns>
+        private async Task<List<int>?> ProcessNameListAsync(string commaSeparatedText, string createEndpoint, List<FilterLookupDto> localCacheList)
         {
-            if (string.IsNullOrWhiteSpace(tenDaNhap) || tenDaNhap.StartsWith("--"))
+            var ids = new List<int>();
+            var nameList = commaSeparatedText.Split(',')
+                                            .Select(s => s.Trim())
+                                            .Where(s => !string.IsNullOrEmpty(s))
+                                            .Distinct(StringComparer.OrdinalIgnoreCase) // Loại bỏ trùng lặp
+                                            .ToList();
+
+            foreach (var name in nameList)
             {
-                return null;
-            }
-            var item = list.FirstOrDefault(x => x.Ten.Equals(tenDaNhap, StringComparison.OrdinalIgnoreCase));
-            if (item != null)
-            {
-                return item.Id;
-            }
-            try
-            {
-                var response = await httpClient.PostAsJsonAsync(apiEndpoint, new FilterLookupDto { Ten = tenDaNhap });
-                if (response.IsSuccessStatusCode)
+                // 1. Kiểm tra cache (danh sách có sẵn)
+                var existing = localCacheList.FirstOrDefault(t => t.Ten.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
                 {
-                    var newItem = await response.Content.ReadFromJsonAsync<FilterLookupDto>();
-                    return newItem?.Id;
+                    ids.Add(existing.Id);
                 }
                 else
                 {
-                    MessageBox.Show($"Không thể tự động thêm '{tenDaNhap}': {await response.Content.ReadAsStringAsync()}", "Lỗi Tạo Mới");
-                    return null;
+                    // 2. Tự động tạo mới nếu không tìm thấy
+                    try
+                    {
+                        var dto = new FilterLookupDto { Ten = name, MoTa = null };
+                        var response = await httpClient.PostAsJsonAsync(createEndpoint, dto);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var newDto = await response.Content.ReadFromJsonAsync<FilterLookupDto>();
+                            if (newDto != null)
+                            {
+                                ids.Add(newDto.Id);
+                                localCacheList.Add(newDto); // Cập nhật cache để lần sau không tạo nữa
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Lỗi khi tự động tạo '{name}': {await response.Content.ReadAsStringAsync()}", "Lỗi API");
+                            return null; // Dừng lại nếu có lỗi
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Lỗi kết nối khi tạo '{name}': {ex.Message}", "Lỗi API");
+                        return null; // Dừng lại nếu có lỗi
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi API khi tạo mới: {ex.Message}", "Lỗi");
-                return null;
-            }
+            return ids;
         }
 
-        // (Hàm BtnXoa_Click giữ nguyên)
+
+        // (BtnXoa_Click giữ nguyên)
         private async void BtnXoa_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedSachDetails == null) return;
@@ -477,84 +518,112 @@ namespace AppCafebookApi.View.quanly.pages
 
         #endregion
 
-        #region 5. CRUD Danh mục (Tác giả, Thể loại, NXB)
-        // (Toàn bộ các hàm trong region này giữ nguyên)
+        #region 5. CRUD Danh mục (Giữ nguyên)
+
+        // (Tất cả các hàm trong region 5 giữ nguyên)
+        private void BtnShowTacGia_Click(object sender, RoutedEventArgs e)
+        {
+            borderTacGia.Visibility = Visibility.Visible;
+            borderTheLoai.Visibility = Visibility.Collapsed;
+            borderNXB.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnShowTheLoai_Click(object sender, RoutedEventArgs e)
+        {
+            borderTacGia.Visibility = Visibility.Collapsed;
+            borderTheLoai.Visibility = Visibility.Visible;
+            borderNXB.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnShowNXB_Click(object sender, RoutedEventArgs e)
+        {
+            borderTacGia.Visibility = Visibility.Collapsed;
+            borderTheLoai.Visibility = Visibility.Collapsed;
+            borderNXB.Visibility = Visibility.Visible;
+        }
+
         private void LbTacGia_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (lbTacGia.SelectedItem is FilterLookupDto selected)
             {
                 txtTenTacGia.Text = selected.Ten;
+                txtMoTaTacGia.Text = selected.MoTa;
             }
         }
         private async void BtnThemTacGia_Click(object sender, RoutedEventArgs e)
         {
-            await CrudLookupAsync("api/app/sach/tacgia", null, txtTenTacGia.Text);
+            await CrudLookupAsync("api/app/sach/tacgia", null, txtTenTacGia.Text, txtMoTaTacGia.Text);
         }
         private async void BtnLuuTacGia_Click(object sender, RoutedEventArgs e)
         {
             if (lbTacGia.SelectedItem is FilterLookupDto selected)
             {
-                await CrudLookupAsync($"api/app/sach/tacgia/{selected.Id}", selected.Id, txtTenTacGia.Text);
+                await CrudLookupAsync($"api/app/sach/tacgia/{selected.Id}", selected.Id, txtTenTacGia.Text, txtMoTaTacGia.Text);
             }
         }
         private async void BtnXoaTacGia_Click(object sender, RoutedEventArgs e)
         {
             if (lbTacGia.SelectedItem is FilterLookupDto selected)
             {
-                await CrudLookupAsync($"api/app/sach/tacgia/{selected.Id}", selected.Id, null, isDelete: true);
+                await CrudLookupAsync($"api/app/sach/tacgia/{selected.Id}", selected.Id, null, null, isDelete: true);
             }
         }
+
         private void LbTheLoai_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (lbTheLoai.SelectedItem is FilterLookupDto selected)
             {
                 txtTenTheLoai.Text = selected.Ten;
+                txtMoTaTheLoai.Text = selected.MoTa;
             }
         }
         private async void BtnThemTheLoai_Click(object sender, RoutedEventArgs e)
         {
-            await CrudLookupAsync("api/app/sach/theloai", null, txtTenTheLoai.Text);
+            await CrudLookupAsync("api/app/sach/theloai", null, txtTenTheLoai.Text, txtMoTaTheLoai.Text);
         }
         private async void BtnLuuTheLoai_Click(object sender, RoutedEventArgs e)
         {
             if (lbTheLoai.SelectedItem is FilterLookupDto selected)
             {
-                await CrudLookupAsync($"api/app/sach/theloai/{selected.Id}", selected.Id, txtTenTheLoai.Text);
+                await CrudLookupAsync($"api/app/sach/theloai/{selected.Id}", selected.Id, txtTenTheLoai.Text, txtMoTaTheLoai.Text);
             }
         }
         private async void BtnXoaTheLoai_Click(object sender, RoutedEventArgs e)
         {
             if (lbTheLoai.SelectedItem is FilterLookupDto selected)
             {
-                await CrudLookupAsync($"api/app/sach/theloai/{selected.Id}", selected.Id, null, isDelete: true);
+                await CrudLookupAsync($"api/app/sach/theloai/{selected.Id}", selected.Id, null, null, isDelete: true);
             }
         }
+
         private void LbNhaXuatBan_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (lbNhaXuatBan.SelectedItem is FilterLookupDto selected)
             {
                 txtTenNhaXuatBan.Text = selected.Ten;
+                txtMoTaNXB.Text = selected.MoTa;
             }
         }
         private async void BtnThemNXB_Click(object sender, RoutedEventArgs e)
         {
-            await CrudLookupAsync("api/app/sach/nhaxuatban", null, txtTenNhaXuatBan.Text);
+            await CrudLookupAsync("api/app/sach/nhaxuatban", null, txtTenNhaXuatBan.Text, txtMoTaNXB.Text);
         }
         private async void BtnLuuNXB_Click(object sender, RoutedEventArgs e)
         {
             if (lbNhaXuatBan.SelectedItem is FilterLookupDto selected)
             {
-                await CrudLookupAsync($"api/app/sach/nhaxuatban/{selected.Id}", selected.Id, txtTenNhaXuatBan.Text);
+                await CrudLookupAsync($"api/app/sach/nhaxuatban/{selected.Id}", selected.Id, txtTenNhaXuatBan.Text, txtMoTaNXB.Text);
             }
         }
         private async void BtnXoaNXB_Click(object sender, RoutedEventArgs e)
         {
             if (lbNhaXuatBan.SelectedItem is FilterLookupDto selected)
             {
-                await CrudLookupAsync($"api/app/sach/nhaxuatban/{selected.Id}", selected.Id, null, isDelete: true);
+                await CrudLookupAsync($"api/app/sach/nhaxuatban/{selected.Id}", selected.Id, null, null, isDelete: true);
             }
         }
-        private async Task CrudLookupAsync(string endpoint, int? id, string? ten, bool isDelete = false)
+
+        private async Task CrudLookupAsync(string endpoint, int? id, string? ten, string? moTa, bool isDelete = false)
         {
             LoadingOverlay.Visibility = Visibility.Visible;
             try
@@ -575,19 +644,28 @@ namespace AppCafebookApi.View.quanly.pages
                     LoadingOverlay.Visibility = Visibility.Collapsed;
                     return;
                 }
-                else if (id.HasValue) // Update (PUT)
+                else
                 {
-                    response = await httpClient.PutAsJsonAsync(endpoint, new FilterLookupDto { Id = id.Value, Ten = ten ?? "" });
-                }
-                else // Create (POST)
-                {
-                    response = await httpClient.PostAsJsonAsync(endpoint, new FilterLookupDto { Ten = ten ?? "" });
+                    var dto = new FilterLookupDto { Ten = ten };
+                    if (id.HasValue)
+                        dto.Id = id.Value;
+                    if (moTa != null)
+                        dto.MoTa = moTa;
+
+                    if (id.HasValue) // Update (PUT)
+                    {
+                        response = await httpClient.PutAsJsonAsync(endpoint, dto);
+                    }
+                    else // Create (POST)
+                    {
+                        response = await httpClient.PostAsJsonAsync(endpoint, dto);
+                    }
                 }
 
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Thao tác thành công!", "Thông báo");
-                    await LoadFiltersAsync(); // Tải lại TOÀN BỘ
+                    await LoadFiltersAsync(); // Tải lại TOÀN BỘ (cho cả 3 listbox)
                     ResetLookupForms();
                 }
                 else
@@ -604,19 +682,25 @@ namespace AppCafebookApi.View.quanly.pages
                 LoadingOverlay.Visibility = Visibility.Collapsed;
             }
         }
+
         private void ResetLookupForms()
         {
             txtTenTacGia.Text = string.Empty;
+            txtMoTaTacGia.Text = string.Empty;
             lbTacGia.SelectedItem = null;
+
             txtTenTheLoai.Text = string.Empty;
+            txtMoTaTheLoai.Text = string.Empty;
             lbTheLoai.SelectedItem = null;
+
             txtTenNhaXuatBan.Text = string.Empty;
+            txtMoTaNXB.Text = string.Empty;
             lbNhaXuatBan.SelectedItem = null;
         }
         #endregion
 
         #region 6. Navigation Buttons
-        // (Toàn bộ các hàm trong region này giữ nguyên)
+        // (Giữ nguyên)
         private void BtnXemBaoCaoSach_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService?.Navigate(new BapCaoTonKhoSachPreviewWindow());
@@ -625,6 +709,85 @@ namespace AppCafebookApi.View.quanly.pages
         {
             this.NavigationService?.Navigate(new CaiDatWindow());
         }
+        #endregion
+
+        #region 7. Lịch sử & Trễ hạn Actions
+        // (Giữ nguyên)
+        private async void BtnLocNgay_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadRentalsAsync(dpTuNgay.SelectedDate, dpDenNgay.SelectedDate);
+        }
+
+        private async void BtnLamMoiLichSu_Click(object sender, RoutedEventArgs e)
+        {
+            dpTuNgay.SelectedDate = null;
+            dpDenNgay.SelectedDate = null;
+            await LoadRentalsAsync(null, null);
+        }
+
+        private void BtnLienHe_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is BaoCaoSachTreHanDto item)
+            {
+                MessageBox.Show($"Đang liên hệ khách: {item.HoTen}\nSĐT: {item.SoDienThoai}", "Liên hệ");
+            }
+        }
+
+        private void BtnGiaHan_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is BaoCaoSachTreHanDto item)
+            {
+                MessageBox.Show($"Mở cửa sổ gia hạn cho sách: {item.TenSach}\nKhách: {item.HoTen}", "Gia hạn");
+            }
+        }
+        #endregion
+
+        // THÊM: Region 8 cho logic ComboBox Helper
+        #region 8. ComboBox Helper Logic
+
+        /// <summary>
+        /// Hàm chung để thêm item được chọn từ ComboBox vào TextBox
+        /// </summary>
+        private void AddItemToTextBox(TextBox targetTextBox, ComboBox sourceComboBox)
+        {
+            if (sourceComboBox.SelectedItem is not FilterLookupDto selected)
+            {
+                return;
+            }
+
+            var currentText = targetTextBox.Text;
+            var currentNames = currentText.Split(',')
+                                          .Select(s => s.Trim())
+                                          .Where(s => !string.IsNullOrEmpty(s))
+                                          .ToList();
+
+            // Chỉ thêm nếu tên chưa có trong danh sách
+            if (!currentNames.Contains(selected.Ten, StringComparer.OrdinalIgnoreCase))
+            {
+                currentNames.Add(selected.Ten);
+                targetTextBox.Text = string.Join(", ", currentNames);
+            }
+
+            // Reset ComboBox để chờ chọn tiếp
+            sourceComboBox.SelectedItem = null;
+            sourceComboBox.Text = string.Empty;
+        }
+
+        private void CmbAddTacGia_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            AddItemToTextBox(txtTacGiaList, cmbAddTacGia);
+        }
+
+        private void CmbAddTheLoai_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            AddItemToTextBox(txtTheLoaiList, cmbAddTheLoai);
+        }
+
+        private void CmbAddNXB_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            AddItemToTextBox(txtNXBList, cmbAddNXB);
+        }
+
         #endregion
     }
 }

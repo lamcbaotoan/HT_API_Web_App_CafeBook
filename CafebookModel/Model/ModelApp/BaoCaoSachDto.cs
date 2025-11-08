@@ -20,6 +20,7 @@ namespace CafebookModel.Model.ModelApp
     {
         public int Id { get; set; }
         public string Ten { get; set; } = string.Empty;
+        public string? MoTa { get; set; } // <--- THÊM DÒNG NÀY
     }
 
     /// <summary>

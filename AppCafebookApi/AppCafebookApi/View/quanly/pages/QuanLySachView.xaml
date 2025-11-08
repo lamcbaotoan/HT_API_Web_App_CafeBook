@@ -31,7 +31,7 @@
         <Geometry x:Key="IconUpload">M9,16V10H5L12,3L19,10H15V16H9M5,20V18H19V20H5Z</Geometry>
         <Geometry x:Key="IconReport">M10,17L6,21H18L14,17H10M10,10H14V15H10V10M4,3H20C21.1,3 22,3.9 22,5V17C22,18.1 21.1,19 20,19H4C2.9,19 2,18.1 2,17V5C2,3.9 2.9,3 4,3Z</Geometry>
         <Geometry x:Key="IconSettings">M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M12,22C11.6,22 11.2,21.9 10.8,21.7L9.1,20.9C5.1,19.3 2,15.2 2,10.9V5L12,2L22,5V10.9C22,15.2 18.9,19.3 14.9,20.9L13.2,21.7C12.8,21.9 12.4,22 12,22Z</Geometry>
-        
+
         <Style x:Key="ActionButton" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource PrimaryBrownBrush}"/>
             <Setter Property="Foreground" Value="White"/>
@@ -177,15 +177,15 @@
             <Setter Property="Stretch" Value="UniformToFill"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
         </Style>
+
+        <Style x:Key="AddHelperComboBox" TargetType="ComboBox" BasedOn="{StaticResource MaterialComboBox}">
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="IsTextSearchEnabled" Value="True"/>
+            <Setter Property="IsEditable" Value="True"/>
+        </Style>
     </Page.Resources>
 
     <Grid Opacity="1" x:Name="MainGrid">
-        <Grid.RenderTransform>
-            <TranslateTransform Y="20"/>
-        </Grid.RenderTransform>
-        <Grid.Triggers>
-        </Grid.Triggers>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="470"/>
@@ -197,7 +197,6 @@
             </Border.Effect>
 
             <TabControl Margin="5">
-
                 <TabItem Header="Quản lý Sách">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -221,8 +220,8 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding IdSach}" Width="50"/>
                                 <DataGridTextColumn Header="Tên Sách" Binding="{Binding TenSach}" Width="*"/>
-                                <DataGridTextColumn Header="Tác Giả" Binding="{Binding TenTacGia}" Width="150"/>
-                                <DataGridTextColumn Header="Thể Loại" Binding="{Binding TenTheLoai}" Width="120"/>
+                                <DataGridTextColumn Header="Tác Giả" Binding="{Binding TenTacGia}" Width="180"/>
+                                <DataGridTextColumn Header="Thể Loại" Binding="{Binding TenTheLoai}" Width="150"/>
                                 <DataGridTextColumn Header="Vị trí" Binding="{Binding ViTri}" Width="80"/>
                                 <DataGridTextColumn Header="Tổng SL" Binding="{Binding SoLuongTong}" Width="80"/>
                                 <DataGridTextColumn Header="Đang Thuê" Binding="{Binding SoLuongDangMuon}" Width="80"/>
@@ -235,6 +234,7 @@
                 <TabItem Header="Lịch sử &amp; Trễ hạn">
                     <Grid Margin="10">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
@@ -259,7 +259,16 @@
                             </Button>
                         </StackPanel>
 
-                        <TabControl Grid.Row="1">
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="Từ ngày:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{StaticResource DarkBrownBrush}"/>
+                            <DatePicker x:Name="dpTuNgay" Width="120" Margin="0,0,10,0"/>
+                            <TextBlock Text="Đến ngày:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{StaticResource DarkBrownBrush}"/>
+                            <DatePicker x:Name="dpDenNgay" Width="120" Margin="0,0,10,0"/>
+                            <Button x:Name="btnLocNgay" Content="Lọc" Click="BtnLocNgay_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
+                            <Button x:Name="btnLamMoiLichSu" Content="Làm mới" Click="BtnLamMoiLichSu_Click" Style="{StaticResource ActionButton}" Background="{StaticResource TextGrayBrush}" Padding="10,5"/>
+                        </StackPanel>
+
+                        <TabControl Grid.Row="2">
                             <TabItem Header="Sách Quá Hạn">
                                 <DataGrid x:Name="dgSachQuaHan" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeaderWidth="0">
                                     <DataGrid.Columns>
@@ -268,6 +277,17 @@
                                         <DataGridTextColumn Header="SĐT" Binding="{Binding SoDienThoai}" Width="100"/>
                                         <DataGridTextColumn Header="Ngày Hẹn Trả" Binding="{Binding NgayHenTra, StringFormat='dd/MM/yyyy'}" Width="100"/>
                                         <DataGridTextColumn Header="Trạng thái" Binding="{Binding TinhTrang}" Width="100"/>
+
+                                        <DataGridTemplateColumn Header="Hành động" Width="150">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Content="Liên hệ" Tag="{Binding}" Click="BtnLienHe_Click" Style="{StaticResource ActionButton}" Background="#42A5F5" FontSize="10" Padding="8,4" Margin="0,0,5,0"/>
+                                                        <Button Content="Gia hạn" Tag="{Binding}" Click="BtnGiaHan_Click" Style="{StaticResource ActionButton}" Background="#FFB74D" Foreground="{StaticResource DarkBrownBrush}" FontSize="10" Padding="8,4"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </TabItem>
@@ -289,53 +309,71 @@
 
                 <TabItem Header="Quản lý Danh mục">
                     <Grid Margin="10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <Border Grid.Column="0" Margin="0,0,10,0" Padding="15" Background="{StaticResource SubtleGrayBrush}" CornerRadius="8">
-                            <StackPanel>
-                                <TextBlock Text="Tác Giả" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
-                                <ListBox x:Name="lbTacGia" DisplayMemberPath="Ten" SelectedValuePath="Id" Height="250" Margin="0,0,0,10" SelectionChanged="LbTacGia_SelectionChanged"/>
-                                <TextBox x:Name="txtTenTacGia" Style="{StaticResource MaterialTextBox}" Margin="0,0,0,10"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="btnThemTacGia" Content="Thêm" Click="BtnThemTacGia_Click" Style="{StaticResource ActionButton}" Background="{StaticResource SuccessBrush}" Padding="10,5" Margin="0,0,5,0"/>
-                                    <Button x:Name="btnLuuTacGia" Content="Lưu" Click="BtnLuuTacGia_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
-                                    <Button x:Name="btnXoaTacGia" Content="Xóa" Click="BtnXoaTacGia_Click" Style="{StaticResource DeleteButton}" Padding="10,5"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                            <Button Content="Quản lý Tác giả" Click="BtnShowTacGia_Click" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                            <Button Content="Quản lý Thể loại" Click="BtnShowTheLoai_Click" Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                            <Button Content="Quản lý Nhà Xuất Bản" Click="BtnShowNXB_Click" Style="{StaticResource ActionButton}"/>
+                        </StackPanel>
 
-                        <Border Grid.Column="1" Margin="5,0,5,0" Padding="15" Background="{StaticResource SubtleGrayBrush}" CornerRadius="8">
-                            <StackPanel>
-                                <TextBlock Text="Thể Loại" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
-                                <ListBox x:Name="lbTheLoai" DisplayMemberPath="Ten" SelectedValuePath="Id" Height="250" Margin="0,0,0,10" SelectionChanged="LbTheLoai_SelectionChanged"/>
-                                <TextBox x:Name="txtTenTheLoai" Style="{StaticResource MaterialTextBox}" Margin="0,0,0,10"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="btnThemTheLoai" Content="Thêm" Click="BtnThemTheLoai_Click" Style="{StaticResource ActionButton}" Background="{StaticResource SuccessBrush}" Padding="10,5" Margin="0,0,5,0"/>
-                                    <Button x:Name="btnLuuTheLoai" Content="Lưu" Click="BtnLuuTheLoai_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
-                                    <Button x:Name="btnXoaTheLoai" Content="Xóa" Click="BtnXoaTheLoai_Click" Style="{StaticResource DeleteButton}" Padding="10,5"/>
+                        <Grid Grid.Row="1">
+                            <Border x:Name="borderTacGia" Visibility="Visible"
+                                    Padding="15" Background="{StaticResource SubtleGrayBrush}" CornerRadius="8">
+                                <StackPanel>
+                                    <TextBlock Text="Tác Giả" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
+                                    <ListBox x:Name="lbTacGia" DisplayMemberPath="Ten" SelectedValuePath="Id" Height="180" Margin="0,0,0,10" SelectionChanged="LbTacGia_SelectionChanged"/>
+                                    <Label Content="Tên Tác Giả"/>
+                                    <TextBox x:Name="txtTenTacGia" Style="{StaticResource MaterialTextBox}" Margin="0,0,0,10"/>
+                                    <Label Content="Giới thiệu (Mô tả)"/>
+                                    <TextBox x:Name="txtMoTaTacGia" Style="{StaticResource MaterialTextBox}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="btnThemTacGia" Content="Thêm" Click="BtnThemTacGia_Click" Style="{StaticResource ActionButton}" Background="{StaticResource SuccessBrush}" Padding="10,5" Margin="0,0,5,0"/>
+                                        <Button x:Name="btnLuuTacGia" Content="Lưu" Click="BtnLuuTacGia_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
+                                        <Button x:Name="btnXoaTacGia" Content="Xóa" Click="BtnXoaTacGia_Click" Style="{StaticResource DeleteButton}" Padding="10,5"/>
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
+                            </Border>
 
-                        <Border Grid.Column="2" Margin="10,0,0,0" Padding="15" Background="{StaticResource SubtleGrayBrush}" CornerRadius="8">
-                            <StackPanel>
-                                <TextBlock Text="Nhà Xuất Bản" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
-                                <ListBox x:Name="lbNhaXuatBan" DisplayMemberPath="Ten" SelectedValuePath="Id" Height="250" Margin="0,0,0,10" SelectionChanged="LbNhaXuatBan_SelectionChanged"/>
-                                <TextBox x:Name="txtTenNhaXuatBan" Style="{StaticResource MaterialTextBox}" Margin="0,0,0,10"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="btnThemNXB" Content="Thêm" Click="BtnThemNXB_Click" Style="{StaticResource ActionButton}" Background="{StaticResource SuccessBrush}" Padding="10,5" Margin="0,0,5,0"/>
-                                    <Button x:Name="btnLuuNXB" Content="Lưu" Click="BtnLuuNXB_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
-                                    <Button x:Name="btnXoaNXB" Content="Xóa" Click="BtnXoaNXB_Click" Style="{StaticResource DeleteButton}" Padding="10,5"/>
+                            <Border x:Name="borderTheLoai" Visibility="Collapsed"
+                                    Padding="15" Background="{StaticResource SubtleGrayBrush}" CornerRadius="8">
+                                <StackPanel>
+                                    <TextBlock Text="Thể Loại" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
+                                    <ListBox x:Name="lbTheLoai" DisplayMemberPath="Ten" SelectedValuePath="Id" Height="180" Margin="0,0,0,10" SelectionChanged="LbTheLoai_SelectionChanged"/>
+                                    <Label Content="Tên Thể Loại"/>
+                                    <TextBox x:Name="txtTenTheLoai" Style="{StaticResource MaterialTextBox}" Margin="0,0,0,10"/>
+                                    <Label Content="Mô tả"/>
+                                    <TextBox x:Name="txtMoTaTheLoai" Style="{StaticResource MaterialTextBox}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="btnThemTheLoai" Content="Thêm" Click="BtnThemTheLoai_Click" Style="{StaticResource ActionButton}" Background="{StaticResource SuccessBrush}" Padding="10,5" Margin="0,0,5,0"/>
+                                        <Button x:Name="btnLuuTheLoai" Content="Lưu" Click="BtnLuuTheLoai_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
+                                        <Button x:Name="btnXoaTheLoai" Content="Xóa" Click="BtnXoaTheLoai_Click" Style="{StaticResource DeleteButton}" Padding="10,5"/>
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
+                            </Border>
+
+                            <Border x:Name="borderNXB" Visibility="Collapsed"
+                                    Padding="15" Background="{StaticResource SubtleGrayBrush}" CornerRadius="8">
+                                <StackPanel>
+                                    <TextBlock Text="Nhà Xuất Bản" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,0,0,10"/>
+                                    <ListBox x:Name="lbNhaXuatBan" DisplayMemberPath="Ten" SelectedValuePath="Id" Height="180" Margin="0,0,0,10" SelectionChanged="LbNhaXuatBan_SelectionChanged"/>
+                                    <Label Content="Tên Nhà Xuất Bản"/>
+                                    <TextBox x:Name="txtTenNhaXuatBan" Style="{StaticResource MaterialTextBox}" Margin="0,0,0,10"/>
+                                    <Label Content="Mô tả"/>
+                                    <TextBox x:Name="txtMoTaNXB" Style="{StaticResource MaterialTextBox}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="btnThemNXB" Content="Thêm" Click="BtnThemNXB_Click" Style="{StaticResource ActionButton}" Background="{StaticResource SuccessBrush}" Padding="10,5" Margin="0,0,5,0"/>
+                                        <Button x:Name="btnLuuNXB" Content="Lưu" Click="BtnLuuNXB_Click" Style="{StaticResource ActionButton}" Padding="10,5" Margin="0,0,5,0"/>
+                                        <Button x:Name="btnXoaNXB" Content="Xóa" Click="BtnXoaNXB_Click" Style="{StaticResource DeleteButton}" Padding="10,5"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                     </Grid>
                 </TabItem>
-
             </TabControl>
         </Border>
 
@@ -352,7 +390,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="lblFormTitle" Text="Thông tin Sách" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DarkBrownBrush}" Margin="0,5,0,15" VerticalAlignment="Center"/>
                         <Button x:Name="btnLamMoiForm" Grid.Column="1" ToolTip="Tạo sách mới" Click="BtnLamMoiForm_Click" 
-                                Style="{StaticResource MaterialIconButton}">
+                                 Style="{StaticResource MaterialIconButton}">
                             <Path Data="{StaticResource IconNew}" Fill="{StaticResource TextGrayBrush}" Width="25" Height="25"/>
                         </Button>
                     </Grid>
@@ -364,11 +402,9 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-
                                 <Border Grid.Column="0" BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1" Width="120" Height="160" Background="{StaticResource SubtleGrayBrush}">
                                     <Image x:Name="AnhBiaPreview" Style="{StaticResource BookCoverImage}"/>
                                 </Border>
-
                                 <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Orientation="Horizontal" Margin="15,0,0,0">
                                     <Button x:Name="btnChonAnh" 
                                             Style="{StaticResource ActionButton}" Background="#F5F5F5" 
@@ -379,7 +415,6 @@
                                             <TextBlock Text="Chọn ảnh bìa" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
-
                                     <Button x:Name="btnXoaAnh" 
                                             Style="{StaticResource DeleteButton}" 
                                             Margin="10,0,0,0" 
@@ -395,17 +430,32 @@
                             <Label Content="Tên Sách (*)"/>
                             <TextBox x:Name="txtTenSach" Style="{StaticResource MaterialTextBox}"/>
 
-                            <Label Content="Tác Giả"/>
-                            <ComboBox x:Name="cmbTacGia" DisplayMemberPath="Ten" SelectedValuePath="Id" Style="{StaticResource MaterialComboBox}"
-                                      IsEditable="True" IsTextSearchEnabled="True"/>
+                            <Label Content="Tác Giả (Gõ tên, cách nhau bằng dấu phẩy ',')"/>
+                            <TextBox x:Name="txtTacGiaList" Style="{StaticResource MaterialTextBox}"
+                                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                            <ComboBox x:Name="cmbAddTacGia" DisplayMemberPath="Ten" 
+                                      SelectionChanged="CmbAddTacGia_SelectionChanged"
+                                      Style="{StaticResource AddHelperComboBox}"
+                                      Margin="0,5,0,0"
+                                      ToolTip="...hoặc chọn từ danh sách này để thêm nhanh."/>
 
-                            <Label Content="Thể Loại"/>
-                            <ComboBox x:Name="cmbTheLoai" DisplayMemberPath="Ten" SelectedValuePath="Id" Style="{StaticResource MaterialComboBox}"
-                                      IsEditable="True" IsTextSearchEnabled="True"/>
+                            <Label Content="Thể Loại (Gõ tên, cách nhau bằng dấu phẩy ',')"/>
+                            <TextBox x:Name="txtTheLoaiList" Style="{StaticResource MaterialTextBox}"
+                                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                            <ComboBox x:Name="cmbAddTheLoai" DisplayMemberPath="Ten" 
+                                      SelectionChanged="CmbAddTheLoai_SelectionChanged"
+                                      Style="{StaticResource AddHelperComboBox}"
+                                      Margin="0,5,0,0"
+                                      ToolTip="...hoặc chọn từ danh sách này để thêm nhanh."/>
 
-                            <Label Content="Nhà Xuất Bản"/>
-                            <ComboBox x:Name="cmbNhaXuatBan" DisplayMemberPath="Ten" SelectedValuePath="Id" Style="{StaticResource MaterialComboBox}"
-                                      IsEditable="True" IsTextSearchEnabled="True"/>
+                            <Label Content="Nhà Xuất Bản (Gõ tên, cách nhau bằng dấu phẩy ',')"/>
+                            <TextBox x:Name="txtNXBList" Style="{StaticResource MaterialTextBox}"
+                                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                            <ComboBox x:Name="cmbAddNXB" DisplayMemberPath="Ten" 
+                                      SelectionChanged="CmbAddNXB_SelectionChanged"
+                                      Style="{StaticResource AddHelperComboBox}"
+                                      Margin="0,5,0,0"
+                                      ToolTip="...hoặc chọn từ danh sách này để thêm nhanh."/>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>

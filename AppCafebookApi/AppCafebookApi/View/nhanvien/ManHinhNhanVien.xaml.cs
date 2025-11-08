@@ -132,9 +132,12 @@ namespace AppCafebookApi.View.nhanvien
 
         private void BtnThueSach_Click(object sender, RoutedEventArgs e)
         {
+            NavigateToPage(sender as ToggleButton, new ThueSachView());
+            /*
             // TODO: NavigateToPage(sender as ToggleButton, new ThueSachView());
             MessageBox.Show("Chức năng 'Quản lý Thuê Sách' đang được phát triển.");
             ResetToDefaultPage(sender);
+            */
         }
 
         private void BtnThongTinCaNhan_Click(object sender, RoutedEventArgs e)

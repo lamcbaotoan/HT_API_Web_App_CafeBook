@@ -1,11 +1,12 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/App/BaoCaoSachController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.ModelApp;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using System; // Thêm
+using System;
+using System.Collections.Generic; // Thêm
 
 namespace CafebookApi.Controllers.App
 {
@@ -24,12 +25,12 @@ namespace CafebookApi.Controllers.App
         public async Task<IActionResult> GetFilterData()
         {
             var theLoais = await _context.TheLoais
-                .Select(t => new FilterLookupDto { Id = t.IdTheLoai, Ten = t.TenTheLoai })
+                .Select(t => new FilterLookupDto { Id = t.IdTheLoai, Ten = t.TenTheLoai, MoTa = t.MoTa })
                 .OrderBy(t => t.Ten)
                 .ToListAsync();
 
             var tacGias = await _context.TacGias
-                .Select(t => new FilterLookupDto { Id = t.IdTacGia, Ten = t.TenTacGia })
+                .Select(t => new FilterLookupDto { Id = t.IdTacGia, Ten = t.TenTacGia, MoTa = t.GioiThieu })
                 .OrderBy(t => t.Ten)
                 .ToListAsync();
 
@@ -39,19 +40,12 @@ namespace CafebookApi.Controllers.App
         [HttpPost("report")]
         public async Task<IActionResult> GetSachReport([FromBody] BaoCaoSachRequestDto request)
         {
-            // --- SỬA LỖI CS8600 TẠI ĐÂY ---
-            // Khởi tạo an toàn hơn
-            var pSearchText = new SqlParameter("@SearchText", (object)DBNull.Value);
-            if (!string.IsNullOrEmpty(request.SearchText))
-            {
-                pSearchText.Value = $"%{request.SearchText}%";
-            }
+            // SỬA LỖI: Chuyển sang biến đơn giản để EF Core tự tham số hóa
+            string? pSearchText = string.IsNullOrEmpty(request.SearchText) ? null : $"%{request.SearchText}%";
+            int? pTheLoaiId = request.TheLoaiId == 0 ? null : request.TheLoaiId;
+            int? pTacGiaId = request.TacGiaId == 0 ? null : request.TacGiaId;
 
-            var pTheLoaiId = new SqlParameter("@TheLoaiId", (object)request.TheLoaiId ?? DBNull.Value);
-            var pTacGiaId = new SqlParameter("@TacGiaId", (object)request.TacGiaId ?? DBNull.Value);
-            // --- KẾT THÚC SỬA LỖI ---
-
-            // 1. TÍNH KPIs (Code này OK)
+            // 1. TÍNH KPIs (Không đổi)
             var kpi = (await _context.Database.SqlQuery<BaoCaoSachKpiDto>($@"
                 SELECT
                     ISNULL(COUNT(DISTINCT idSach), 0) AS TongDauSach,
@@ -61,33 +55,49 @@ namespace CafebookApi.Controllers.App
                 FROM dbo.Sach;
             ").ToListAsync()).FirstOrDefault() ?? new BaoCaoSachKpiDto();
 
-            // 2. TAB 1: TỒN KHO CHI TIẾT
+            // 2. TAB 1: TỒN KHO CHI TIẾT (VIẾT LẠI HOÀN TOÀN)
             var chiTietTonKho = await _context.Database.SqlQuery<BaoCaoSachChiTietDto>($@"
                 WITH SachDangThue AS (
                     SELECT idSach, COUNT(idSach) AS SoLuongDangMuon
                     FROM dbo.ChiTietPhieuThue
                     WHERE ngayTraThucTe IS NULL
                     GROUP BY idSach
+                ),
+                SachTacGiasAgg AS (
+                    SELECT
+                        stg.idSach,
+                        STRING_AGG(tg.tenTacGia, ', ') AS tenTacGia
+                    FROM dbo.Sach_TacGia stg
+                    JOIN dbo.TacGia tg ON stg.idTacGia = tg.idTacGia
+                    GROUP BY stg.idSach
+                ),
+                SachTheLoaisAgg AS (
+                    SELECT
+                        stl.idSach,
+                        STRING_AGG(tl.tenTheLoai, ', ') AS tenTheLoai
+                    FROM dbo.Sach_TheLoai stl
+                    JOIN dbo.TheLoai tl ON stl.idTheLoai = tl.idTheLoai
+                    GROUP BY stl.idSach
                 )
                 SELECT
                     s.tenSach,
-                    tg.tenTacGia,
-                    tl.tenTheLoai,
+                    ISNULL(stg_agg.tenTacGia, 'N/A') AS tenTacGia,
+                    ISNULL(stl_agg.tenTheLoai, 'N/A') AS tenTheLoai,
                     s.soLuongTong,
                     ISNULL(sdt.SoLuongDangMuon, 0) AS SoLuongDangMuon,
                     (s.soLuongTong - ISNULL(sdt.SoLuongDangMuon, 0)) AS SoLuongConLai
                 FROM dbo.Sach s
-                LEFT JOIN dbo.TheLoai tl ON s.idTheLoai = tl.idTheLoai
-                LEFT JOIN dbo.TacGia tg ON s.idTacGia = tg.idTacGia
+                LEFT JOIN SachTheLoaisAgg stl_agg ON s.idSach = stl_agg.idSach
+                LEFT JOIN SachTacGiasAgg stg_agg ON s.idSach = stg_agg.idSach
                 LEFT JOIN SachDangThue sdt ON s.idSach = sdt.idSach
                 WHERE
-                    (s.tenSach LIKE {pSearchText} OR {pSearchText} IS NULL)
-                    AND (s.idTheLoai = {pTheLoaiId} OR {pTheLoaiId} IS NULL)
-                    AND (s.idTacGia = {pTacGiaId} OR {pTacGiaId} IS NULL)
+                    (s.tenSach LIKE {pSearchText} OR stg_agg.tenTacGia LIKE {pSearchText} OR {pSearchText} IS NULL)
+                    AND (EXISTS(SELECT 1 FROM dbo.Sach_TheLoai stl WHERE stl.idSach = s.idSach AND stl.idTheLoai = {pTheLoaiId}) OR {pTheLoaiId} IS NULL)
+                    AND (EXISTS(SELECT 1 FROM dbo.Sach_TacGia stg WHERE stg.idSach = s.idSach AND stg.idTacGia = {pTacGiaId}) OR {pTacGiaId} IS NULL)
                 ORDER BY SoLuongConLai ASC, s.tenSach;
             ").ToListAsync();
 
-            // 3. TAB 2: SÁCH TRỄ HẠN (Code này OK)
+            // 3. TAB 2: SÁCH TRỄ HẠN (Không đổi)
             var sachTreHan = await _context.Database.SqlQuery<BaoCaoSachTreHanDto>($@"
                 SELECT
                     s.tenSach,
@@ -108,20 +118,28 @@ namespace CafebookApi.Controllers.App
                 ORDER BY ctpt.ngayHenTra ASC;
             ").ToListAsync();
 
-            // 4. TAB 3: TOP SÁCH THUÊ (Code này OK)
+            // 4. TAB 3: TOP SÁCH THUÊ (VIẾT LẠI)
             var topSachThue = await _context.Database.SqlQuery<TopSachDuocThueDto>($@"
+                WITH SachTacGiasAgg AS (
+                    SELECT
+                        stg.idSach,
+                        STRING_AGG(tg.tenTacGia, ', ') AS tenTacGia
+                    FROM dbo.Sach_TacGia stg
+                    JOIN dbo.TacGia tg ON stg.idTacGia = tg.idTacGia
+                    GROUP BY stg.idSach
+                )
                 SELECT TOP 10
                     s.tenSach,
-                    tg.tenTacGia,
+                    ISNULL(stg_agg.tenTacGia, 'N/A') AS tenTacGia,
                     COUNT(ctpt.idSach) AS TongLuotThue
                 FROM dbo.ChiTietPhieuThue ctpt
                 JOIN dbo.Sach s ON ctpt.idSach = s.idSach
-                LEFT JOIN dbo.TacGia tg ON s.idTacGia = tg.idTacGia
-                GROUP BY s.tenSach, tg.tenTacGia
+                LEFT JOIN SachTacGiasAgg stg_agg ON s.idSach = stg_agg.idSach
+                GROUP BY s.tenSach, stg_agg.tenTacGia
                 ORDER BY TongLuotThue DESC;
             ").ToListAsync();
 
-            // 5. TỔNG HỢP KẾT QUẢ (Code này OK)
+            // 5. TỔNG HỢP KẾT QUẢ (Không đổi)
             var dto = new BaoCaoSachTongHopDto
             {
                 Kpi = kpi,

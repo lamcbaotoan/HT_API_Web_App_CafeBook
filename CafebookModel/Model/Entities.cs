@@ -452,9 +452,9 @@ namespace CafebookModel.Model.Entities
         [StringLength(255)]
         public string? MatKhau { get; set; }
         public DateTime NgayTao { get; set; }
-        // --- THÊM MỚI ---
         public bool BiKhoa { get; set; }
-        public string? AnhDaiDien { get; set; } // Thêm (nếu chưa có)
+        public string? AnhDaiDien { get; set; } 
+        public bool TaiKhoanTam { get; set; }
         public virtual ICollection<HoaDon> HoaDons { get; set; } = new List<HoaDon>();
         public virtual ICollection<PhieuDatBan> PhieuDatBans { get; set; } = new List<PhieuDatBan>();
         public virtual ICollection<PhieuThueSach> PhieuThueSachs { get; set; } = new List<PhieuThueSach>();
@@ -525,7 +525,6 @@ namespace CafebookModel.Model.Entities
 
         [ForeignKey("IdSanPhamApDung")]
         public virtual SanPham? SanPhamApDung { get; set; }
-        // --- KẾT THÚC CỘT MỚI ---
 
         public virtual ICollection<HoaDon_KhuyenMai> HoaDonKhuyenMais { get; set; } = new List<HoaDon_KhuyenMai>();
     }
@@ -547,11 +546,9 @@ namespace CafebookModel.Model.Entities
     {
         [Key]
         public int IdTheLoai { get; set; }
-        [Required]
-        [StringLength(255)]
-        public string TenTheLoai { get; set; } = string.Empty;
-
-        public virtual ICollection<Sach> Sachs { get; set; } = new List<Sach>();
+        public string TenTheLoai { get; set; } = null!;
+        public string? MoTa { get; set; }
+        public virtual ICollection<SachTheLoai> SachTheLoais { get; set; } = new List<SachTheLoai>();
     }
 
     [Table("TacGia")]
@@ -563,8 +560,7 @@ namespace CafebookModel.Model.Entities
         [StringLength(255)]
         public string TenTacGia { get; set; } = string.Empty;
         public string? GioiThieu { get; set; }
-
-        public virtual ICollection<Sach> Sachs { get; set; } = new List<Sach>();
+        public virtual ICollection<SachTacGia> SachTacGias { get; set; } = new List<SachTacGia>();
     }
 
     [Table("NhaXuatBan")]
@@ -572,11 +568,9 @@ namespace CafebookModel.Model.Entities
     {
         [Key]
         public int IdNhaXuatBan { get; set; }
-        [Required]
-        [StringLength(255)]
-        public string TenNhaXuatBan { get; set; } = string.Empty;
-
-        public virtual ICollection<Sach> Sachs { get; set; } = new List<Sach>();
+        public string TenNhaXuatBan { get; set; } = null!;
+        public string? MoTa { get; set; }
+        public virtual ICollection<SachNhaXuatBan> SachNhaXuatBans { get; set; } = new List<SachNhaXuatBan>();
     }
 
     [Table("Sach")]
@@ -584,30 +578,100 @@ namespace CafebookModel.Model.Entities
     {
         [Key]
         public int IdSach { get; set; }
-        [Required]
-        [StringLength(500)]
-        public string TenSach { get; set; } = string.Empty;
-        public int? IdTheLoai { get; set; }
-        public int? IdTacGia { get; set; }
-        public int? IdNhaXuatBan { get; set; }
+        public string TenSach { get; set; } = null!;
         public int? NamXuatBan { get; set; }
         public string? MoTa { get; set; }
         public int SoLuongTong { get; set; }
         public int SoLuongHienCo { get; set; }
-        public string? AnhBia { get; set; } // Base64
-        public decimal? GiaBia { get; set; } // <<< THÊM MỚI
-        public string? ViTri { get; set; }  // <<< THÊM MỚI
-
-        [ForeignKey("IdTheLoai")]
-        public virtual TheLoai? TheLoai { get; set; }
-        [ForeignKey("IdTacGia")]
-        public virtual TacGia? TacGia { get; set; }
-        [ForeignKey("IdNhaXuatBan")]
-        public virtual NhaXuatBan? NhaXuatBan { get; set; }
-
+        public string? AnhBia { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? GiaBia { get; set; }
+        public string? ViTri { get; set; }
+        public virtual ICollection<SachTacGia> SachTacGias { get; set; } = new List<SachTacGia>();
+        public virtual ICollection<SachTheLoai> SachTheLoais { get; set; } = new List<SachTheLoai>();
+        public virtual ICollection<SachNhaXuatBan> SachNhaXuatBans { get; set; } = new List<SachNhaXuatBan>();
         public virtual ICollection<ChiTietPhieuThue> ChiTietPhieuThues { get; set; } = new List<ChiTietPhieuThue>();
+        [InverseProperty("SachGoc")]
         public virtual ICollection<DeXuatSach> DeXuatSachGocs { get; set; } = new List<DeXuatSach>();
+        [InverseProperty("SachDeXuat")]
         public virtual ICollection<DeXuatSach> DeXuatSachDeXuats { get; set; } = new List<DeXuatSach>();
+        public virtual ICollection<ChiTietPhieuTra> ChiTietPhieuTras { get; set; } = new List<ChiTietPhieuTra>();
+    }
+
+
+    [Table("PhieuTraSach")]
+    public class PhieuTraSach
+    {
+        [Key]
+        public int IdPhieuTra { get; set; }
+
+        public int IdPhieuThueSach { get; set; }
+        public int IdNhanVien { get; set; }
+        public DateTime NgayTra { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TongPhiThue { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TongTienPhat { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TongTienCocHoan { get; set; }
+
+        public int DiemTichLuy { get; set; }
+
+        // Navigation properties
+        [ForeignKey("IdPhieuThueSach")]
+        public virtual PhieuThueSach PhieuThueSach { get; set; } = null!;
+
+        [ForeignKey("IdNhanVien")]
+        public virtual NhanVien NhanVien { get; set; } = null!;
+
+        public virtual ICollection<ChiTietPhieuTra> ChiTietPhieuTras { get; set; } = new List<ChiTietPhieuTra>();
+    }
+
+    [Table("ChiTietPhieuTra")]
+    public class ChiTietPhieuTra
+    {
+        public int IdPhieuTra { get; set; }
+        public int IdSach { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TienPhat { get; set; }
+
+        // Navigation properties
+        [ForeignKey("IdPhieuTra")]
+        public virtual PhieuTraSach PhieuTraSach { get; set; } = null!;
+
+        [ForeignKey("IdSach")]
+        public virtual Sach Sach { get; set; } = null!;
+    }
+
+    [Table("Sach_TacGia")]
+    public class SachTacGia
+    {
+        public int IdSach { get; set; }
+        public virtual Sach Sach { get; set; } = null!;
+        public int IdTacGia { get; set; }
+        public virtual TacGia TacGia { get; set; } = null!;
+    }
+
+    [Table("Sach_TheLoai")]
+    public class SachTheLoai
+    {
+        public int IdSach { get; set; }
+        public virtual Sach Sach { get; set; } = null!;
+        public int IdTheLoai { get; set; }
+        public virtual TheLoai TheLoai { get; set; } = null!;
+    }
+
+    [Table("Sach_NhaXuatBan")]
+    public class SachNhaXuatBan
+    {
+        public int IdSach { get; set; }
+        public virtual Sach Sach { get; set; } = null!;
+        public int IdNhaXuatBan { get; set; }
+        public virtual NhaXuatBan NhaXuatBan { get; set; } = null!;
     }
 
     [Table("PhieuThueSach")]
@@ -623,13 +687,10 @@ namespace CafebookModel.Model.Entities
         public string TrangThai { get; set; } = string.Empty;
         [Column(TypeName = "decimal(18, 2)")]
         public decimal TongTienCoc { get; set; }
-
-        [ForeignKey("IdKhachHang")]
         public virtual KhachHang KhachHang { get; set; } = null!;
-        [ForeignKey("IdNhanVien")]
         public virtual NhanVien NhanVien { get; set; } = null!;
-
         public virtual ICollection<ChiTietPhieuThue> ChiTietPhieuThues { get; set; } = new List<ChiTietPhieuThue>();
+        public virtual ICollection<PhieuTraSach> PhieuTraSachs { get; set; } = new List<PhieuTraSach>();
     }
 
     [Table("ChiTietPhieuThue")]
@@ -707,26 +768,17 @@ namespace CafebookModel.Model.Entities
         public virtual ICollection<PhieuXuatHuy> PhieuXuatHuys { get; set; } = new List<PhieuXuatHuy>();
         public virtual ICollection<PhieuThueSach> PhieuThueSachs { get; set; } = new List<PhieuThueSach>();
         public virtual ICollection<LichLamViec> LichLamViecs { get; set; } = new List<LichLamViec>();
-
-        // Sửa lỗi PhieuLuong (Chỉ rõ collection này dùng FK "NhanVien")
         [InverseProperty("NhanVien")]
         public virtual ICollection<PhieuLuong> PhieuLuongs { get; set; } = new List<PhieuLuong>();
-
-        // Thêm collection cho mối quan hệ thứ 2 (dùng FK "NguoiPhat")
         [InverseProperty("NguoiPhat")]
         public virtual ICollection<PhieuLuong> PhieuLuongsDaPhat { get; set; } = new List<PhieuLuong>();
-
-
-        // Sửa lỗi DonXinNghi (Chỉ rõ collection này dùng FK "NhanVien")
         [InverseProperty("NhanVien")]
         public virtual ICollection<DonXinNghi> DonXinNghis { get; set; } = new List<DonXinNghi>();
-
-        // Sửa lỗi DonXinNghi (Chỉ rõ collection này dùng FK "NguoiDuyet")
         [InverseProperty("NguoiDuyet")]
         public virtual ICollection<DonXinNghi> DonXinNghiNguoiDuyets { get; set; } = new List<DonXinNghi>();
-
-
         public virtual ICollection<ChatLichSu> ChatLichSus { get; set; } = new List<ChatLichSu>();
+        public virtual ICollection<PhieuTraSach> PhieuTraSachs { get; set; } = new List<PhieuTraSach>();
+        public virtual ICollection<PhieuThuongPhat> PhieuThuongPhatNguoiTaos { get; set; } = new List<PhieuThuongPhat>();
 
         // --- KẾT THÚC SỬA LỖI ---
     }

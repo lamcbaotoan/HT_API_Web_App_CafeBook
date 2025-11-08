@@ -29,10 +29,19 @@
     <Compile Update="View\Common\PhieuLuongPreviewWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Common\PhieuThuePreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Common\PhieuTraPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\nhanvien\pages\DatBanView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\nhanvien\pages\GoiMonView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\ThueSachView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\nhanvien\pages\SoDoBanView.xaml.cs">

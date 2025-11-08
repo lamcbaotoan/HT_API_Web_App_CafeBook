@@ -64,10 +64,7 @@ namespace CafebookApi.Controllers.Web
                 SoDienThoai = settings.FirstOrDefault(c => c.TenCaiDat == "SoDienThoai")?.GiaTri,
                 EmailLienHe = settings.FirstOrDefault(c => c.TenCaiDat == "LienHe_Email")?.GiaTri,
                 GioMoCua = settings.FirstOrDefault(c => c.TenCaiDat == "LienHe_GioMoCua")?.GiaTri,
-
-                // Logic tính toán (SỬA ĐỔI)
                 SoBanTrong = await _context.Bans.CountAsync(b => b.TrangThai == "Trống"),
-                // Đếm số đầu sách (IdSach) có SoLuongHienCo > 0
                 SoSachSanSang = await _context.Sachs.CountAsync(s => s.SoLuongHienCo > 0)
             };
 
@@ -83,14 +80,14 @@ namespace CafebookApi.Controllers.Web
                     dieuKienApDung = km.DieuKienApDung
                 }).ToListAsync();
 
-            // 3. Lấy 5 món nổi bật (SỬA ĐỔI)
+            // 3. Lấy 5 món nổi bật (Không đổi)
             var monNoiBat_Raw = await _context.SanPhams
                 .Where(sp => sp.TrangThaiKinhDoanh == true)
                 .OrderByDescending(sp => sp.IdSanPham)
                 .Take(5)
                 .Select(sp => new
                 {
-                    sp.IdSanPham, // <-- THÊM ID
+                    sp.IdSanPham,
                     sp.TenSanPham,
                     sp.GiaBan,
                     sp.HinhAnh
@@ -98,22 +95,22 @@ namespace CafebookApi.Controllers.Web
 
             var monNoiBat = monNoiBat_Raw.Select(sp => new SanPhamDto
             {
-                IdSanPham = sp.IdSanPham, // <-- THÊM ID
+                IdSanPham = sp.IdSanPham,
                 TenSanPham = sp.TenSanPham,
                 DonGia = sp.GiaBan,
                 AnhSanPhamUrl = GetFullImageUrl(sp.HinhAnh)
             }).ToList();
 
-            // 4. Lấy 4 sách nổi bật
+            // 4. Lấy 4 sách nổi bật (SỬA DÙNG N-N)
             var sachNoiBat_Raw = await _context.Sachs
-                .Include(s => s.TacGia)
                 .OrderByDescending(s => s.SoLuongHienCo)
                 .Take(4)
                 .Select(s => new
                 {
                     s.IdSach,
                     s.TenSach,
-                    TacGia = s.TacGia != null ? s.TacGia.TenTacGia : "Không rõ",
+                    // SỬA: Nối chuỗi các tác giả từ bảng N-N
+                    TacGia = string.Join(", ", s.SachTacGias.Select(stg => stg.TacGia.TenTacGia)),
                     s.AnhBia
                 }).ToListAsync();
 
@@ -121,7 +118,8 @@ namespace CafebookApi.Controllers.Web
             {
                 IdSach = s.IdSach,
                 TieuDe = s.TenSach,
-                TacGia = s.TacGia,
+                // SỬA: Xử lý trường hợp không có tác giả
+                TacGia = string.IsNullOrEmpty(s.TacGia) ? "Không rõ" : s.TacGia,
                 AnhBiaUrl = GetFullImageUrl(s.AnhBia)
             }).ToList();
 
