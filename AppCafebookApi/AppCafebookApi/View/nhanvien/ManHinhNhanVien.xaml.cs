@@ -1,25 +1,38 @@
-﻿using AppCafebookApi.Services;
+﻿// Tệp: AppCafebookApi/View/nhanvien/ManHinhNhanVien.xaml.cs
+
+using AppCafebookApi.Services;
 using AppCafebookApi.View.nhanvien.pages;
 using CafebookModel.Utils;
+using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Collections.Generic; // <-- Thêm
-using System; // <-- Thêm
+using System.Windows.Threading;
+using CafebookModel.Model.ModelApp.NhanVien;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 
 namespace AppCafebookApi.View.nhanvien
 {
     public partial class ManHinhNhanVien : Window
     {
+        private DispatcherTimer _sidebarTimer;
+        public static string CurrentTrangThai { get; set; } = "KhongCoCa";
+
         public ManHinhNhanVien()
         {
             InitializeComponent();
             this.Loaded += ManHinhNhanVien_Loaded;
+
+            _sidebarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            _sidebarTimer.Tick += SidebarTimer_Tick;
         }
 
-        private void ManHinhNhanVien_Loaded(object sender, RoutedEventArgs e)
+        // *** SỬA HÀM NÀY ***
+        private async void ManHinhNhanVien_Loaded(object sender, RoutedEventArgs e)
         {
             var currentUser = AuthService.CurrentUser;
             if (currentUser != null)
@@ -53,14 +66,19 @@ namespace AppCafebookApi.View.nhanvien
                 btnSoDoBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
                 btnDatBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
 
-                // Chức năng Giao Hàng (chưa có quyền, tạm ẩn)
-                // bool coQuyenGiaoHang = AuthService.CoQuyen("GiaoHang.Xem");
-                // btnGiaoHang.Visibility = coQuyenGiaoHang ? Visibility.Visible : Visibility.Collapsed;
-                btnGiaoHang.Visibility = Visibility.Collapsed; // Tạm ẩn
+                // *** SỬA LỖI: Kích hoạt nút Giao Hàng ***
+                // (Giả định rằng Thu ngân/Quản lý có quyền xem)
+                bool coQuyenGiaoHang = AuthService.CoQuyen("BanHang.ThanhToan", "GiaoHang.Xem");
+                btnGiaoHang.Visibility = coQuyenGiaoHang ? Visibility.Visible : Visibility.Collapsed;
+                // *** KẾT THÚC SỬA LỖI ***
 
                 // Chức năng Thuê Sách (Thu ngân/Quản lý)
                 bool coQuyenSach = AuthService.CoQuyen("Sach.QuanLy");
                 btnThueSach.Visibility = coQuyenSach ? Visibility.Visible : Visibility.Collapsed;
+
+                // (Thêm chức năng Chế biến - Giả định quyền là "CheBien.Xem")
+                bool coQuyenCheBien = AuthService.CoQuyen("CheBien.Xem");
+                btnCheBien.Visibility = coQuyenCheBien ? Visibility.Visible : Visibility.Collapsed;
 
                 // Chọn trang mặc định
                 if (btnSoDoBan.Visibility == Visibility.Visible)
@@ -70,20 +88,24 @@ namespace AppCafebookApi.View.nhanvien
                 }
                 else
                 {
-                    // (Nếu nhân viên không có quyền xem sơ đồ bàn,
-                    // bạn nên điều hướng họ đến trang cá nhân hoặc lịch làm việc)
                     btnThongTinCaNhan.IsChecked = true;
-                    // NavigateToPage(btnThongTinCaNhan, new ThongTinCaNhanView());
+                    NavigateToPage(btnThongTinCaNhan, new AppCafebookApi.View.nhanvien.pages.ThongTinCaNhanView());
+                }
+
+                if (AuthService.CurrentUser != null)
+                {
+                    await UpdateSidebarStatusAsync();
+                    _sidebarTimer.Start();
                 }
             }
         }
 
         private void UncheckOtherButtons(ToggleButton? exception)
         {
-            // Thêm các nút mới vào danh sách
+            // Danh sách này đã đúng
             var navButtons = new List<ToggleButton>
             {
-                btnSoDoBan, btnCheBien, btnDatBan, btnGiaoHang, btnThueSach, // Thêm btnCheBien
+                btnSoDoBan, btnCheBien, btnDatBan, btnGiaoHang, btnThueSach,
                 btnThongTinCaNhan, btnChamCong, btnLichLamViecCuaToi, btnPhieuLuongCuaToi
             };
 
@@ -113,22 +135,14 @@ namespace AppCafebookApi.View.nhanvien
 
         private void BtnDatBan_Click(object sender, RoutedEventArgs e)
         {
-            // (Chuyển btnDatBanSach thành btnDatBan cho nhất quán)
             NavigateToPage(sender as ToggleButton, new DatBanView());
-            /*
-            MessageBox.Show("Chức năng 'Đặt Bàn' đang được phát triển.");
-            ResetToDefaultPage(sender);
-            */
         }
-
-        // === CÁC HÀM CLICK MỚI ===
 
         private void BtnGiaoHang_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: NavigateToPage(sender as ToggleButton, new GiaoHangView());
-            MessageBox.Show("Chức năng 'Đơn Giao Hàng' đang được phát triển.");
-            ResetToDefaultPage(sender);
+            NavigateToPage(sender as ToggleButton, new GiaoHangView());
         }
+
         private void BtnCheBien_Click(object sender, RoutedEventArgs e)
         {
             NavigateToPage(sender as ToggleButton, new CheBienView());
@@ -137,49 +151,26 @@ namespace AppCafebookApi.View.nhanvien
         private void BtnThueSach_Click(object sender, RoutedEventArgs e)
         {
             NavigateToPage(sender as ToggleButton, new ThueSachView());
-            /*
-            // TODO: NavigateToPage(sender as ToggleButton, new ThueSachView());
-            MessageBox.Show("Chức năng 'Quản lý Thuê Sách' đang được phát triển.");
-            ResetToDefaultPage(sender);
-            */
         }
 
         private void BtnThongTinCaNhan_Click(object sender, RoutedEventArgs e)
         {
             NavigateToPage(sender as ToggleButton, new AppCafebookApi.View.nhanvien.pages.ThongTinCaNhanView());
-            /*
-            // TODO: NavigateToPage(sender as ToggleButton, new ThongTinCaNhanView());
-            MessageBox.Show("Chức năng 'Thông tin cá nhân & Đổi Mật khẩu' đang được phát triển.");
-            ResetToDefaultPage(sender);
-            */
         }
 
-        private async void BtnChamCong_Click(object sender, RoutedEventArgs e)
+        private void BtnChamCong_Click(object sender, RoutedEventArgs e)
         {
-            // Đây là nút hành động, không phải điều hướng
-            UncheckOtherButtons(null); // Bỏ check tất cả
-            btnSoDoBan.IsChecked = true; // Quay về Sơ đồ bàn
-
-            if (AuthService.CurrentUser == null) return;
-            int idNhanVien = AuthService.CurrentUser.IdNhanVien;
-
-            // (Bạn cần tạo API endpoint `api/app/nhanvien/chamcong/{idNhanVien}` 
-            //  để xử lý logic check-in/check-out)
-            MessageBox.Show($"Đang gửi yêu cầu Chấm công (Check-in/Check-out) cho ID: {idNhanVien}...\n(Chức năng này cần API)", "Chấm công");
+            NavigateToPage(sender as ToggleButton, new ChamCongView());
         }
 
         private void BtnLichLamViecCuaToi_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: NavigateToPage(sender as ToggleButton, new LichLamViecCaNhanView());
-            MessageBox.Show("Chức năng 'Xem Lịch Làm Việc' đang được phát triển.");
-            ResetToDefaultPage(sender);
+            NavigateToPage(sender as ToggleButton, new LichLamViecView());
         }
 
         private void BtnPhieuLuongCuaToi_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: NavigateToPage(sender as ToggleButton, new PhieuLuongCaNhanView());
-            MessageBox.Show("Chức năng 'Xem Phiếu Lương' đang được phát triển.");
-            ResetToDefaultPage(sender);
+            NavigateToPage(sender as ToggleButton, new PhieuLuongView());
         }
 
         // --- HÀM HELPER VÀ ĐĂNG XUẤT ---
@@ -198,8 +189,70 @@ namespace AppCafebookApi.View.nhanvien
             MessageBox.Show("Chức năng Thông báo đang được phát triển.");
         }
 
+        private async void SidebarTimer_Tick(object? sender, EventArgs e)
+        {
+            await UpdateSidebarStatusAsync();
+        }
+
+        private async Task UpdateSidebarStatusAsync()
+        {
+            if (AuthService.CurrentUser == null || lblSidebarStatus == null) return;
+            try
+            {
+                var status = await ApiClient.Instance.GetFromJsonAsync<ChamCongDashboardDto>("api/app/chamcong/status");
+                if (status != null)
+                {
+                    CurrentTrangThai = status.TrangThai;
+
+                    switch (status.TrangThai)
+                    {
+                        case "DaChamCong":
+                            var duration = DateTime.Now - status.GioVao.Value;
+                            lblSidebarStatus.Text = $"Đang làm ({duration:hh\\:mm})";
+                            lblSidebarStatus.Foreground = Brushes.LightGreen;
+                            break;
+                        case "ChuaChamCong":
+                            lblSidebarStatus.Text = "Chưa chấm công";
+                            lblSidebarStatus.Foreground = Brushes.LightGray;
+                            break;
+                        case "NghiPhep":
+                            lblSidebarStatus.Text = "Đang nghỉ phép";
+                            lblSidebarStatus.Foreground = Brushes.LightBlue;
+                            break;
+                        case "KhongCoCa":
+                            lblSidebarStatus.Text = "Không có ca";
+                            lblSidebarStatus.Foreground = Brushes.Gray;
+                            break;
+                        default: // DaTraCa
+                            lblSidebarStatus.Text = "Đã trả ca";
+                            lblSidebarStatus.Foreground = Brushes.Gray;
+                            break;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                lblSidebarStatus.Text = "Lỗi đồng bộ";
+                lblSidebarStatus.Foreground = Brushes.OrangeRed;
+            }
+        }
+
+        public static string GetCurrentCheckInStatus()
+        {
+            return CurrentTrangThai;
+        }
+
         private void BtnDangXuat_Click(object sender, RoutedEventArgs e)
         {
+            if (GetCurrentCheckInStatus() == "DaChamCong")
+            {
+                MessageBox.Show("Bạn chưa trả ca. Vui lòng nhấn \"TRẢ CA\" trước khi đăng xuất.",
+                                "Cảnh báo chưa trả ca",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                return;
+            }
+
             var result = MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?",
                                          "Xác nhận đăng xuất",
                                          MessageBoxButton.YesNo,

@@ -1,0 +1,138 @@
+﻿<Page x:Class="AppCafebookApi.View.nhanvien.pages.PhieuLuongView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      mc:Ignorable="d" 
+      d:DesignHeight="720" d:DesignWidth="1150"
+      Title="PhieuLuongView"
+      FontFamily="Segoe UI" Background="#FFF8E1" Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
+        <SolidColorBrush x:Key="BorderGrayBrush" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="GreenBrush" Color="#388E3C"/>
+        <SolidColorBrush x:Key="RedBrush" Color="#D32F2F"/>
+        <SolidColorBrush x:Key="BlueBrush" Color="#1976D2"/>
+
+        <Style TargetType="ListBoxItem" x:Key="PayslipItemStyle">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="border" Padding="15" Margin="0,0,0,10"
+                                BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1"
+                                Background="White" CornerRadius="8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="{Binding TieuDe}" FontWeight="Bold" FontSize="16"/>
+                                <TextBlock Grid.Row="1" Text="{Binding ThucLanh, StringFormat=N0}" FontSize="20" Foreground="{StaticResource PrimaryBrownBrush}" FontWeight="Bold" Margin="0,5,0,0"/>
+                                <TextBlock Grid.Row="2" x:Name="txtTrangThai" Text="{Binding TrangThai}" FontSize="12" Foreground="{StaticResource TextGrayBrush}" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBrownBrush}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding TrangThai}" Value="Đã phát">
+                                <Setter TargetName="txtTrangThai" Property="Foreground" Value="{StaticResource GreenBrush}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="350"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="White" BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="0,0,1,0" Padding="15">
+            <StackPanel>
+                <TextBlock Text="Phiếu lương của bạn" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBrownBrush}" Margin="0,0,0,15"/>
+                <ListBox x:Name="lbPhieuLuong" 
+                         Background="Transparent" BorderThickness="0"
+                         ItemContainerStyle="{StaticResource PayslipItemStyle}"
+                         SelectionChanged="LbPhieuLuong_SelectionChanged"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Column="1">
+            <StackPanel x:Name="panelChonPhieu" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Chọn một phiếu lương để xem chi tiết" FontSize="16" Foreground="{StaticResource TextGrayBrush}"/>
+            </StackPanel>
+
+            <ScrollViewer x:Name="panelChiTiet" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="25">
+                    <TextBlock x:Name="lblTieuDeChiTiet" Text="Chi tiết phiếu lương tháng 10/2025" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrownBrush}"/>
+                    <TextBlock x:Name="lblThucLanh" Text="0 đ" FontSize="48" FontWeight="ExtraBold" Foreground="{StaticResource PrimaryBrownBrush}" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="lblTrangThai" Text="Đã phát ngày 01/11/2025" FontSize="14" Foreground="{StaticResource GreenBrush}" FontWeight="SemiBold" Margin="0,0,0,20"/>
+
+                    <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Lương cơ bản (theo giờ):" FontWeight="SemiBold" Margin="0,0,20,10"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="lblLuongCoBan" Text="30.000 đ" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tổng giờ làm:" FontWeight="SemiBold" Margin="0,0,20,10"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="lblTongGioLam" Text="160.00 giờ" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+
+                            <Separator Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,10"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Thành tiền (Lương):" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="lblTienLuongTheoGio" Text="4.800.000 đ" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{StaticResource BlueBrush}"/>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Text="Các khoản thưởng" FontSize="18" FontWeight="Bold" Margin="0,20,0,10"/>
+                    <DataGrid x:Name="dgThuong" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Ngày" Binding="{Binding NgayTao, StringFormat=dd/MM}" Width="80"/>
+                            <DataGridTextColumn Header="Lý do" Binding="{Binding LyDo}" Width="*"/>
+                            <DataGridTextColumn Header="Người tạo" Binding="{Binding TenNguoiTao}" Width="120"/>
+                            <DataGridTextColumn Header="Số tiền" Binding="{Binding SoTien, StringFormat=N0}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="lblTongThuong" Text="Tổng thưởng: 0 đ" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,5,0,0" Foreground="{StaticResource GreenBrush}"/>
+
+                    <TextBlock Text="Các khoản khấu trừ" FontSize="18" FontWeight="Bold" Margin="0,20,0,10"/>
+                    <DataGrid x:Name="dgKhauTru" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Ngày" Binding="{Binding NgayTao, StringFormat=dd/MM}" Width="80"/>
+                            <DataGridTextColumn Header="Lý do" Binding="{Binding LyDo}" Width="*"/>
+                            <DataGridTextColumn Header="Người tạo" Binding="{Binding TenNguoiTao}" Width="120"/>
+                            <DataGridTextColumn Header="Số tiền" Binding="{Binding SoTien, StringFormat=N0}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="lblTongKhauTru" Text="Tổng khấu trừ: 0 đ" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,5,0,0" Foreground="{StaticResource RedBrush}"/>
+
+                    <Separator Margin="0,20,0,15"/>
+                    <Grid>
+                        <TextBlock Text="THỰC LÃNH" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="lblThucLanhFinal" Text="0 đ" FontSize="22" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{StaticResource PrimaryBrownBrush}"/>
+                    </Grid>
+                    <TextBlock Text="(Lương + Tổng thưởng + Tổng khấu trừ)" HorizontalAlignment="Right" Foreground="{StaticResource TextGrayBrush}" FontSize="11"/>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

@@ -150,59 +150,5 @@ namespace CafebookApi.Controllers.App.NhanVien
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đổi mật khẩu thành công!" });
         }
-
-        // --- HÀM ĐÃ ĐƯỢC CẬP NHẬT ---
-        [HttpPost("submit-leave")]
-        public async Task<IActionResult> SubmitLeaveRequest([FromBody] DonXinNghiRequestDto req)
-        {
-            if (req.NgayKetThuc < req.NgayBatDau)
-                return BadRequest("Ngày kết thúc không thể trước ngày bắt đầu.");
-
-            var idNhanVien = GetIdNhanVienFromToken();
-
-            // 1. Lấy thông tin Tên nhân viên để tạo nội dung thông báo
-            // (Chúng ta chỉ Select HoTen để tối ưu)
-            var nhanVien = await _context.NhanViens
-                .AsNoTracking()
-                .Select(nv => new { nv.IdNhanVien, nv.HoTen })
-                .FirstOrDefaultAsync(nv => nv.IdNhanVien == idNhanVien);
-
-            if (nhanVien == null)
-            {
-                return NotFound("Không tìm thấy nhân viên.");
-            }
-
-            // 2. Tạo đối tượng Đơn Xin Nghỉ
-            var don = new DonXinNghi
-            {
-                IdNhanVien = idNhanVien,
-                LoaiDon = req.LoaiDon,
-                LyDo = req.LyDo,
-                NgayBatDau = req.NgayBatDau,
-                NgayKetThuc = req.NgayKetThuc,
-                TrangThai = "Chờ duyệt",
-            };
-
-            // 3. Lưu đơn nghỉ (để lấy IdDonXinNghi tự động tăng)
-            _context.DonXinNghis.Add(don);
-            await _context.SaveChangesAsync();
-
-            // 4. THÊM MỚI: Tạo đối tượng Thông Báo
-            var thongBao = new ThongBao
-            {
-                IdNhanVienTao = idNhanVien,
-                NoiDung = $"Đơn nghỉ mới từ {nhanVien.HoTen}",
-                ThoiGianTao = DateTime.Now,
-                LoaiThongBao = "DonXinNghi", // Giống ví dụ của bạn
-                IdLienQuan = don.IdDonXinNghi, // Dùng ID của đơn vừa tạo
-                DaXem = false // Mặc định là chưa xem
-            };
-
-            // 5. Lưu thông báo vào CSDL
-            _context.ThongBaos.Add(thongBao);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Gửi đơn xin nghỉ và tạo thông báo thành công!" });
-        }
     }
 }

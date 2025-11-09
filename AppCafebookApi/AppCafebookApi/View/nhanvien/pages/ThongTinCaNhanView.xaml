@@ -221,10 +221,6 @@
                               Style="{StaticResource NavToggleButton}" 
                               Tag="{StaticResource IconEdit}" 
                               Click="BtnChinhSua_Click"/>
-                <ToggleButton x:Name="btnVietDon" Content="Viết đơn xin nghỉ" 
-                              Style="{StaticResource NavToggleButton}" 
-                              Tag="{StaticResource IconLeave}" 
-                              Click="BtnVietDon_Click"/>
                 <ToggleButton x:Name="btnDoiMatKhau" Content="Đổi mật khẩu" 
                               Style="{StaticResource NavToggleButton}" 
                               Tag="{StaticResource IconPassword}" 
@@ -350,40 +346,6 @@
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="btnXacNhanDoiMatKhau" Content="Xác nhận" Style="{StaticResource GreenButton}" Click="BtnXacNhanDoiMatKhau_Click"/>
                             <Button x:Name="btnHuyDoiMatKhau" Content="Hủy" Style="{StaticResource MaterialButton}" Margin="10,0,0,0" Click="BtnHuyDoiMatKhau_Click"
-                                    Background="{StaticResource WhiteBrush}" Foreground="{StaticResource DarkTextBrush}" BorderBrush="{StaticResource SubtleGrayBrush}" BorderThickness="1"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-            </TabItem>
-
-            <TabItem x:Name="tabVietDon">
-                <Border Background="{StaticResource WhiteBrush}" CornerRadius="8" Padding="25"
-                        Effect="{StaticResource ShadowDepth1}">
-                    <StackPanel>
-                        <TextBlock Text="Viết đơn xin nghỉ" Style="{StaticResource HeaderStyle}"/>
-
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                <TextBlock Text="Từ ngày:" Style="{StaticResource LabelStyle}"/>
-                                <DatePicker x:Name="dpNgayBatDau" Margin="0,5,0,0"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                <TextBlock Text="Đến ngày:" Style="{StaticResource LabelStyle}"/>
-                                <DatePicker x:Name="dpNgayKetThuc" Margin="0,5,0,0"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="Lý do:" Style="{StaticResource LabelStyle}"/>
-                        <TextBox x:Name="txtLyDo" Margin="0,5,0,20" Height="100" TextWrapping="Wrap" AcceptsReturn="True" 
-                                 VerticalScrollBarVisibility="Auto" Style="{StaticResource MaterialInput}"/>
-
-                        <StackPanel Orientation="Horizontal">
-                            <Button x:Name="btnGuiDon" Content="Gửi đơn" Style="{StaticResource GreenButton}" Click="BtnGuiDon_Click"/>
-                            <Button x:Name="btnHuyGuiDon" Content="Hủy" Style="{StaticResource MaterialButton}" Margin="10,0,0,0" Click="BtnHuyGuiDon_Click"
                                     Background="{StaticResource WhiteBrush}" Foreground="{StaticResource DarkTextBrush}" BorderBrush="{StaticResource SubtleGrayBrush}" BorderThickness="1"/>
                         </StackPanel>
                     </StackPanel>

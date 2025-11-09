@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:AppCafebookApi.View.nhanvien"
         mc:Ignorable="d"
         Title="Cafebook - Copyright by © Lâm Chu Bảo Toàn | Contact:[lamchubaotoan@gmail.com]" Height="800" Width="1440"
@@ -123,6 +124,13 @@
                     </Border>
                     <TextBlock x:Name="txtUserName" Text="Tên Nhân Viên" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource WhiteTextBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                     <TextBlock x:Name="txtUserRole" Text="Nhân viên" FontSize="13" Foreground="{StaticResource SubtleWhiteTextBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="lblSidebarStatus" 
+                               Text="(Đang tải...)" 
+                               FontSize="12" 
+                               FontWeight="SemiBold"
+                               Foreground="#FFD180" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,5,0,0"/>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">

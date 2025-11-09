@@ -12,7 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient; // Cần thêm để bắt lỗi SQL
+using Microsoft.Data.SqlClient;
+using System.Net.Http; // <-- THÊM MỚI
 
 namespace AppCafebookApi.Controllers.app.NhanVien
 {
@@ -22,8 +23,10 @@ namespace AppCafebookApi.Controllers.app.NhanVien
     {
         private readonly CafebookDbContext _context;
         private readonly IConfiguration _config;
-        private const int ReservationSlotHours = 2; // Giả định một suất đặt bàn kéo dài 2 tiếng
-        private const int ReservationBufferMinutes = 5; // 5 phút đệm
+        private readonly IHttpClientFactory _clientFactory; // <-- THÊM MỚI
+
+        private const int ReservationSlotHours = 2;
+        private const int ReservationBufferMinutes = 5;
 
         private class OpeningHours
         {
@@ -32,54 +35,33 @@ namespace AppCafebookApi.Controllers.app.NhanVien
             public bool IsValid { get; set; } = false;
         }
 
-        public DatBanController(CafebookDbContext context, IConfiguration config)
+        // SỬA HÀM KHỞI TẠO
+        public DatBanController(CafebookDbContext context, IConfiguration config, IHttpClientFactory clientFactory)
         {
             _context = context;
             _config = config;
+            _clientFactory = clientFactory; // <-- THÊM MỚI
         }
 
-        // === HÀM MỚI (ĐƯỢC DI CHUYỂN TỪ SODOBANCONTROLLER) ===
-        /// <summary>
-        /// Tự động huỷ phiếu trễ 15 phút (Public API)
-        /// </summary>
-        [HttpPost("auto-cancel-late")]
-        public async Task<IActionResult> AutoCancelLateReservationsAsync()
-        {
-            var now = DateTime.Now;
-            var timeLimit = now.AddMinutes(-15);
-
-            var lateReservations = await _context.PhieuDatBans
-                .Include(p => p.Ban)
-                .Where(p => (p.TrangThai == "Đã đặt" || p.TrangThai == "Chờ xác nhận") && // Hủy cả phiếu chờ
-                            p.ThoiGianDat < timeLimit)
-                .ToListAsync();
-
-            if (lateReservations.Any())
-            {
-                foreach (var phieu in lateReservations)
-                {
-                    phieu.TrangThai = "Đã hủy";
-                    phieu.GhiChu = (phieu.GhiChu ?? "") + " (Tự động hủy do trễ 15 phút)";
-
-                    if (phieu.Ban != null && phieu.Ban.TrangThai == "Đã đặt") // Chỉ reset bàn "Đã đặt"
-                    {
-                        phieu.Ban.TrangThai = "Trống";
-                    }
-                }
-                await _context.SaveChangesAsync();
-                return Ok(new { message = $"Đã tự động hủy {lateReservations.Count} phiếu bị trễ." });
-            }
-            return Ok(new { message = "Không có phiếu nào bị trễ." });
-        }
-        // === KẾT THÚC HÀM MỚI ===
+        // *** SỬA: XÓA HOÀN TOÀN HÀM AutoCancelLateReservationsAsync() KHỎI ĐÂY ***
 
         #region GET Endpoints
         [HttpGet("list")]
         public async Task<ActionResult<IEnumerable<PhieuDatBanDto>>> GetDatBanList()
         {
-            // === SỬA: GỌI HÀM DỌN DẸP TRƯỚC KHI TẢI LIST ===
-            await AutoCancelLateReservationsAsync();
+            // === SỬA: GỌI API DỌN DẸP TRƯỚC KHI TẢI LIST ===
+            try
+            {
+                var client = _clientFactory.CreateClient();
+                var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5166/api/app/background/auto-cancel-late");
+                await client.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Loi khi goi auto-cancel API: {ex.Message}");
+            }
             // === KẾT THÚC SỬA ===
+
             var list = await _context.PhieuDatBans
                 .Include(p => p.KhachHang)
                 .Include(p => p.Ban).ThenInclude(b => b.KhuVuc)

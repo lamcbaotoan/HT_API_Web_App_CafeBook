@@ -89,8 +89,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                 btnChinhSua.IsChecked = false;
             if (btnDoiMatKhau != null && btnDoiMatKhau != exception)
                 btnDoiMatKhau.IsChecked = false;
-            if (btnVietDon != null && btnVietDon != exception)
-                btnVietDon.IsChecked = false;
+            // *** SỬA: ĐÃ XÓA logic "btnVietDon" ***
         }
         private void ShowPanel(string panelName)
         {
@@ -111,11 +110,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     btnDoiMatKhau.IsChecked = true;
                     UncheckOtherButtons(btnDoiMatKhau);
                     break;
-                case "VietDon":
-                    MainTabControl.SelectedItem = tabVietDon;
-                    btnVietDon.IsChecked = true;
-                    UncheckOtherButtons(btnVietDon);
-                    break;
+                    // *** SỬA: ĐÃ XÓA case "VietDon" ***
             }
         }
         private void BtnLichSu_Click(object sender, RoutedEventArgs e) { ShowPanel("LichSu"); }
@@ -315,7 +310,7 @@ namespace AppCafebookApi.View.nhanvien.pages
         #endregion
 
         #region Logic Panel Viết Đơn (Đã cập nhật)
-
+        /*
         private async void BtnGuiDon_Click(object sender, RoutedEventArgs e)
         {
             // SỬA: Xóa kiểm tra cmbLoaiDon
@@ -367,7 +362,7 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
             btnGuiDon.IsEnabled = true;
         }
-
+        
         private void BtnHuyGuiDon_Click(object sender, RoutedEventArgs e)
         {
             // SỬA: Xóa cmbLoaiDon
@@ -376,6 +371,7 @@ namespace AppCafebookApi.View.nhanvien.pages
             txtLyDo.Text = "";
             ShowPanel("LichSu");
         }
+        */
         #endregion
     }
 }

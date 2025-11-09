@@ -1,4 +1,7 @@
-﻿using CafebookApi.Data;
+﻿// Tệp: CafebookApi/Controllers/App/ThuongPhatController.cs
+// (*** THAY THẾ TOÀN BỘ TỆP NÀY ***)
+
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApp;
 using Microsoft.AspNetCore.Mvc;
@@ -26,21 +29,25 @@ namespace CafebookApi.Controllers.App
         [HttpGet("pending/{idNhanVien}")]
         public async Task<IActionResult> GetPending(int idNhanVien)
         {
+            // *** SỬA LỖI: Dùng Select thủ công thay vì Include ***
             var data = await _context.PhieuThuongPhats
-                .Include(p => p.NguoiTao)
                 .Where(p => p.IdNhanVien == idNhanVien && p.IdPhieuLuong == null) // Chỉ lấy phiếu chưa chốt
                 .OrderByDescending(p => p.NgayTao)
                 .Select(p => new PhieuThuongPhatDto
                 {
                     IdPhieuThuongPhat = p.IdPhieuThuongPhat,
                     IdNhanVien = p.IdNhanVien,
-                    HoTenNhanVien = p.NhanVien.HoTen,
+                    // Dùng truy vấn con (subquery)
+                    HoTenNhanVien = _context.NhanViens.Where(nv => nv.IdNhanVien == p.IdNhanVien).Select(nv => nv.HoTen).FirstOrDefault() ?? "N/A",
                     NgayTao = p.NgayTao,
                     SoTien = p.SoTien,
                     LyDo = p.LyDo,
-                    TenNguoiTao = p.NguoiTao.HoTen
+                    // Dùng truy vấn con (subquery)
+                    TenNguoiTao = _context.NhanViens.Where(nv => nv.IdNhanVien == p.IdNguoiTao).Select(nv => nv.HoTen).FirstOrDefault() ?? "N/A"
                 })
                 .ToListAsync();
+            // *** KẾT THÚC SỬA LỖI ***
+
             return Ok(data);
         }
 

@@ -25,59 +25,21 @@ namespace CafebookApi.Controllers.App.NhanVien
             _clientFactory = clientFactory; // <-- THÊM MỚI
         }
 
-        /// <summary>
-        /// THÊM HÀM MỚI: Tự động huỷ phiếu trễ 15 phút
-        /// </summary>
-        private async Task AutoCancelLateReservationsAsync()
-        {
-            var now = DateTime.Now;
-            // Xác định mốc thời gian (bất kỳ phiếu nào trước 15 phút)
-            var timeLimit = now.AddMinutes(-15);
-
-            // 1. Tìm tất cả các phiếu "Đã đặt" bị trễ quá 15 phút
-            var lateReservations = await _context.PhieuDatBans
-                .Include(p => p.Ban) // Phải Include Bàn để cập nhật trạng thái Bàn
-                .Where(p => p.TrangThai == "Đã đặt" &&
-                            p.ThoiGianDat < timeLimit)
-                .ToListAsync();
-
-            if (lateReservations.Any())
-            {
-                foreach (var phieu in lateReservations)
-                {
-                    // 2. Cập nhật trạng thái phiếu
-                    phieu.TrangThai = "Đã hủy";
-                    phieu.GhiChu = (phieu.GhiChu ?? "") + " (Tự động hủy do trễ 15 phút)";
-
-                    // 3. Cập nhật trạng thái bàn (chỉ khi bàn đó có liên kết)
-                    if (phieu.Ban != null)
-                    {
-                        phieu.Ban.TrangThai = "Trống";
-                    }
-                }
-
-                // 4. Lưu tất cả thay đổi vào CSDL
-                await _context.SaveChangesAsync();
-            }
-        }
-
         // === HÀM ĐÃ ĐƯỢC NÂNG CẤP (10 PHÚT) ===
         [HttpGet("tables")]
         public async Task<IActionResult> GetSoDoBan()
         {
             // === SỬA BƯỚC NÀY ===
             // Chạy logic tự động huỷ TRƯỚC KHI lấy sơ đồ bàn
-            // Bằng cách gọi API của DatBanController
+            // Bằng cách gọi API chuyên dụng của BackgroundJobController
             try
             {
                 var client = _clientFactory.CreateClient();
-                // API này chạy trên cùng máy chủ (localhost)
-                var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5166/api/app/datban/auto-cancel-late");
+                var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:5166/api/app/background/auto-cancel-late");
                 await client.SendAsync(request);
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi nhưng vẫn tiếp tục tải sơ đồ bàn
                 Console.WriteLine($"Loi khi goi auto-cancel API: {ex.Message}");
             }
             // === KẾT THÚC SỬA ===

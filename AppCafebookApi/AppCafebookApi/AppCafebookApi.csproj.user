@@ -38,13 +38,25 @@
     <Compile Update="View\Common\PhieuTraPreviewWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\nhanvien\pages\ChamCongView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\nhanvien\pages\CheBienView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\nhanvien\pages\DatBanView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\nhanvien\pages\GiaoHangView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\nhanvien\pages\GoiMonView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\LichLamViecView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\nhanvien\pages\PhieuLuongView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="View\nhanvien\pages\ThueSachView.xaml.cs">

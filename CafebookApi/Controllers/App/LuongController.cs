@@ -1,4 +1,5 @@
-﻿// File: CafebookApi/Controllers/App/LuongController.cs (CẬP NHẬT)
+﻿// Tệp: CafebookApi/Controllers/App/LuongController.cs
+// (*** THAY THẾ TOÀN BỘ TỆP NÀY ***)
 
 using CafebookApi.Data;
 using CafebookModel.Model.Entities;
@@ -47,7 +48,6 @@ namespace CafebookApi.Controllers.App
 
             return new CaiDatNhanSuDto
             {
-                // SỬA: 8.0 -> 8.0m (decimal)
                 GioLamChuan = GetSettingValue("HR_GioLamChuan", 8.0m),
                 HeSoOT = GetSettingValue("HR_HeSoOT", 1.5m),
                 PhatDiTre_Phut = GetSettingValue("HR_PhatDiTre_Phut", 5),
@@ -78,7 +78,6 @@ namespace CafebookApi.Controllers.App
                     var chamCong = l.BangChamCongs.FirstOrDefault();
                     var gioVao = chamCong?.GioVao;
                     var gioRa = chamCong?.GioRa;
-                    // SỬA: 0 -> 0m (decimal)
                     var soGioLam = chamCong?.SoGioLam ?? 0m;
                     string trangThai = "Chưa chấm công";
 
@@ -99,7 +98,7 @@ namespace CafebookApi.Controllers.App
                         GioCaKetThuc = l.CaLamViec.GioKetThuc,
                         GioVao = gioVao,
                         GioRa = gioRa,
-                        SoGioLam = soGioLam, // Sẽ tự động khớp kiểu decimal
+                        SoGioLam = soGioLam,
                         TrangThai = trangThai
                     };
                 })
@@ -110,11 +109,10 @@ namespace CafebookApi.Controllers.App
             return Ok(results);
         }
 
-        // Hàm UpdateChamCong (đã sửa ở lần trước) giữ nguyên
         [HttpPut("chamcong")]
         public async Task<IActionResult> UpdateChamCong([FromBody] ChamCongUpdateDto dto)
         {
-            BangChamCong? chamCong; // Sửa: Cho phép null tạm thời
+            BangChamCong? chamCong;
 
             if (dto.IdChamCong == 0)
             {
@@ -135,8 +133,6 @@ namespace CafebookApi.Controllers.App
                 if (chamCong == null) return NotFound("Không tìm thấy dữ liệu chấm công.");
             }
 
-            // Cảnh báo CS8600 ở dòng 134 đã được giải quyết
-            // vì cả chamCong.GioVao/GioRa và dto.GioVaoMoi/GioRaMoi đều là DateTime? (nullable)
             chamCong.GioVao = dto.GioVaoMoi;
             chamCong.GioRa = dto.GioRaMoi;
 
@@ -158,7 +154,6 @@ namespace CafebookApi.Controllers.App
 
             var hrSettings = await LoadHrSettingsAsync();
 
-            // SỬA: double -> decimal
             decimal HE_SO_OT = hrSettings.HeSoOT;
             decimal PHAT_DI_TRE_MOI_GIO = hrSettings.PhatDiTre_HeSo;
             int SO_PHUT_TRE_CHO_PHEP = hrSettings.PhatDiTre_Phut;
@@ -181,9 +176,8 @@ namespace CafebookApi.Controllers.App
                                 l.NgayLam <= endDate.Date)
                     .ToListAsync();
 
-                // SỬA: 0m -> decimal
                 ke.TongGioLam = lichLamViecList.SelectMany(l => l.BangChamCongs).Sum(c => c.SoGioLam ?? 0m);
-                ke.TienLuongGio = ke.TongGioLam * ke.LuongCoBan; // Bây giờ là decimal * decimal
+                ke.TienLuongGio = ke.TongGioLam * ke.LuongCoBan;
                 ke.ChiTiet += $"Giờ: {ke.TongGioLam:F2}h. Lương: {ke.TienLuongGio:N0}. ";
 
                 decimal tongPhatTuDong = 0;
@@ -197,10 +191,7 @@ namespace CafebookApi.Controllers.App
 
                 foreach (var tre in diTreList)
                 {
-                    // === SỬA LỖI CS8629 (Dòng 198) ===
-                    // Thêm '!' vì .Where(x => x.GioVao.HasValue) đã lọc
                     var phutTre = (tre.GioVao!.Value - tre.GioCaVao).TotalMinutes;
-                    // (phutTre / 60.0) là double, ép kiểu (decimal) là đúng
                     tongPhatTuDong += (decimal)(phutTre / 60.0) * ke.LuongCoBan * PHAT_DI_TRE_MOI_GIO;
                 }
                 if (tongPhatTuDong > 0) ke.ChiTiet += $"Phạt trễ: {tongPhatTuDong:N0}. ";
@@ -216,15 +207,11 @@ namespace CafebookApi.Controllers.App
 
                 foreach (var ot in otList)
                 {
-                    // === SỬA LỖI CS8629 (Dòng 215) ===
-                    // Thêm '!' vì .Where(x => x.GioRa.HasValue) đã lọc
                     var phutOT = (ot.GioRa!.Value - ot.GioCaRa).TotalMinutes;
-                    // (phutOT / 60.0) là double, ép kiểu (decimal) là đúng
                     tongThuongTuDong += (decimal)(phutOT / 60.0) * ke.LuongCoBan * HE_SO_OT;
                 }
                 if (tongThuongTuDong > 0) ke.ChiTiet += $"Thưởng OT: {tongThuongTuDong:N0}. ";
 
-                // SỬA: (cc.SoGioLam ?? 0) -> (cc.SoGioLam ?? 0m)
                 int soNgayLamViec = lichLamViecList
                                         .Count(l => l.BangChamCongs.Any(cc => (cc.SoGioLam ?? 0m) > 0));
 
@@ -234,12 +221,16 @@ namespace CafebookApi.Controllers.App
                     ke.ChiTiet += $"Thưởng CC: {hrSettings.ChuyenCan_TienThuong:N0}. ";
                 }
 
-                var thuongPhatManual = await _context.PhieuThuongPhats
+                // *** SỬA LỖI (Gây ra CS0103 'NhanVienIdNhanVien') ***
+                // Thay vì tải toàn bộ PhieuThuongPhat, chỉ Select cột SoTien
+                var thuongPhatManualTien = await _context.PhieuThuongPhats
                     .Where(p => p.IdNhanVien == nv.IdNhanVien && p.IdPhieuLuong == null)
+                    .Select(p => p.SoTien) // Chỉ lấy số tiền
                     .ToListAsync();
 
-                decimal tongThuongManual = thuongPhatManual.Where(p => p.SoTien > 0).Sum(p => p.SoTien);
-                decimal tongPhatManual = thuongPhatManual.Where(p => p.SoTien < 0).Sum(p => p.SoTien) * -1;
+                decimal tongThuongManual = thuongPhatManualTien.Where(soTien => soTien > 0).Sum();
+                decimal tongPhatManual = thuongPhatManualTien.Where(soTien => soTien < 0).Sum() * -1; // Sum() sẽ là số âm
+                // *** KẾT THÚC SỬA LỖI ***
 
                 if (tongThuongManual > 0) ke.ChiTiet += $"Thưởng khác: {tongThuongManual:N0}. ";
                 if (tongPhatManual > 0) ke.ChiTiet += $"Phạt khác: {tongPhatManual:N0}. ";
@@ -253,6 +244,7 @@ namespace CafebookApi.Controllers.App
 
             return Ok(bangKeList);
         }
+
 
         [HttpPost("finalize")]
         public async Task<IActionResult> FinalizePayroll([FromBody] LuongFinalizeDto dto)
@@ -279,7 +271,7 @@ namespace CafebookApi.Controllers.App
                             Thang = dto.Thang,
                             Nam = dto.Nam,
                             LuongCoBan = ke.LuongCoBan,
-                            TongGioLam = ke.TongGioLam, // SỬA: Bỏ ép kiểu (decimal) vì cả 2 đã là decimal
+                            TongGioLam = ke.TongGioLam,
                             TienThuong = ke.TongThuong,
                             KhauTru = ke.TongPhat,
                             ThucLanh = ke.ThucLanh,

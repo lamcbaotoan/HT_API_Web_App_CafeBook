@@ -1,4 +1,5 @@
-﻿using CafebookApi.Data;
+﻿// Tệp: CafebookApi/Controllers/App/PhatLuongController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.ModelApp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CafebookApi.Controllers.App
 {
-    [Route("api/app/phatluong")] // Đổi route thành /app/phatluong
+    [Route("api/app/phatluong")]
     [ApiController]
     public class PhatLuongController : ControllerBase
     {
@@ -29,7 +30,7 @@ namespace CafebookApi.Controllers.App
                 .Include(p => p.NhanVien)
                 .Where(p => p.Thang == thang && p.Nam == nam &&
                              (p.TrangThai == "Đã chốt" || p.TrangThai == "Đã phát"))
-                .OrderByDescending(p => p.TrangThai) // Ưu tiên "Đã chốt" lên đầu
+                .OrderByDescending(p => p.TrangThai)
                 .ThenBy(p => p.NhanVien.HoTen);
 
             var result = await query.Select(p => new PhieuLuongDto
@@ -41,7 +42,7 @@ namespace CafebookApi.Controllers.App
                 Nam = p.Nam,
                 TongGioLam = p.TongGioLam,
                 ThucLanh = p.ThucLanh,
-                NgayChot = p.NgayTao, // Lấy NgayTao làm NgayChot
+                NgayChot = p.NgayTao,
                 TrangThai = p.TrangThai
             }).ToListAsync();
 
@@ -54,11 +55,13 @@ namespace CafebookApi.Controllers.App
         [HttpGet("chitiet/{id}")]
         public async Task<IActionResult> GetChiTietPhieuLuong(int id)
         {
+            // *** SỬA LỖI: Sử dụng đúng DTO và xóa logic thừa ***
+            // Dùng DTO của ModelApp (Quản lý)
             var phieu = await _context.PhieuLuongs
                 .Include(p => p.NhanVien)
-                .Include(p => p.NguoiPhat) // Join với NhanVien qua IdNguoiPhat
+                .Include(p => p.NguoiPhat)
                 .Where(p => p.IdPhieuLuong == id)
-                .Select(p => new PhieuLuongChiTietDto
+                .Select(p => new CafebookModel.Model.ModelApp.PhieuLuongChiTietDto // Chỉ định rõ DTO để hết lỗi CS0104
                 {
                     IdPhieuLuong = p.IdPhieuLuong,
                     HoTenNhanVien = p.NhanVien.HoTen,
@@ -74,11 +77,14 @@ namespace CafebookApi.Controllers.App
                     TenNguoiPhat = p.NguoiPhat != null ? p.NguoiPhat.HoTen : null
                 })
                 .FirstOrDefaultAsync();
+            // *** KẾT THÚC SỬA LỖI ***
 
             if (phieu == null)
             {
                 return NotFound("Không tìm thấy phiếu lương.");
             }
+
+            // (Đã xóa logic truy vấn PhieuThuongPhats vì không cần thiết cho màn hình này)
 
             return Ok(phieu);
         }
@@ -104,8 +110,6 @@ namespace CafebookApi.Controllers.App
             phieu.TrangThai = "Đã phát";
             phieu.NgayPhatLuong = DateTime.Now;
             phieu.IdNguoiPhat = dto.IdNguoiPhat;
-
-            // (Thêm ghi log LichSuHeThong nếu có)
 
             await _context.SaveChangesAsync();
 
