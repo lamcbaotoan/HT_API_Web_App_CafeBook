@@ -60,11 +60,19 @@ namespace CafebookApi.Controllers.Web
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Sai thông tin đăng nhập hoặc mật khẩu." });
             }
 
-            // SỬA ĐỔI: KIỂM TRA TÀI KHOẢN KHÓA
             if (khachHang.BiKhoa)
             {
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Tài khoản này đã bị khóa. Vui lòng liên hệ quản trị viên." });
             }
+
+            // ==========================================================
+            // === NÂNG CẤP: KIỂM TRA TÀI KHOẢN TẠM KHI ĐĂNG NHẬP ===
+            // ==========================================================
+            if (khachHang.TaiKhoanTam)
+            {
+                return Ok(new WebLoginResponseModel { Success = false, Message = "Tài khoản này là tài khoản tạm. Vui lòng dùng chức năng Đăng Ký để kích hoạt." });
+            }
+            // ==========================================================
 
             var dto = new KhachHangDto
             {
@@ -81,35 +89,70 @@ namespace CafebookApi.Controllers.Web
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] DangKyRequestModel model)
         {
-            // ... (Logic kiểm tra trùng lặp và tạo KhachHang entity giữ nguyên) ...
-            if (model == null || string.IsNullOrEmpty(model.HoTen) || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.SoDienThoai) || string.IsNullOrEmpty(model.Password))
+            // ==========================================================
+            // === NÂNG CẤP: TOÀN BỘ LOGIC ĐĂNG KÝ MỚI ===
+            // ==========================================================
+            if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.SoDienThoai) || string.IsNullOrEmpty(model.Password))
             {
-                return Ok(new WebLoginResponseModel { Success = false, Message = "Vui lòng điền đầy đủ thông tin bắt buộc." });
+                return Ok(new WebLoginResponseModel { Success = false, Message = "Vui lòng điền đầy đủ Email, SĐT và Mật khẩu." });
             }
-            if (await _context.KhachHangs.AnyAsync(k => k.Email == model.Email))
+
+            // 1. Kiểm tra Email/SĐT đã tồn tại ở tài khoản CHÍNH THỨC (taiKhoanTam = false) hay chưa
+            var existingFullAccount = await _context.KhachHangs
+                .FirstOrDefaultAsync(k => k.TaiKhoanTam == false && (k.Email == model.Email || k.SoDienThoai == model.SoDienThoai));
+
+            if (existingFullAccount != null)
             {
-                return Ok(new WebLoginResponseModel { Success = false, Message = "Email này đã được sử dụng." });
+                if (existingFullAccount.Email == model.Email)
+                {
+                    return Ok(new WebLoginResponseModel { Success = false, Message = "Email này đã được sử dụng bởi một tài khoản khác." });
+                }
+                if (existingFullAccount.SoDienThoai == model.SoDienThoai)
+                {
+                    return Ok(new WebLoginResponseModel { Success = false, Message = "SĐT này đã được sử dụng bởi một tài khoản khác." });
+                }
             }
-            if (await _context.KhachHangs.AnyAsync(k => k.SoDienThoai == model.SoDienThoai))
+
+            // 2. Tìm tài khoản TẠM (taiKhoanTam = true) khớp Email hoặc SĐT
+            var existingTempAccount = await _context.KhachHangs
+                .FirstOrDefaultAsync(k => k.TaiKhoanTam == true && (k.Email == model.Email || k.SoDienThoai == model.SoDienThoai));
+
+            KhachHang khachHang;
+
+            if (existingTempAccount != null)
             {
-                return Ok(new WebLoginResponseModel { Success = false, Message = "SĐT này đã được sử dụng." });
+                // TÌM THẤY TÀI KHOẢN TẠM -> NÂNG CẤP (UPDATE)
+                khachHang = existingTempAccount;
+
+                khachHang.Email = model.Email; // Cập nhật SĐT và Email mới
+                khachHang.SoDienThoai = model.SoDienThoai;
+                khachHang.MatKhau = model.Password; // Đặt mật khẩu mới
+                khachHang.NgayTao = DateTime.Now; // Làm mới ngày tạo
+                khachHang.TaiKhoanTam = false; // Chuyển thành tài khoản chính thức
+                khachHang.BiKhoa = false;
+                // DiemTichLuy được giữ nguyên
+
+                _context.KhachHangs.Update(khachHang);
             }
-            if (!string.IsNullOrEmpty(model.TenDangNhap) && await _context.KhachHangs.AnyAsync(k => k.TenDangNhap == model.TenDangNhap))
+            else
             {
-                return Ok(new WebLoginResponseModel { Success = false, Message = "Tên đăng nhập này đã được sử dụng." });
+                // KHÔNG TÌM THẤY -> TẠO MỚI (CREATE)
+                khachHang = new KhachHang
+                {
+                    // Dùng Email làm Họ Tên mặc định để thỏa mãn NOT NULL
+                    HoTen = model.Email,
+                    Email = model.Email,
+                    SoDienThoai = model.SoDienThoai,
+                    TenDangNhap = null, // Không dùng TenDangNhap nữa
+                    MatKhau = model.Password,
+                    NgayTao = DateTime.Now,
+                    DiemTichLuy = 0, // Tài khoản mới bắt đầu từ 0
+                    BiKhoa = false,
+                    TaiKhoanTam = false // Tạo là tài khoản chính thức ngay
+                };
+                _context.KhachHangs.Add(khachHang);
             }
-            var khachHang = new KhachHang
-            {
-                HoTen = model.HoTen,
-                Email = model.Email,
-                SoDienThoai = model.SoDienThoai,
-                TenDangNhap = string.IsNullOrEmpty(model.TenDangNhap) ? null : model.TenDangNhap,
-                MatKhau = model.Password,
-                NgayTao = DateTime.Now,
-                DiemTichLuy = 0,
-                BiKhoa = false // Mặc định khi đăng ký
-            };
-            _context.KhachHangs.Add(khachHang);
+
             await _context.SaveChangesAsync();
 
             var dto = new KhachHangDto
@@ -122,6 +165,7 @@ namespace CafebookApi.Controllers.Web
                 AnhDaiDienUrl = GetFullImageUrl(khachHang.AnhDaiDien)
             };
             return Ok(new WebLoginResponseModel { Success = true, KhachHangData = dto });
+            // ==========================================================
         }
     }
 }

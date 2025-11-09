@@ -1,0 +1,69 @@
+﻿@page "/Account/LichSuDatBanView"
+@model WebCafebookApi.Pages.Account.LichSuDatBanViewModel
+@{
+    ViewData["Title"] = "Lịch sử đặt bàn";
+    Layout = "_Layout_Account"; // Sử dụng layout tài khoản
+}
+
+<h3 class="page-title-account">@ViewData["Title"]</h3>
+<p class="page-lead-account">Theo dõi các phiếu đặt bàn sắp tới và đã hoàn thành của bạn.</p>
+
+<hr class="my-4" />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Bookings == null || !Model.Bookings.Any())
+{
+    <div class="alert alert-info">
+        Bạn chưa có lịch sử đặt bàn nào.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Bàn</th>
+                    <th scope="col">Thời gian</th>
+                    <th scope="col">Số khách</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col">Ghi chú</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Bookings)
+                {
+                    <tr>
+                        <td class="fw-bold">@item.TenBan</td>
+                        <td>@item.ThoiGianDat.ToString("HH:mm, dd/MM/yyyy")</td>
+                        <td>@item.SoLuongKhach</td>
+                        <td>
+                            <span class="badge @GetBadgeClass(item.TrangThai)">
+                                @item.TrangThai
+                            </span>
+                        </td>
+                        <td>@item.GhiChu</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@functions {
+    private string GetBadgeClass(string trangThai)
+    {
+        return trangThai switch
+        {
+            "Đã xác nhận" => "bg-primary",
+            "Đã hủy" => "bg-danger",
+            "Khách đã đến" => "bg-success",
+            "Đã hoàn thành" => "bg-secondary",
+            _ => "bg-dark",
+        };
+    }
+}

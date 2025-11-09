@@ -4,17 +4,63 @@ using System.Collections.Generic;
 
 namespace CafebookModel.Model.ModelWeb
 {
-    /// <summary>
-    /// DTO cho một thẻ Sách (Book Card) trên lưới
-    /// </summary>
+    // DTO cho các thẻ sách (dùng chung)
     public class SachCardDto
     {
         public int IdSach { get; set; }
         public string TieuDe { get; set; } = string.Empty;
-        public string? TacGia { get; set; }
-        public decimal GiaBia { get; set; } // Dùng làm tiền cọc
+        public string? TacGia { get; set; } // Dùng cho trang thư viện chính
+        public decimal GiaBia { get; set; }
         public int SoLuongCoSan { get; set; }
-        public string? AnhBiaUrl { get; set; } // Đã đổi sang URL
+        public string? AnhBiaUrl { get; set; }
+    }
+
+    // DTO cho Tác giả (để hiển thị link)
+    public class TacGiaDto
+    {
+        public int IdTacGia { get; set; }
+        public string TenTacGia { get; set; } = string.Empty;
+    }
+
+    // DTO cho Thể loại (để hiển thị link)
+    public class TheLoaiDto
+    {
+        public int IdTheLoai { get; set; }
+        public string TenTheLoai { get; set; } = string.Empty;
+    }
+
+    // DTO cho Nhà xuất bản (để hiển thị link)
+    public class NhaXuatBanDto
+    {
+        public int IdNhaXuatBan { get; set; }
+        public string TenNhaXuatBan { get; set; } = string.Empty;
+    }
+
+    // DTO cho trang Chi Tiết Sách (ĐÃ SỬA)
+    public class SachChiTietDto
+    {
+        public int IdSach { get; set; }
+        public string TieuDe { get; set; } = string.Empty;
+        public decimal GiaBia { get; set; }
+        public string? AnhBiaUrl { get; set; }
+        public string? MoTa { get; set; }
+        public string? ViTri { get; set; }
+        public int TongSoLuong { get; set; }
+        public int SoLuongCoSan { get; set; }
+
+        // === SỬA: Đổi từ string sang List DTO ===
+        public List<TacGiaDto> TacGias { get; set; } = new();
+        public List<TheLoaiDto> TheLoais { get; set; } = new();
+        public List<NhaXuatBanDto> NhaXuatBans { get; set; } = new();
+
+        public List<SachCardDto> GoiY { get; set; } = new();
+    }
+
+    // DTO cho trang Kết quả tìm kiếm (MỚI)
+    public class SachKetQuaTimKiemDto
+    {
+        public string TieuDeTrang { get; set; } = "Kết quả tìm kiếm";
+        public List<SachCardDto> SachList { get; set; } = new List<SachCardDto>();
     }
 
     /// <summary>
@@ -26,27 +72,6 @@ namespace CafebookModel.Model.ModelWeb
         public int TotalPages { get; set; }
         public int CurrentPage { get; set; }
     }
-
-    /// <summary>
-    /// DTO cho trang Chi Tiết Sách
-    /// </summary>
-    public class SachChiTietDto
-    {
-        public int IdSach { get; set; }
-        public string TieuDe { get; set; } = string.Empty;
-        public string? TacGia { get; set; }
-        public string? TheLoai { get; set; }
-        public decimal GiaBia { get; set; }
-        public string? AnhBiaUrl { get; set; } // Đã đổi sang URL
-        public string? MoTa { get; set; }
-        public string? ViTri { get; set; }
-        public int TongSoLuong { get; set; }
-        public int SoLuongCoSan { get; set; }
-
-        // Danh sách "Có thể bạn cũng thích"
-        public List<SachCardDto> GoiY { get; set; } = new();
-    }
-
     /// <summary>
     /// DTO chứa các bộ lọc (filters) cho trang thư viện
     /// </summary>

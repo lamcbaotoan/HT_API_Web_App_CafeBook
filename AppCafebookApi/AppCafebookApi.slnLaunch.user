@@ -7,7 +7,7 @@
         "Action": "Start"
       },
       {
-        "Path": "AppCafebookApi\\AppCafebookApi.csproj",
+        "Path": "..\\WebCafebookApi\\WebCafebookApi.csproj",
         "Action": "Start"
       }
     ]

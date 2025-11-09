@@ -1,7 +1,7 @@
 ﻿// Tập tin: CafebookApi/Controllers/Web/ThuVienSachController.cs
 using CafebookApi.Data;
 using CafebookModel.Model.ModelWeb;
-using CafebookModel.Model.ModelApp; // Dùng chung FilterLookupDto
+using CafebookModel.Model.ModelApp;
 using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -34,18 +34,18 @@ namespace CafebookApi.Controllers.Web
             _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
         }
 
+        // Helper lấy URL ảnh
         [ApiExplorerSettings(IgnoreApi = true)]
         private string? GetFullImageUrl(string? relativePath)
         {
-            if (string.IsNullOrEmpty(relativePath))
-                return null;
+            if (string.IsNullOrEmpty(relativePath)) return null;
             return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
         }
 
+        // API lấy bộ lọc (Giữ nguyên)
         [HttpGet("filters")]
         public async Task<IActionResult> GetFilters()
         {
-            // SỬA: Chỉ định rõ namespace DTO
             var filters = new CafebookModel.Model.ModelWeb.SachFiltersDto
             {
                 TheLoais = await _context.TheLoais
@@ -56,6 +56,7 @@ namespace CafebookApi.Controllers.Web
             return Ok(filters);
         }
 
+        // API trang thư viện chính (Giữ nguyên)
         [HttpGet("search")]
         public async Task<IActionResult> Search(
             [FromQuery] string? search,
@@ -67,7 +68,6 @@ namespace CafebookApi.Controllers.Web
         {
             var query = _context.Sachs.AsQueryable();
 
-            // SỬA: Lọc Thể loại (dùng N-N)
             if (theLoaiId.HasValue && theLoaiId > 0)
                 query = query.Where(s => s.SachTheLoais.Any(stl => stl.IdTheLoai == theLoaiId));
 
@@ -81,7 +81,6 @@ namespace CafebookApi.Controllers.Web
                 var searchLower = search.ToLower();
                 query = query.Where(s =>
                     s.TenSach.ToLower().Contains(searchLower) ||
-                    // SỬA: Lọc Tác giả (dùng N-N)
                     s.SachTacGias.Any(stg => stg.TacGia.TenTacGia.ToLower().Contains(searchLower))
                 );
             }
@@ -103,7 +102,6 @@ namespace CafebookApi.Controllers.Web
                 .Select(s => new {
                     s.IdSach,
                     s.TenSach,
-                    // SỬA: Nối chuỗi Tác giả (dùng N-N)
                     TacGia = string.Join(", ", s.SachTacGias.Select(stg => stg.TacGia.TenTacGia)),
                     s.GiaBia,
                     s.SoLuongHienCo,
@@ -118,7 +116,7 @@ namespace CafebookApi.Controllers.Web
                 TacGia = string.IsNullOrEmpty(s.TacGia) ? "Không rõ" : s.TacGia,
                 GiaBia = s.GiaBia ?? 0,
                 SoLuongCoSan = s.SoLuongHienCo,
-                AnhBiaUrl = GetFullImageUrl(s.AnhBia) // <-- Gọi hàm C# (An toàn)
+                AnhBiaUrl = GetFullImageUrl(s.AnhBia)
             }).ToList();
 
             var result = new SachPhanTrangDto
@@ -130,74 +128,103 @@ namespace CafebookApi.Controllers.Web
             return Ok(result);
         }
 
+        // API trang chi tiết sách (SỬA LẠI)
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDetails(int id)
+        public async Task<IActionResult> GetSachChiTiet(int id)
         {
-            // --- SỬA LỖI: Tách làm 2 bước ---
-
-            // Bước 1: Lấy dữ liệu thô (raw data) từ SQL
-            var rawSach = await _context.Sachs
-                .AsNoTracking()
+            var sach = await _context.Sachs
+                .Include(s => s.SachTacGias).ThenInclude(stg => stg.TacGia)
+                .Include(s => s.SachTheLoais).ThenInclude(stl => stl.TheLoai)
+                .Include(s => s.SachNhaXuatBans).ThenInclude(snxb => snxb.NhaXuatBan)
+                .Include(s => s.DeXuatSachGocs).ThenInclude(ds => ds.SachDeXuat)
                 .Where(s => s.IdSach == id)
-                .Select(s => new
+                .Select(s => new SachChiTietDto
                 {
+                    IdSach = s.IdSach,
+                    TieuDe = s.TenSach,
+                    AnhBiaUrl = s.AnhBia, // Lấy đường dẫn thô
+                    MoTa = s.MoTa,
+                    GiaBia = s.GiaBia ?? 0,
+                    ViTri = s.ViTri,
+                    TongSoLuong = s.SoLuongTong,
+                    SoLuongCoSan = s.SoLuongHienCo,
+                    TacGias = s.SachTacGias.Select(stg => new TacGiaDto { IdTacGia = stg.IdTacGia, TenTacGia = stg.TacGia.TenTacGia }).ToList(),
+                    TheLoais = s.SachTheLoais.Select(stl => new TheLoaiDto { IdTheLoai = stl.IdTheLoai, TenTheLoai = stl.TheLoai.TenTheLoai }).ToList(),
+                    NhaXuatBans = s.SachNhaXuatBans.Select(snxb => new NhaXuatBanDto { IdNhaXuatBan = snxb.IdNhaXuatBan, TenNhaXuatBan = snxb.NhaXuatBan.TenNhaXuatBan }).ToList(),
+                    GoiY = s.DeXuatSachGocs.Select(ds => new SachCardDto
+                    {
+                        IdSach = ds.IdSachDeXuat,
+                        TieuDe = ds.SachDeXuat.TenSach,
+                        AnhBiaUrl = ds.SachDeXuat.AnhBia, // Lấy đường dẫn thô
+                        GiaBia = ds.SachDeXuat.GiaBia ?? 0
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (sach == null) return NotFound();
+
+            // Hoàn thiện URL (bên ngoài truy vấn SQL)
+            sach.AnhBiaUrl = GetFullImageUrl(sach.AnhBiaUrl);
+            foreach (var item in sach.GoiY)
+            {
+                item.AnhBiaUrl = GetFullImageUrl(item.AnhBiaUrl);
+            }
+
+            return Ok(sach);
+        }
+
+        // API TÌM KIẾM MỚI (cho trang TimKiemSachView)
+        [HttpGet("filter-by-id")]
+        public async Task<IActionResult> SearchSachById([FromQuery] int? idTacGia, [FromQuery] int? idTheLoai, [FromQuery] int? idNXB)
+        {
+            var query = _context.Sachs.AsQueryable();
+            var resultDto = new SachKetQuaTimKiemDto();
+
+            if (idTacGia.HasValue)
+            {
+                var tacGia = await _context.TacGias.FindAsync(idTacGia.Value);
+                if (tacGia == null) return NotFound("Không tìm thấy tác giả.");
+                resultDto.TieuDeTrang = $"Sách của tác giả: {tacGia.TenTacGia}";
+                query = query.Where(s => s.SachTacGias.Any(stg => stg.IdTacGia == idTacGia.Value));
+            }
+            else if (idTheLoai.HasValue)
+            {
+                var theLoai = await _context.TheLoais.FindAsync(idTheLoai.Value);
+                if (theLoai == null) return NotFound("Không tìm thấy thể loại.");
+                resultDto.TieuDeTrang = $"Sách thuộc thể loại: {theLoai.TenTheLoai}";
+                query = query.Where(s => s.SachTheLoais.Any(stl => stl.IdTheLoai == idTheLoai.Value));
+            }
+            else if (idNXB.HasValue)
+            {
+                // (Chưa dùng nhưng để sẵn)
+                var nxb = await _context.NhaXuatBans.FindAsync(idNXB.Value);
+                if (nxb == null) return NotFound("Không tìm thấy NXB.");
+                resultDto.TieuDeTrang = $"Sách của NXB: {nxb.TenNhaXuatBan}";
+                query = query.Where(s => s.SachNhaXuatBans.Any(snxb => snxb.IdNhaXuatBan == idNXB.Value));
+            }
+            else
+            {
+                return BadRequest("Cần cung cấp một tiêu chí tìm kiếm.");
+            }
+
+            var rawList = await query
+                .Select(s => new {
                     s.IdSach,
                     s.TenSach,
-                    TacGia = string.Join(", ", s.SachTacGias.Select(stg => stg.TacGia.TenTacGia)),
-                    TheLoai = string.Join(", ", s.SachTheLoais.Select(stl => stl.TheLoai.TenTheLoai)),
-                    s.GiaBia,
-                    s.AnhBia, // Lấy đường dẫn thô
-                    s.MoTa,
-                    s.ViTri,
-                    s.SoLuongTong,
-                    s.SoLuongHienCo
+                    s.AnhBia,
+                    s.GiaBia
                 })
-                .FirstOrDefaultAsync(); // <-- Dòng 137 cũ
-
-            if (rawSach == null)
-                return NotFound(new { Message = "Không tìm thấy sách." });
-
-            // Bước 2: Tạo DTO cuối cùng (trong bộ nhớ C#)
-            var sachDto = new SachChiTietDto
-            {
-                IdSach = rawSach.IdSach,
-                TieuDe = rawSach.TenSach,
-                TacGia = string.IsNullOrEmpty(rawSach.TacGia) ? "Không rõ" : rawSach.TacGia,
-                TheLoai = string.IsNullOrEmpty(rawSach.TheLoai) ? "Không rõ" : rawSach.TheLoai,
-                GiaBia = rawSach.GiaBia ?? 0,
-                AnhBiaUrl = GetFullImageUrl(rawSach.AnhBia), // <-- Gọi hàm C# (An toàn)
-                MoTa = rawSach.MoTa,
-                ViTri = rawSach.ViTri,
-                TongSoLuong = rawSach.SoLuongTong,
-                SoLuongCoSan = rawSach.SoLuongHienCo
-            };
-
-            // --- Phần code lấy Gợi Ý (GoiY) đã đúng, giữ nguyên ---
-            var suggestions_raw = await _context.DeXuatSachs
-                .Where(d => d.IdSachGoc == id)
-                .Include(d => d.SachDeXuat.SachTacGias)
-                    .ThenInclude(stg => stg.TacGia)
-                .OrderByDescending(d => d.DoLienQuan)
-                .Take(4)
-                .Select(d => d.SachDeXuat)
                 .ToListAsync();
 
-            sachDto.GoiY = suggestions_raw.Select(s => new SachCardDto
+            resultDto.SachList = rawList.Select(s => new SachCardDto
             {
                 IdSach = s.IdSach,
                 TieuDe = s.TenSach,
-                TacGia = string.Join(", ", s.SachTacGias.Select(stg => stg.TacGia.TenTacGia)),
-                GiaBia = s.GiaBia ?? 0,
-                SoLuongCoSan = s.SoLuongHienCo,
-                AnhBiaUrl = GetFullImageUrl(s.AnhBia) // <-- Gọi hàm C# (An toàn)
+                AnhBiaUrl = GetFullImageUrl(s.AnhBia),
+                GiaBia = s.GiaBia ?? 0
             }).ToList();
 
-            foreach (var item in sachDto.GoiY)
-            {
-                if (string.IsNullOrEmpty(item.TacGia)) item.TacGia = "Không rõ";
-            }
-
-            return Ok(sachDto);
+            return Ok(resultDto);
         }
     }
 }

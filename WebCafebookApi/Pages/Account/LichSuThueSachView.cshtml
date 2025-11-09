@@ -1,0 +1,82 @@
+﻿@page "/Account/LichSuThueSachView"
+@model WebCafebookApi.Pages.Account.LichSuThueSachViewModel
+@{
+    ViewData["Title"] = "Lịch sử thuê sách";
+    Layout = "_Layout_Account"; // Sử dụng layout tài khoản [cite: 35]
+}
+
+<h3 class="page-title-account">@ViewData["Title"]</h3>
+<p class="page-lead-account">Theo dõi các phiếu thuê sách và chi phí của bạn.</p>
+
+<hr class="my-4" />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Rentals == null || !Model.Rentals.Any())
+{
+    <div class="alert alert-info">
+        Bạn chưa có lịch sử thuê sách nào.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Mã Phiếu</th>
+                    <th scope="col">Ngày Thuê</th>
+                    <th scope="col">Trạng Thái</th>
+                    <th scope="col">SL Sách</th>
+                    <th scope="col">Tiền Cọc</th>
+                    <th scope="col">Phí Thuê</th>
+                    <th scope="col">Tiền Phạt</th>
+                    <th scope="col">Cọc Hoàn</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Rentals)
+                {
+                    <tr>
+                        <td class="fw-bold">#@item.IdPhieuThueSach</td>
+                        <td>@item.NgayThue.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <span class="badge @GetBadgeClass(item.TrangThai)">
+                                @item.TrangThai
+                            </span>
+                        </td>
+                        <td>@item.SoLuongSach</td>
+                        <td>@item.TongTienCoc.ToString("N0") đ</td>
+
+                        @if (item.NgayTra.HasValue)
+                        {
+                            <td class="text-danger">@item.TongPhiThue?.ToString("N0") đ</td>
+                            <td class="text-danger fw-bold">@item.TongTienPhat?.ToString("N0") đ</td>
+                            <td class="text-success">@item.TongTienCocHoan?.ToString("N0") đ</td>
+                        }
+                        else
+                        {
+                            <td colspan="3" class="text-muted text-center small"><em>(Chưa trả)</em></td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@functions {
+    private string GetBadgeClass(string trangThai)
+    {
+        return trangThai.ToLower() switch
+        {
+            "đang thuê" => "bg-primary",
+            "đã trả" => "bg-success",
+            "đã hủy" => "bg-danger",
+            _ => "bg-secondary",
+        };
+    }
+}

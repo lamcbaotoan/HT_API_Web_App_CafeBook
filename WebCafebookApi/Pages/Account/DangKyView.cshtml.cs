@@ -26,9 +26,7 @@ namespace WebCafebookApi.Pages.Account
 
         public class InputModel
         {
-            [Required(ErrorMessage = "Vui lòng nhập họ tên")]
-            [Display(Name = "Họ và Tên")]
-            public string HoTen { get; set; } = string.Empty;
+            // ĐÃ XÓA: HoTen
 
             [Required(ErrorMessage = "Vui lòng nhập SĐT")]
             [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
@@ -40,8 +38,7 @@ namespace WebCafebookApi.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; } = string.Empty;
 
-            [Display(Name = "Tên đăng nhập")]
-            public string? TenDangNhap { get; set; }
+            // ĐÃ XÓA: TenDangNhap
 
             [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
             [StringLength(100, ErrorMessage = "{0} phải dài từ {2} đến {1} ký tự.", MinimumLength = 6)]
@@ -71,10 +68,10 @@ namespace WebCafebookApi.Pages.Account
             var httpClient = _httpClientFactory.CreateClient();
             var apiRequest = new DangKyRequestModel
             {
-                HoTen = Input.HoTen,
+                // ĐÃ XÓA: HoTen
                 Email = Input.Email,
                 SoDienThoai = Input.SoDienThoai,
-                TenDangNhap = Input.TenDangNhap,
+                // ĐÃ XÓA: TenDangNhap
                 Password = Input.Password
             };
             var response = await httpClient.PostAsJsonAsync("http://localhost:5166/api/web/taikhoankhach/register", apiRequest);
@@ -102,7 +99,6 @@ namespace WebCafebookApi.Pages.Account
                         CookieAuthenticationDefaults.AuthenticationScheme,
                         new ClaimsPrincipal(claimsIdentity));
 
-                    // SỬA: Lưu URL (nếu có) thay vì Base64 và đổi tên Key
                     HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
 
                     return LocalRedirect(returnUrl);

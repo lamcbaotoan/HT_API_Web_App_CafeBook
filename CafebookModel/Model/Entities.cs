@@ -628,6 +628,7 @@ namespace CafebookModel.Model.Entities
         public virtual NhanVien NhanVien { get; set; } = null!;
 
         public virtual ICollection<ChiTietPhieuTra> ChiTietPhieuTras { get; set; } = new List<ChiTietPhieuTra>();
+        
     }
 
     [Table("ChiTietPhieuTra")]

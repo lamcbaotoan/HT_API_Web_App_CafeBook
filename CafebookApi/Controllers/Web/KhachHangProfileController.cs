@@ -3,14 +3,14 @@ using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelWeb;
 using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // <-- Cần
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System;
-using System.Linq;
+using System.Linq; // <-- Cần
 
 namespace CafebookApi.Controllers.Web
 {
@@ -22,6 +22,7 @@ namespace CafebookApi.Controllers.Web
         private readonly IWebHostEnvironment _env;
         private readonly string _baseUrl;
 
+        // Constructor đã được đơn giản hóa (không cần IPasswordHasher)
         public KhachHangProfileController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
@@ -33,15 +34,19 @@ namespace CafebookApi.Controllers.Web
             _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
         }
 
-        // --- (Các hàm helper xử lý ảnh: GetFullImageUrl, SaveImageAsync, DeleteImage giữ nguyên) ---
+        // --- (GetFullImageUrl giữ nguyên) ---
         [ApiExplorerSettings(IgnoreApi = true)]
         private string? GetFullImageUrl(string? relativePath)
         {
             if (string.IsNullOrEmpty(relativePath)) return null;
             return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
         }
+
+        // ==========================================================
+        // === SỬA: Cập nhật SaveImageAsync để dùng ID và Slug ===
+        // ==========================================================
         [ApiExplorerSettings(IgnoreApi = true)]
-        private async Task<string?> SaveImageAsync(IFormFile imageFile, string subFolder, string baseFileName)
+        private async Task<string?> SaveImageAsync(IFormFile imageFile, string subFolder, string baseFileNameSlug, int userId)
         {
             if (imageFile == null || imageFile.Length == 0) return null;
 
@@ -49,7 +54,10 @@ namespace CafebookApi.Controllers.Web
             if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
 
             var fileExtension = Path.GetExtension(imageFile.FileName);
-            var uniqueFileName = $"{baseFileName}_{DateTime.Now:yyyyMMddHHmmssfff}{fileExtension}";
+
+            // Tên tệp mới: {IdKhachHang}_{SlugHoTen}.{ext}
+            // VÍ DỤ: 1_khach-vang-lai.jpg
+            var uniqueFileName = $"{userId}_{baseFileNameSlug}{fileExtension}";
             var filePath = Path.Combine(uploadPath, uniqueFileName);
 
             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -59,6 +67,7 @@ namespace CafebookApi.Controllers.Web
 
             return $"/images/{subFolder}/{uniqueFileName}".Replace(Path.DirectorySeparatorChar, '/');
         }
+
         [ApiExplorerSettings(IgnoreApi = true)]
         private void DeleteImage(string? relativePath)
         {
@@ -71,10 +80,7 @@ namespace CafebookApi.Controllers.Web
         }
 
 
-
-        /// <summary>
-        /// API MỚI: Lấy thông tin tổng quan (Điểm tích lũy)
-        /// </summary>
+        // --- (GetOverview và GetProfile giữ nguyên như tệp bạn đã tải lên) ---
         [HttpGet("overview/{id}")]
         public async Task<IActionResult> GetOverview(int id)
         {
@@ -90,15 +96,11 @@ namespace CafebookApi.Controllers.Web
                 DiemTichLuy = kh.DiemTichLuy,
                 NgayTao = kh.NgayTao,
                 TongHoaDon = hoaDons.Count,
-                // SỬA LỖI CS1061: Tính toán dựa trên các cột có thật
                 TongChiTieu = hoaDons.Sum(hd => hd.TongTienGoc - hd.GiamGia + hd.TongPhuThu)
             };
             return Ok(dto);
         }
 
-        /// <summary>
-        /// API lấy thông tin chi tiết của khách hàng
-        /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProfile(int id)
         {
@@ -127,13 +129,21 @@ namespace CafebookApi.Controllers.Web
             var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null) return NotFound();
 
-            // Cập nhật ảnh (nếu có)
+            // ==========================================================
+            // === SỬA: Lấy HoTen làm slug (thay vì tên tệp) ===
+            // ==========================================================
             if (avatarFile != null)
             {
                 DeleteImage(kh.AnhDaiDien); // Xóa ảnh cũ
-                string baseFileName = kh.TenDangNhap ?? kh.Email ?? kh.IdKhachHang.ToString();
-                kh.AnhDaiDien = await SaveImageAsync(avatarFile, "avatars/avatarKH", SlugifyUtil.GenerateSlug(baseFileName));
+
+                // Lấy HoTen (model.HoTen) làm cơ sở cho slug
+                // Dùng model.HoTen thay vì kh.HoTen để đảm bảo tên slug khớp với tên mới
+                string baseSlug = SlugifyUtil.GenerateSlug(model.HoTen);
+
+                // Truyền slug và ID vào helper
+                kh.AnhDaiDien = await SaveImageAsync(avatarFile, "avatars/avatarKH", baseSlug, id);
             }
+            // ==========================================================
 
             // Cập nhật thông tin text
             kh.HoTen = model.HoTen;
@@ -146,7 +156,7 @@ namespace CafebookApi.Controllers.Web
         }
 
         /// <summary>
-        /// API đổi mật khẩu
+        /// API đổi mật khẩu (KHÔNG HASH)
         /// </summary>
         [HttpPost("change-password/{id}")]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] PasswordChangeModel model)
@@ -154,15 +164,92 @@ namespace CafebookApi.Controllers.Web
             var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null) return NotFound();
 
-            // SỬA: Phải kiểm tra mật khẩu cũ (trong thực tế phải HASH)
+            // Kiểm tra mật khẩu cũ (plain text)
             if (kh.MatKhau != model.MatKhauCu)
             {
                 return BadRequest(new { Message = "Mật khẩu cũ không chính xác." });
             }
 
-            kh.MatKhau = model.MatKhauMoi; // (Trong thực tế phải HASH mật khẩu mới)
+            kh.MatKhau = model.MatKhauMoi; // Lưu mật khẩu mới (plain text)
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Đổi mật khẩu thành công." });
+        }
+
+        // ==========================================================
+        // === THÊM MỚI: API LỊCH SỬ ĐẶT BÀN ===
+        // ==========================================================
+        [HttpGet("booking-history/{id}")]
+        public async Task<IActionResult> GetBookingHistory(int id)
+        {
+            var bookings = await _context.PhieuDatBans
+                .Include(p => p.Ban) // Join với bảng Ban
+                .Where(p => p.IdKhachHang == id)
+                .OrderByDescending(p => p.ThoiGianDat)
+                .Select(p => new LichSuDatBanDto
+                {
+                    IdPhieuDatBan = p.IdPhieuDatBan,
+                    // ======================================
+                    // === SỬA LỖI Ở ĐÂY ===
+                    // ======================================
+                    TenBan = p.Ban.SoBan, // Sửa từ "TenBan" thành "SoBan"
+                    // ======================================
+                    ThoiGianDat = p.ThoiGianDat,
+                    SoLuongKhach = p.SoLuongKhach,
+                    TrangThai = p.TrangThai,
+                    GhiChu = p.GhiChu
+                })
+                .ToListAsync();
+
+            if (bookings == null)
+            {
+                return Ok(new List<LichSuDatBanDto>());
+            }
+
+            return Ok(bookings);
+        }
+
+        // ==========================================================
+        // === THÊM MỚI: API LỊCH SỬ THUÊ SÁCH ===
+        // ==========================================================
+        [HttpGet("rental-history/{id}")]
+        public async Task<IActionResult> GetRentalHistory(int id)
+        {
+            var rentals = await _context.PhieuThueSachs
+                .Include(p => p.ChiTietPhieuThues) // Join để đếm số lượng sách
+
+                // ==========================================================
+                // === SỬA LỖI CS1061 TẠI ĐÂY ===
+                // Đổi PhieuTraSach (số ít) thành PhieuTraSachs (số nhiều)
+                .Include(p => p.PhieuTraSachs)
+                // ==========================================================
+
+                .Where(p => p.IdKhachHang == id)
+                .OrderByDescending(p => p.NgayThue)
+                .Select(p => new LichSuPhieuThueDto
+                {
+                    IdPhieuThueSach = p.IdPhieuThueSach,
+                    NgayThue = p.NgayThue,
+                    TrangThai = p.TrangThai,
+                    SoLuongSach = p.ChiTietPhieuThues.Count(), // Đếm số sách trong chi tiết
+                    TongTienCoc = p.TongTienCoc,
+
+                    // ==========================================================
+                    // === SỬA LỖI CS1061 TẠI ĐÂY ===
+                    // Thêm .FirstOrDefault() để lấy 1 phiếu trả duy nhất từ danh sách
+                    // ==========================================================
+                    NgayTra = p.PhieuTraSachs.FirstOrDefault() != null ? (DateTime?)p.PhieuTraSachs.FirstOrDefault().NgayTra : null,
+                    TongPhiThue = p.PhieuTraSachs.FirstOrDefault() != null ? (decimal?)p.PhieuTraSachs.FirstOrDefault().TongPhiThue : null,
+                    TongTienPhat = p.PhieuTraSachs.FirstOrDefault() != null ? (decimal?)p.PhieuTraSachs.FirstOrDefault().TongTienPhat : null,
+                    TongTienCocHoan = p.PhieuTraSachs.FirstOrDefault() != null ? (decimal?)p.PhieuTraSachs.FirstOrDefault().TongTienCocHoan : null
+                })
+                .ToListAsync();
+
+            if (rentals == null)
+            {
+                return Ok(new List<LichSuPhieuThueDto>()); // Trả về danh sách rỗng
+            }
+
+            return Ok(rentals);
         }
     }
 }
