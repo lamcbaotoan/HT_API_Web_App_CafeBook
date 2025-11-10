@@ -1,4 +1,8 @@
-﻿using System;
+﻿/* KHÔNG THAY ĐỔI */
+/* Các DTO đã được định nghĩa chính xác. */
+
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace CafebookModel.Model.ModelWeb
@@ -35,10 +39,11 @@ namespace CafebookModel.Model.ModelWeb
     /// </summary>
     public class DatBanWebRequestDto
     {
-        // Thông tin khách (nếu chưa đăng nhập)
+        // Thông tin khách (nếu chưa đăng nhập hoặc đặt hộ)
         public string? HoTen { get; set; }
         public string? SoDienThoai { get; set; }
-        public string? Email { get; set; } // <-- SỬA ĐỔI: Thêm trường Email
+        public string? Email { get; set; }
+
         [Required]
         public int IdBan { get; set; }
 
@@ -52,5 +57,24 @@ namespace CafebookModel.Model.ModelWeb
         public int SoLuongKhach { get; set; }
 
         public string? GhiChu { get; set; }
+    }
+
+    /// <summary>
+    /// DTO mới để trả về danh sách bàn nhóm theo khu vực
+    /// </summary>
+    public class KhuVucBanDto
+    {
+        public int IdKhuVuc { get; set; }
+        public string TenKhuVuc { get; set; } = string.Empty;
+        public List<BanTrongDto> BanList { get; set; } = new();
+    }
+
+    /// <summary>
+    /// DTO mới để trả về giờ mở/đóng cửa
+    /// </summary>
+    public class OpeningHoursDto
+    {
+        public TimeSpan Open { get; set; }
+        public TimeSpan Close { get; set; }
     }
 }
