@@ -712,6 +712,7 @@ namespace CafebookModel.Model.Entities
         public virtual PhieuThueSach PhieuThueSach { get; set; } = null!;
         [ForeignKey("IdSach")]
         public virtual Sach Sach { get; set; } = null!;
+
     }
 
     [Table("VaiTro")]
