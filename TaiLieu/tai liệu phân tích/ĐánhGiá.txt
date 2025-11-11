@@ -1,0 +1,257 @@
+Tuyệt vời 🎯 — đây là bước **nâng cấp cực kỳ quan trọng** giúp hệ thống **Cafébook** của bạn trở nên *chuyên nghiệp và tương tác tốt với khách hàng*:
+
+> 👉 Thêm **chức năng “Đánh giá sau khi đặt hàng / sử dụng dịch vụ”**,
+> áp dụng cho **cả sách thuê và món gọi**,
+> và **tạo báo cáo tổng hợp phản hồi khách hàng**.
+
+Dưới đây là **bản đặc tả chi tiết chức năng đánh giá**, theo chuẩn báo cáo nghiệp vụ, có thể chép trực tiếp vào đồ án hoặc tài liệu kỹ thuật 👇
+
+---
+
+# 🧾 ĐẶC TẢ CHỨC NĂNG: ĐÁNH GIÁ DỊCH VỤ SAU KHI ĐẶT HÀNG
+
+---
+
+## 🔷 1. Mục tiêu
+
+Cung cấp tính năng cho khách hàng **đánh giá và phản hồi** sau khi:
+
+* **Thuê sách** (đánh giá chất lượng sách, trải nghiệm thuê).
+* **Gọi món / thức uống** (đánh giá hương vị, phục vụ).
+
+Hệ thống sẽ:
+
+* Lưu đánh giá (nội dung, hình ảnh, mức độ hài lòng).
+* Cho phép quản trị viên xem **báo cáo tổng hợp đánh giá**, phân loại theo:
+
+  * Loại đơn (Sách / Món)
+  * Mức sao trung bình
+  * Số lượng đánh giá tích cực / tiêu cực
+
+---
+
+## 🔷 2. Actor liên quan
+
+| Actor                      | Vai trò                                         |
+| -------------------------- | ----------------------------------------------- |
+| **Khách hàng**             | Gửi đánh giá, nội dung, hình ảnh, sao, nhận xét |
+| **Quản trị viên**          | Duyệt, phản hồi, ẩn / xóa đánh giá sai quy định |
+| **Chủ cửa hàng / Quản lý** | Xem báo cáo tổng hợp và thống kê đánh giá       |
+
+---
+
+## 🔷 3. Mô tả nghiệp vụ tổng quan
+
+### 🧭 Luồng tổng quát:
+
+```
+1️⃣ Khách hàng hoàn tất đơn hàng (thuê hoặc món)
+      ↓
+2️⃣ Hệ thống hiển thị gợi ý “Đánh giá dịch vụ”
+      ↓
+3️⃣ Khách chọn 1-5 sao, nhập nội dung, tải ảnh (nếu muốn)
+      ↓
+4️⃣ Gửi đánh giá lên hệ thống
+      ↓
+5️⃣ Quản lý có thể xem và trả lời đánh giá
+      ↓
+6️⃣ Báo cáo tổng hợp thống kê mức độ hài lòng
+```
+
+---
+
+## 🔷 4. Đặc tả chi tiết chức năng
+
+### **FS-05: GỬI ĐÁNH GIÁ**
+
+#### Mục đích
+
+Khách hàng gửi nhận xét, hình ảnh và mức sao sau khi hoàn tất đơn hàng.
+
+#### Tiền điều kiện
+
+* Khách hàng đã đăng nhập.
+* Đơn hàng hoặc phiếu thuê ở trạng thái `Hoàn tất`.
+
+#### Hậu điều kiện
+
+* Một bản ghi đánh giá được lưu vào hệ thống (`DanhGia`).
+* Liên kết với `HoaDon` hoặc `PhieuThueSach` qua mã đơn (`IdDonHang`).
+
+#### Luồng chính
+
+| Bước | Mô tả hành động                                      | Hệ thống xử lý                               |
+| ---- | ---------------------------------------------------- | -------------------------------------------- |
+| 1    | Khách mở trang “Đơn mua của tôi”                     | Hiển thị danh sách đơn hàng hoàn tất         |
+| 2    | Nhấn “Đánh giá đơn hàng”                             | Mở form nhập đánh giá                        |
+| 3    | Chọn số sao (1–5), nhập nội dung, tải ảnh (tùy chọn) | Xác thực nội dung                            |
+| 4    | Gửi đánh giá                                         | Lưu vào bảng `DanhGia`                       |
+| 5    | Hệ thống xác nhận “Đánh giá thành công”              | Cập nhật trạng thái đơn hàng = “Đã đánh giá” |
+
+#### Dữ liệu lưu
+
+| Cột            | Kiểu          | Mô tả                                      |
+| -------------- | ------------- | ------------------------------------------ |
+| `IdDanhGia`    | INT           | Khóa chính                                 |
+| `IdKhachHang`  | INT           | Người gửi                                  |
+| `IdDonHang`    | INT           | Liên kết đến `HoaDon` hoặc `PhieuThueSach` |
+| `LoaiDon`      | NVARCHAR(20)  | “Sach” hoặc “Mon”                          |
+| `SoSao`        | INT           | Số sao (1–5)                               |
+| `NoiDung`      | NVARCHAR(MAX) | Nội dung nhận xét                          |
+| `HinhAnh`      | NVARCHAR(500) | Đường dẫn ảnh (nếu có)                     |
+| `NgayDanhGia`  | DATETIME      | Thời gian gửi                              |
+| `PhanHoiAdmin` | NVARCHAR(MAX) | Phản hồi của quản trị viên                 |
+| `TrangThai`    | NVARCHAR(20)  | Hiển thị / Ẩn / Đã phản hồi                |
+
+---
+
+### **FS-06: HIỂN THỊ & QUẢN LÝ ĐÁNH GIÁ**
+
+#### Mục tiêu
+
+Giúp nhân viên / quản lý xem danh sách đánh giá, phản hồi, và thống kê.
+
+#### Tiền điều kiện
+
+* Người dùng là **Admin / Nhân viên quản lý**.
+
+#### Hậu điều kiện
+
+* Quản trị viên có thể phản hồi, ẩn, hoặc xóa đánh giá vi phạm.
+* Báo cáo tổng hợp được cập nhật theo thời gian.
+
+#### Luồng hoạt động
+
+| Bước | Hành động                            | Hệ thống xử lý                        |
+| ---- | ------------------------------------ | ------------------------------------- |
+| 1    | Quản trị mở trang “Quản lý đánh giá” | Hiển thị danh sách đánh giá mới nhất  |
+| 2    | Lọc theo loại: “Sách / Món / Tất cả” | Truy vấn theo `LoaiDon`               |
+| 3    | Chọn đánh giá để phản hồi            | Hiển thị chi tiết nội dung            |
+| 4    | Gửi phản hồi hoặc ẩn đánh giá        | Cập nhật `PhanHoiAdmin` / `TrangThai` |
+| 5    | Tạo báo cáo thống kê                 | Tổng hợp theo tháng / quý             |
+
+---
+
+### **FS-07: BÁO CÁO TỔNG HỢP ĐÁNH GIÁ**
+
+#### Mục tiêu
+
+Thống kê **mức độ hài lòng của khách hàng** trên toàn hệ thống.
+
+#### Nguồn dữ liệu
+
+Từ bảng `DanhGia`, kết hợp với `HoaDon`, `PhieuThueSach`.
+
+#### Dữ liệu tổng hợp ví dụ:
+
+| Loại | Số lượt đánh giá | Trung bình sao | % tích cực (≥4 sao) | % tiêu cực (≤2 sao) |
+| ---- | ---------------- | -------------- | ------------------- | ------------------- |
+| Sách | 52               | 4.4            | 87%                 | 4%                  |
+| Món  | 68               | 4.6            | 91%                 | 3%                  |
+
+#### Biểu đồ gợi ý
+
+* Cột: So sánh trung bình sao Sách / Món.
+* Đường: Xu hướng đánh giá theo tháng.
+* Bảng: Danh sách phản hồi mới nhất.
+
+---
+
+## 💡 5. Tích hợp giao diện (UI logic)
+
+### **1️⃣ Trong trang _Layout_Account.cshtml**
+
+Thêm mục:
+
+```html
+<li class="nav-item">
+    <a class="nav-link" asp-page="/Account/DanhGiaView">
+        <i class="fa fa-star"></i> Đánh giá của tôi
+    </a>
+</li>
+```
+
+### **2️⃣ Trong DonMuaView.cshtml**
+
+Hiển thị nút “Đánh giá” với đơn đã hoàn tất:
+
+```html
+@if (item.TrangThai == "Hoàn tất" && !item.DaDanhGia)
+{
+    <a asp-action="DanhGia" asp-route-id="@item.IdDonHang" class="btn btn-outline-primary btn-sm">
+        Đánh giá đơn hàng
+    </a>
+}
+```
+
+### **3️⃣ Trong DanhGiaView.cshtml**
+
+Form gửi đánh giá:
+
+```html
+<form method="post" enctype="multipart/form-data">
+    <label>Chọn số sao:</label>
+    <select name="SoSao" class="form-select">
+        <option>5</option>
+        <option>4</option>
+        <option>3</option>
+        <option>2</option>
+        <option>1</option>
+    </select>
+
+    <textarea name="NoiDung" class="form-control mt-2" placeholder="Cảm nhận của bạn..."></textarea>
+
+    <input type="file" name="HinhAnh" class="form-control mt-2" />
+    <button type="submit" class="btn btn-success mt-3">Gửi đánh giá</button>
+</form>
+```
+
+---
+
+## 🧱 6. Mô hình dữ liệu liên kết (ERD)
+
+```
+KhachHang ───< DanhGia >─── HoaDon
+                     │
+                     └────── PhieuThueSach
+```
+
+* Một khách có thể có nhiều đánh giá.
+* Mỗi đánh giá chỉ thuộc **một đơn hàng (sách hoặc món)**.
+* Có thể lọc, báo cáo, thống kê theo loại đơn (`LoaiDon`).
+
+---
+
+## ✅ 7. Ưu điểm của hệ thống đánh giá này
+
+| Lợi ích             | Mô tả                                              |
+| ------------------- | -------------------------------------------------- |
+| 🎯 Phản hồi thực tế | Khách gửi cảm nhận thật sau mỗi đơn                |
+| 📸 Trực quan        | Cho phép gửi kèm hình ảnh                          |
+| 📊 Dễ thống kê      | Tách biệt đánh giá sách / món nhưng tổng hợp chung |
+| 💬 Tăng tương tác   | Quản lý có thể phản hồi trực tiếp                  |
+| ⭐ Xây dựng uy tín   | Hiển thị đánh giá tốt để thu hút khách mới         |
+
+---
+
+## 🔮 8. Gợi ý mở rộng trong tương lai
+
+* Cho phép khách **chỉnh sửa hoặc xóa đánh giá** trong 24h.
+* Hiển thị **đánh giá nổi bật** trên trang chủ (Top 5 đánh giá gần nhất).
+* Cho phép **lọc sách / món theo đánh giá cao nhất**.
+* Thêm **tính năng AI phân tích cảm xúc** trong nội dung đánh giá (phân loại tích cực / tiêu cực tự động).
+
+---
+
+## ✅ Kết luận
+
+| Thành phần             | Trạng thái                        | Ghi chú                       |
+| ---------------------- | --------------------------------- | ----------------------------- |
+| Chức năng gửi đánh giá | ✅ Hoàn chỉnh                      | Hỗ trợ nội dung, ảnh, sao     |
+| Quản lý phản hồi       | ✅ Có duyệt / ẩn / xóa             | Dễ triển khai bằng Razor Page |
+| Báo cáo tổng hợp       | ✅ Có thể dùng SQL View hoặc chart | Gộp cả sách và món            |
+| Cấu trúc CSDL          | ✅ Độc lập, chỉ cần bảng `DanhGia` | Không cần chỉnh bảng cũ       |
+
+---
+
+👉 Nếu bạn muốn, tôi có thể **viết luôn đoạn SQL tạo bảng `DanhGia` + truy vấn báo cáo tổng hợp (gộp Sách và Món)** để bạn copy chạy trực tiếp vào SQL Server — bạn có muốn tôi tạo phần đó luôn không?

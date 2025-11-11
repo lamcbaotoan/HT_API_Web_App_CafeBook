@@ -1,0 +1,178 @@
+# 📚 “Thuê sách” và ☕ “Gọi món / Đặt thức uống”
+---
+# 🧾 ĐẶC TẢ CHI TIẾT CHỨC NĂNG HỆ THỐNG CAFÉBOOK
+---
+## 🔷 1. Giới thiệu chung
+**Tên hệ thống:** *Cafebook Management System*
+**Mô tả tổng quát:**
+Hệ thống hỗ trợ khách hàng **thuê sách để đọc tại quán hoặc mang về**, đồng thời **đặt món / thức uống**.
+Cả hai nghiệp vụ được **quản lý tách biệt** nhưng dùng **chung thông tin khách hàng, nhân viên, và thanh toán**.
+---
+## 🔷 2. Danh sách chức năng chính
+| Mã chức năng | Tên chức năng               | Mô tả ngắn                                                              |
+| ------------ | --------------------------- | ----------------------------------------------------------------------- |
+| FS-01        | Quản lý thuê sách           | Khách hàng thuê 1 hoặc nhiều sách, có thể giao tận nơi, có thời hạn trả |
+| FS-02        | Quản lý đặt món / thức uống | Khách hàng gọi món tại quán hoặc đặt giao hàng                          |
+| FS-03        | Quản lý thanh toán          | Thanh toán cọc sách hoặc hóa đơn món                                    |
+| FS-04        | Theo dõi và xử lý đơn hàng  | Nhân viên quản lý, xác nhận, cập nhật trạng thái đơn                    |
+---
+## 🧩 3. ĐẶC TẢ CHỨC NĂNG CHI TIẾT
+---
+## 📚 **CHỨC NĂNG FS-01: THUÊ SÁCH**
+#### 1️⃣ Mục đích
+Cho phép khách hàng **thuê một hoặc nhiều quyển sách** từ quán Cafébook để đọc tại chỗ hoặc mang về.
+Có thể chọn giao tận nơi, thanh toán tiền cọc, và theo dõi phiếu thuê.
+---
+#### 2️⃣ Actor liên quan
+| Actor               | Vai trò                              |
+| ------------------- | ------------------------------------ |
+| Khách hàng          | Chọn sách, xác nhận thuê, thanh toán |
+| Nhân viên kho sách  | Xác nhận đơn, chuẩn bị sách          |
+| Nhân viên giao hàng | Giao sách đến khách nếu cần          |
+| Quản lý / Thu ngân  | Xác nhận thanh toán, xử lý trả sách  |
+---
+#### 3️⃣ Tiền điều kiện
+* Khách hàng **đã đăng nhập hệ thống.**
+* Sách **còn tồn kho** (`soLuongHienCo > 0`).
+* Tài khoản khách **không bị khóa** (`BiKhoa = 0`).
+---
+#### 4️⃣ Hậu điều kiện
+* Phiếu thuê được tạo trong bảng `PhieuThueSach`.
+* Các sách được trừ tồn (`soLuongHienCo`).
+* Thanh toán cọc được ghi nhận (nếu có).
+--
+#### 5️⃣ Luồng hoạt động chính
+| Bước | Mô tả hành động                                              | Hệ thống xử lý                                                |
+| ---- | ------------------------------------------------------------ | ------------------------------------------------------------- |
+| 1    | Khách hàng chọn 1 hoặc nhiều sách từ danh mục                | Hiển thị thông tin chi tiết sách (giá cọc, mô tả, tình trạng) |
+| 2    | Nhấn “Thuê sách”                                             | Mở form nhập thông tin thuê                                   |
+| 3    | Nhập hình thức nhận: “Tại quán” hoặc “Giao tận nơi”          | Nếu giao tận nơi → yêu cầu địa chỉ và số điện thoại           |
+| 4    | Chọn phương thức thanh toán: COD / Chuyển khoản / Ví điện tử | Lưu lựa chọn                                                  |
+| 5    | Nhấn “Xác nhận thuê”                                         | Tạo bản ghi `PhieuThueSach`, `ChiTietPhieuThue`               |
+| 6    | Hệ thống trừ sách khỏi kho, gửi thông báo                    | Hiển thị thông tin hạn trả                                    |
+| 7    | Nhân viên xác nhận đơn                                       | Cập nhật `trangThai = Đang xử lý / Đang giao / Đã trả`        |
+---
+#### 6️⃣ Các luồng phụ
+* **Luồng lỗi 1:** Sách hết hàng → hiển thị thông báo.
+* **Luồng lỗi 2:** Khách chưa đăng nhập → chuyển đến trang Login.
+* **Luồng lỗi 3:** Thanh toán thất bại → hủy phiếu, hoàn kho.
+---
+#### 7️⃣ Dữ liệu chính
+| Bảng                | Mô tả                      |
+| ------------------- | -------------------------- |
+| `PhieuThueSach`     | Thông tin phiếu thuê tổng  |
+| `ChiTietPhieuThue`  | Danh sách sách thuê        |
+| `ThanhToanThueSach` | Thông tin thanh toán       |
+| `Sach`              | Dữ liệu sách, số lượng tồn |
+---
+#### 8️⃣ Trạng thái phiếu thuê
+| Trạng thái   | Mô tả                   |
+| ------------ | ----------------------- |
+| Chờ xác nhận | Đơn mới tạo             |
+| Đang giao    | Đang gửi sách đến khách |
+| Đang thuê    | Khách đang giữ sách     |
+| Đã trả       | Đã hoàn tất             |
+| Đã hủy       | Đơn bị hủy              |
+---
+### ☕ **CHỨC NĂNG FS-02: GỌI MÓN / ĐẶT THỨC UỐNG**
+#### 1️⃣ Mục đích
+Cho phép khách hàng **đặt món, thức uống hoặc đồ ăn nhẹ** từ menu Cafébook, có thể dùng tại quán hoặc giao tận nơi.
+---
+#### 2️⃣ Actor liên quan
+| Actor                   | Vai trò                        |
+| ----------------------- | ------------------------------ |
+| Khách hàng              | Chọn món, đặt hàng, thanh toán |
+| Nhân viên pha chế / bếp | Chuẩn bị món theo đơn          |
+| Nhân viên giao hàng     | Giao món cho khách             |
+| Thu ngân                | Xác nhận thanh toán            |
+---
+#### 3️⃣ Tiền điều kiện
+* Khách hàng **đăng nhập thành công**.
+* Món ăn / thức uống **còn kinh doanh** (`trangThai = 'Còn bán'`).
+---
+#### 4️⃣ Hậu điều kiện
+* Tạo bản ghi `HoaDon` và `ChiTietHoaDon`.
+* Món được gửi đến quầy pha chế.
+* Trạng thái hóa đơn được cập nhật.
+---
+#### 5️⃣ Luồng hoạt động chính
+| Bước | Mô tả hành động                                     | Hệ thống xử lý                             |
+| ---- | --------------------------------------------------- | ------------------------------------------ |
+| 1    | Khách chọn món từ menu                              | Hiển thị thông tin chi tiết, giá, hình ảnh |
+| 2    | Chọn số lượng và thêm vào giỏ hàng                  | Cập nhật tổng tạm tính                     |
+| 3    | Chọn hình thức dùng: tại quán / giao tận nơi        | Hiển thị ô nhập địa chỉ nếu giao           |
+| 4    | Chọn phương thức thanh toán (COD / CK / Ví điện tử) | Lưu lựa chọn                               |
+| 5    | Xác nhận đặt hàng                                   | Hệ thống tạo `HoaDon`, `ChiTietHoaDon`     |
+| 6    | Chuyển đơn đến pha chế                              | Cập nhật trạng thái `Đang pha chế`         |
+| 7    | Món hoàn tất → giao hàng hoặc phục vụ               | Trạng thái `Hoàn tất`                      |
+---
+#### 6️⃣ Các luồng phụ
+* **Luồng lỗi 1:** Món hết → hiển thị thông báo.
+* **Luồng lỗi 2:** Giao hàng thất bại → cập nhật trạng thái “Đã hủy”.
+* **Luồng lỗi 3:** Thanh toán lỗi → xóa hóa đơn.
+---
+#### 7️⃣ Dữ liệu chính
+| Bảng              | Mô tả                      |
+| ----------------- | -------------------------- |
+| `HoaDon`          | Lưu thông tin hóa đơn món  |
+| `ChiTietHoaDon`   | Món, số lượng, đơn giá     |
+| `ThanhToanHoaDon` | Giao dịch thanh toán       |
+| `SanPham`         | Danh mục thức uống / đồ ăn |
+--
+#### 8️⃣ Trạng thái hóa đơn
+| Trạng thái   | Mô tả                   |
+| ------------ | ----------------------- |
+| Chờ xác nhận | Mới đặt                 |
+| Đang pha chế | Nhân viên đang chuẩn bị |
+| Đang giao    | Giao tận nơi            |
+| Hoàn tất     | Đã giao / phục vụ xong  |
+| Đã hủy       | Đơn bị hủy              |
+---
+### 💰 **CHỨC NĂNG FS-03: THANH TOÁN**
+#### Mục tiêu:
+Cung cấp các phương thức thanh toán linh hoạt cho cả thuê sách và gọi món.
+| Phương thức      | Mô tả                                       | Áp dụng            |
+| ---------------- | ------------------------------------------- | ------------------ |
+| **COD**          | Thanh toán khi nhận hàng                    | Thuê sách, đặt món |
+| **Chuyển khoản** | Chuyển qua tài khoản ngân hàng              | Thuê sách, đặt món |
+| **Ví điện tử**   | Thanh toán online (Momo, ZaloPay, VNPay...) | Thuê sách, đặt món |
+---
+### 📋 **CHỨC NĂNG FS-04: THEO DÕI & XỬ LÝ ĐƠN HÀNG**
+#### Mục tiêu:
+* Giúp khách hàng xem trạng thái đơn thuê hoặc đặt món.
+* Giúp nhân viên cập nhật tiến trình xử lý.
+#### Actor:
+* **Khách hàng:** xem lịch sử đơn.
+* **Nhân viên:** xác nhận, cập nhật, hủy, hoàn tiền.
+#### Chức năng chi tiết:
+| Mã    | Hành động           | Mô tả                                    |
+| ----- | ------------------- | ---------------------------------------- |
+| F04.1 | Xem lịch sử thuê    | Hiển thị danh sách phiếu thuê theo khách |
+| F04.2 | Xem lịch sử hóa đơn | Hiển thị danh sách hóa đơn món           |
+| F04.3 | Hủy đơn hàng        | Cho phép hủy nếu chưa xử lý              |
+| F04.4 | Cập nhật trạng thái | Nhân viên cập nhật tiến độ đơn           |
+---
+## 🧱 4. Mô hình dữ liệu liên quan
+| Loại dữ liệu        | Bảng chính                             | Mô tả                        |
+| ------------------- | -------------------------------------- | ---------------------------- |
+| **Sách**            | `Sach`                                 | Thông tin sách, số lượng tồn |
+| **Phiếu thuê**      | `PhieuThueSach`, `ChiTietPhieuThue`    | Ghi nhận thuê sách           |
+| **Món / thức uống** | `SanPham`                              | Danh sách sản phẩm           |
+| **Hóa đơn**         | `HoaDon`, `ChiTietHoaDon`              | Ghi nhận gọi món             |
+| **Khách hàng**      | `KhachHang`                            | Thông tin người dùng         |
+| **Thanh toán**      | `ThanhToanThueSach`, `ThanhToanHoaDon` | Quản lý giao dịch tiền       |
+---
+## ✅ 5. Kết luận
+* “Thuê sách” và “Gọi món” **là hai module độc lập**.
+* Cả hai **chia sẻ chung hệ thống đăng nhập, khách hàng, nhân viên, và thanh toán.**
+* Không cần thêm bảng “gộp”, chỉ cần **truy vấn chung theo `idKhachHang` hoặc dùng VIEW** khi thống kê.
+* Cấu trúc hiện tại **đủ mạnh để mở rộng**, ví dụ:
+  * Thêm “Đặt bàn” (liên kết với Hóa đơn).
+  * Thêm “Mua sách” (liên kết với Phiếu thuê).
+//////////////////
++ nâng cấp chức năng giỏ hàng để đặt món/ sách online(giỏ hàng lưu tạm thời sesion),(Chức năng thanh toán online qua ví điện tử, chuyển khoản ngân hàng, COD (phát triển sau))
+* file GioHangControllers.cs, GioHangDto.cs, GioHangView.cshtml.cs, GioHangView.cshtml.
+* file ThanhToanControllers.cs, ThanhToanDto.cs, ThanhToanView.cshtml.cs, ThanhToanView.cshtml.
++ Nâng Cấp chức năng Theo dõi đơn hàng trong _Layout_Account.cshtml.
+* File DonMuaControllers.cs,  DonMuaDto.cs,  DonMuaView.cshtml,  DonMuaView.cshtml.cs.
+* File ChiTietDonMuaControllers.cs,  ChiTietDonMuaDto.cs,  ChiTietDonMuaView.cshtml.cs,  ChiTietDonMuaView.cshtml.
