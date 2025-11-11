@@ -110,19 +110,32 @@
                 <div class="col-lg-3">
                     <div class="card sticky-top" style="top: 20px;">
                         <div class="card-body">
-                            <h5 class="card-title">Đặt Thuê Sách</h5>
+                            <h5 class="card-title">Thuê Sách</h5>
                             <hr />
+
+                            @if (TempData["CartMessage"] != null)
+                            {
+                                <div class="alert alert-success small">@TempData["CartMessage"]</div>
+                            }
+
                             @if (User.Identity?.IsAuthenticated == true)
                             {
                                 @if (Model.Sach.SoLuongCoSan > 0)
                                 {
-                                    <p class="small">Bạn sẽ được chuyển đến trang xác nhận thuê.</p>
-                                    <a asp-page="/ThueSachView" asp-route-id="@Model.Sach.IdSach" class="btn btn-primary w-100">
-                                        Tiến hành thuê
+                                    @* === SỬA: ĐỔI THÀNH FORM "THÊM VÀO GIỎ" === *@
+                                    <form method="post" asp-page-handler="AddToCart">
+                                        <input type="hidden" name="idSach" value="@Model.Sach.IdSach" />
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+                                        </button>
+                                    </form>
+                                    <a asp-page="/GioHangView" class="btn btn-outline-success w-100 mt-2">
+                                        <i class="bi bi-box-arrow-right"></i> Tới giỏ thuê
                                     </a>
                                 }
                                 else
                                 {
+
                                     <div class="alert alert-warning">Sách này đã được thuê hết.</div>
                                 }
                             }

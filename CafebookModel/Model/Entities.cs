@@ -65,7 +65,7 @@ namespace CafebookModel.Model.Entities
         [Key]
         public int IdHoaDon { get; set; }
         public int? IdBan { get; set; }
-        public int IdNhanVien { get; set; }
+        public int? IdNhanVien { get; set; }
         public int? IdKhachHang { get; set; }
         public DateTime ThoiGianTao { get; set; }
         public DateTime? ThoiGianThanhToan { get; set; }
@@ -98,7 +98,7 @@ namespace CafebookModel.Model.Entities
         [ForeignKey("IdBan")]
         public virtual Ban? Ban { get; set; }
         [ForeignKey("IdNhanVien")]
-        public virtual NhanVien NhanVien { get; set; } = null!;
+        public virtual NhanVien? NhanVien { get; set; }
         [ForeignKey("IdKhachHang")]
         public virtual KhachHang? KhachHang { get; set; }
         [ForeignKey("IdNguoiGiaoHang")]
@@ -681,15 +681,17 @@ namespace CafebookModel.Model.Entities
         [Key]
         public int IdPhieuThueSach { get; set; }
         public int IdKhachHang { get; set; }
-        public int IdNhanVien { get; set; }
+        public int? IdNhanVien { get; set; }
         public DateTime NgayThue { get; set; }
         [Required]
         [StringLength(50)]
         public string TrangThai { get; set; } = string.Empty;
         [Column(TypeName = "decimal(18, 2)")]
         public decimal TongTienCoc { get; set; }
+        [ForeignKey("IdKhachHang")]
         public virtual KhachHang KhachHang { get; set; } = null!;
-        public virtual NhanVien NhanVien { get; set; } = null!;
+        [ForeignKey("IdNhanVien")]
+        public virtual NhanVien? NhanVien { get; set; }
         public virtual ICollection<ChiTietPhieuThue> ChiTietPhieuThues { get; set; } = new List<ChiTietPhieuThue>();
         public virtual ICollection<PhieuTraSach> PhieuTraSachs { get; set; } = new List<PhieuTraSach>();
     }

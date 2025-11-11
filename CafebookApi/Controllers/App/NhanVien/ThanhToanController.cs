@@ -367,7 +367,16 @@ namespace CafebookApi.Controllers.App.NhanVien
 
             hoaDonThanhToan.GiamGia = giamGiaKM + giamGiaDiem;
 
-            await TruKho(hoaDonThanhToan.IdNhanVien, chiTietTach);
+            if (hoaDonThanhToan.IdNhanVien.HasValue)
+            {
+                await TruKho(hoaDonThanhToan.IdNhanVien.Value, chiTietTach);
+            }
+            else
+            {
+                // Trường hợp này không nên xảy ra ở App WPF,
+                // nhưng chúng ta vẫn nên ghi log hoặc báo lỗi
+                throw new InvalidOperationException("Không thể trừ kho vì hoá đơn thiếu IdNhanVien.");
+            }
 
             hoaDonThanhToan.TrangThai = "Đã thanh toán";
             hoaDonThanhToan.ThoiGianThanhToan = DateTime.Now;
