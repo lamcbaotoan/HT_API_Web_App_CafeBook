@@ -2,13 +2,13 @@
 using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using WebCafebookApi.Services; // Thêm using này
-using System.Linq;
-using Microsoft.AspNetCore.Http;
+// using WebCafebookApi.Services; // ĐÃ XÓA
+// using System.Linq; // ĐÃ XÓA
+// using Microsoft.AspNetCore.Http; // ĐÃ XÓA
+// using System.Collections.Generic; // ĐÃ XÓA
 
 namespace WebCafebookApi.Pages
 {
@@ -54,26 +54,8 @@ namespace WebCafebookApi.Pages
 
 
         // === CẬP NHẬT HÀM XỬ LÝ GIỎ HÀNG ===
-        public IActionResult OnPostAddToCart(int idSach)
-        {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
-            var cart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey) ?? new List<CartItemDto>();
-
-            var existingItem = cart.FirstOrDefault(i => i.Id == idSach && i.Loai == "Sach");
-
-            if (existingItem == null)
-            {
-                cart.Add(new CartItemDto { Id = idSach, Loai = "Sach", SoLuong = 1 });
-                // SỬA LỖI CS0104: Chỉ định rõ namespace
-                HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, cart);
-                TempData["CartMessage"] = "Đã thêm sách vào giỏ thuê!";
-            }
-            else
-            {
-                TempData["CartMessage"] = "Sách này đã có trong giỏ.";
-            }
-
-            return RedirectToPage(new { id = idSach });
-        }
+        // 
+        //  ĐÃ XÓA TOÀN BỘ PHƯƠNG THỨC OnPostAddToCart TỪ ĐÂY
+        //
     }
 }

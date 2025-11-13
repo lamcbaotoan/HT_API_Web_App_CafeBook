@@ -1,4 +1,5 @@
-﻿using CafebookModel.Model.ModelWeb;
+﻿// Tập tin: WebCafebookApi/Pages/GioHangView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Collections.Generic;
@@ -23,14 +24,12 @@ namespace WebCafebookApi.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey);
             if (sessionCart == null || !sessionCart.Any())
             {
                 return Page();
             }
 
-            // ... (Phần còn lại của OnGetAsync giữ nguyên) ...
             var httpClient = _httpClientFactory.CreateClient("ApiClient");
             var populatedItems = new List<GioHangItemViewModel>();
 
@@ -38,37 +37,20 @@ namespace WebCafebookApi.Pages
             {
                 try
                 {
-                    if (item.Loai == "Sach")
+                    // SỬA: Xóa bỏ logic kiểm tra "Sach"
+                    // Giờ chỉ tải "SanPham"
+                    var sp = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{item.Id}");
+                    if (sp != null)
                     {
-                        var sach = await httpClient.GetFromJsonAsync<SachChiTietDto>($"api/web/thuvien/{item.Id}");
-                        if (sach != null)
+                        populatedItems.Add(new GioHangItemViewModel
                         {
-                            populatedItems.Add(new GioHangItemViewModel
-                            {
-                                Id = item.Id,
-                                Loai = item.Loai,
-                                TenHienThi = sach.TieuDe,
-                                HinhAnhUrl = sach.AnhBiaUrl,
-                                DonGia = sach.GiaBia,
-                                SoLuong = 1
-                            });
-                        }
-                    }
-                    else if (item.Loai == "SanPham")
-                    {
-                        var sp = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{item.Id}");
-                        if (sp != null)
-                        {
-                            populatedItems.Add(new GioHangItemViewModel
-                            {
-                                Id = item.Id,
-                                Loai = item.Loai,
-                                TenHienThi = sp.TenSanPham,
-                                HinhAnhUrl = sp.HinhAnhUrl,
-                                DonGia = sp.DonGia,
-                                SoLuong = item.SoLuong
-                            });
-                        }
+                            Id = item.Id,
+                            // Xóa "Loai"
+                            TenHienThi = sp.TenSanPham,
+                            HinhAnhUrl = sp.HinhAnhUrl,
+                            DonGia = sp.DonGia,
+                            SoLuong = item.SoLuong
+                        });
                     }
                 }
                 catch (System.Exception ex)
@@ -80,39 +62,41 @@ namespace WebCafebookApi.Pages
             return Page();
         }
 
-        public IActionResult OnPostRemove(int id, string loai)
+        // SỬA: Xóa tham số "loai"
+        public IActionResult OnPostRemove(int id)
         {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey);
             if (sessionCart != null)
             {
-                var itemToRemove = sessionCart.FirstOrDefault(i => i.Id == id && i.Loai == loai);
+                // SỬA: Tìm chỉ bằng Id
+                var itemToRemove = sessionCart.FirstOrDefault(i => i.Id == id);
                 if (itemToRemove != null)
                 {
                     sessionCart.Remove(itemToRemove);
-                    // SỬA LỖI CS0104: Chỉ định rõ namespace
                     HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, sessionCart);
                 }
             }
             return RedirectToPage();
         }
 
-        public IActionResult OnPostUpdateQuantity(int id, string loai, int soLuong)
+        // SỬA: Xóa tham số "loai"
+        public IActionResult OnPostUpdateQuantity(int id, int soLuong)
         {
-            if (loai == "Sach" || soLuong <= 0)
+            // SỬA: Xóa kiểm tra "Sach"
+            if (soLuong <= 0)
             {
-                return RedirectToPage();
+                // Nếu cập nhật số lượng về 0, hãy xóa nó
+                return OnPostRemove(id);
             }
 
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey);
             if (sessionCart != null)
             {
-                var itemToUpdate = sessionCart.FirstOrDefault(i => i.Id == id && i.Loai == loai);
+                // SỬA: Tìm chỉ bằng Id
+                var itemToUpdate = sessionCart.FirstOrDefault(i => i.Id == id);
                 if (itemToUpdate != null)
                 {
                     itemToUpdate.SoLuong = soLuong;
-                    // SỬA LỖI CS0104: Chỉ định rõ namespace
                     HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, sessionCart);
                 }
             }

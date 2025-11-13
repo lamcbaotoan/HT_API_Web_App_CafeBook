@@ -54,13 +54,13 @@ namespace WebCafebookApi.Pages
         }
 
 
-        // === THÊM HÀM XỬ LÝ GIỎ HÀNG CHO SẢN PHẨM ===
+        // === SỬA HÀM XỬ LÝ GIỎ HÀNG (XÓA 'Loai') ===
         public IActionResult OnPostAddToCart(int idSanPham)
         {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var cart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey) ?? new List<CartItemDto>();
 
-            var existingItem = cart.FirstOrDefault(i => i.Id == idSanPham && i.Loai == "SanPham");
+            // SỬA LỖI CS1061: Xóa 'Loai' khỏi logic tìm kiếm
+            var existingItem = cart.FirstOrDefault(i => i.Id == idSanPham);
 
             if (existingItem != null)
             {
@@ -69,11 +69,11 @@ namespace WebCafebookApi.Pages
             }
             else
             {
-                cart.Add(new CartItemDto { Id = idSanPham, Loai = "SanPham", SoLuong = this.SoLuong });
+                // SỬA LỖI CS0117: Xóa 'Loai' khỏi đối tượng
+                cart.Add(new CartItemDto { Id = idSanPham, SoLuong = this.SoLuong });
                 TempData["CartMessage"] = "Đã thêm sản phẩm vào giỏ!";
             }
 
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, cart);
             return RedirectToPage(new { id = idSanPham });
         }

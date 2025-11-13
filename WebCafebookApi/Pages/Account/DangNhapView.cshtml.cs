@@ -37,8 +37,7 @@ namespace WebCafebookApi.Pages.Account
             [Display(Name = "Mật khẩu")]
             public string Password { get; set; } = string.Empty;
 
-            [Display(Name = "Ghi nhớ đăng nhập")]
-            public bool RememberMe { get; set; }
+            // ĐÃ XÓA: Thuộc tính RememberMe
         }
 
         public async Task OnGetAsync(string? returnUrl = null)
@@ -71,7 +70,7 @@ namespace WebCafebookApi.Pages.Account
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
-                if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null)
+                if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null && apiResponse.Token != null)
                 {
                     var user = apiResponse.KhachHangData;
                     var claims = new List<Claim>
@@ -85,16 +84,20 @@ namespace WebCafebookApi.Pages.Account
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    var authProperties = new AuthenticationProperties { IsPersistent = Input.RememberMe };
 
+                    // SỬA: Không còn IsPersistent = Input.RememberMe
+                    var authProperties = new AuthenticationProperties();
+
+                    // 1. Đăng nhập Cookie cho Frontend
                     await HttpContext.SignInAsync(
                         CookieAuthenticationDefaults.AuthenticationScheme,
                         new ClaimsPrincipal(claimsIdentity),
                         authProperties);
 
-                    // SỬA: Lưu URL (nếu có) thay vì Base64 và đổi tên Key
-                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
+                    // 2. Lưu JWT Token vào Session để ApiClient sử dụng
+                    HttpContext.Session.SetString("JwtToken", apiResponse.Token);
 
+                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
                     return LocalRedirect(returnUrl);
                 }
                 else

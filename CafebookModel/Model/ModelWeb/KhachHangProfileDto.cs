@@ -1,7 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Tập tin: CafebookModel/Model/ModelWeb/KhachHangProfileDto.cs
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System;
 
 namespace CafebookModel.Model.ModelWeb
 {
+    // ... (Các DTO KhachHangTongQuanDto, KhachHangProfileDto, ProfileUpdateModel, PasswordChangeModel giữ nguyên) ...
+
     /// <summary>
     /// DTO cho trang TỔNG QUAN
     /// </summary>
@@ -43,9 +48,6 @@ namespace CafebookModel.Model.ModelWeb
 
         public string? DiaChi { get; set; }
 
-        // ==================================
-        // === THÊM MỚI ===
-        // ==================================
         [Required(ErrorMessage = "Tên đăng nhập không được để trống")]
         [StringLength(100, ErrorMessage = "Tên đăng nhập phải dài từ 6 đến 100 ký tự.", MinimumLength = 6)]
         public string TenDangNhap { get; set; } = string.Empty;
@@ -68,5 +70,76 @@ namespace CafebookModel.Model.ModelWeb
         [DataType(DataType.Password)]
         [Compare("MatKhauMoi", ErrorMessage = "Mật khẩu mới và mật khẩu xác nhận không khớp.")]
         public string XacNhanMatKhauMoi { get; set; } = string.Empty;
+    }
+
+    // ==========================================================
+    // === DTO CHO LỊCH SỬ ĐƠN HÀNG (Đã di chuyển vào đây) ===
+    // ==========================================================
+
+    /// <summary>
+    /// DTO cho một món hàng trong thẻ lịch sử (Trang List & Trang Detail)
+    /// </summary>
+    public class DonHangItemWebDto
+    {
+        public int IdSanPham { get; set; }
+        public string TenSanPham { get; set; } = string.Empty;
+        public string? HinhAnhUrl { get; set; }
+        public int SoLuong { get; set; }
+        public decimal DonGia { get; set; }
+        public decimal ThanhTien => DonGia * SoLuong;
+    }
+
+    /// <summary>
+    /// DTO cho một thẻ (card) trên trang LỊCH SỬ (List)
+    /// </summary>
+    public class LichSuDonHangWebDto
+    {
+        public int IdHoaDon { get; set; }
+        public DateTime ThoiGianTao { get; set; }
+        public string TrangThaiThanhToan { get; set; } = string.Empty;
+        public string? TrangThaiGiaoHang { get; set; }
+        public decimal ThanhTien { get; set; }
+        public List<DonHangItemWebDto> Items { get; set; } = new();
+    }
+
+    /// <summary>
+    /// DTO MỚI: Cho một sự kiện trong timeline vận chuyển
+    /// </summary>
+    public class TrackingEventDto
+    {
+        public DateTime Timestamp { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsCurrent { get; set; } = false;
+    }
+
+    /// <summary>
+    /// DTO MỚI: DTO chính cho trang CHI TIẾT ĐƠN HÀNG
+    /// </summary>
+    public class DonHangChiTietWebDto
+    {
+        // Thông tin cơ bản
+        public int IdHoaDon { get; set; }
+        public string MaDonHang { get; set; } = string.Empty; // "HD00097"
+        public string TrangThaiGiaoHang { get; set; } = string.Empty;
+        public string TrangThaiThanhToan { get; set; } = string.Empty;
+        public DateTime ThoiGianTao { get; set; }
+
+        // Địa chỉ
+        public string HoTen { get; set; } = string.Empty;
+        public string SoDienThoai { get; set; } = string.Empty;
+        public string DiaChiGiaoHang { get; set; } = string.Empty;
+
+        // Timeline
+        public List<TrackingEventDto> TrackingEvents { get; set; } = new();
+
+        // Món hàng
+        public List<DonHangItemWebDto> Items { get; set; } = new();
+
+        // Thanh toán
+        public decimal TongTienHang { get; set; } // (Tổng tiền gốc)
+        public decimal GiamGia { get; set; } // (GiamGia + Diem)
+        public decimal ThanhTien { get; set; }
+        public string PhuongThucThanhToan { get; set; } = string.Empty;
     }
 }

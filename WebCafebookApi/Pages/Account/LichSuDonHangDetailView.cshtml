@@ -1,0 +1,369 @@
+﻿@page "/Account/LichSuDonHangDetailView/{id:int}"
+@model WebCafebookApi.Pages.Account.LichSuDonHangDetailViewModel
+@{
+    ViewData["Title"] = "Chi Tiết Đơn Hàng";
+    Layout = "_Layout_Account";
+}
+
+@section Styles {
+    <style>
+        /* CSS cho thanh tiến trình (Progress Tracker) */
+        .progress-tracker {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+            .progress-step .icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: #e0e0e0;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                border: 4px solid #fff;
+                z-index: 2;
+                position: relative;
+            }
+
+            .progress-step .text {
+                display: block;
+                margin-top: 5px;
+                font-size: 0.9rem;
+                color: #757575;
+            }
+
+            .progress-step:not(:first-child)::before {
+                content: '';
+                position: absolute;
+                width: 100%;
+                height: 4px;
+                background-color: #e0e0e0;
+                top: 20px; /* (40px + 4px*2) / 2 - 4px/2 */
+                right: 50%;
+                z-index: 1;
+            }
+            /* Trạng thái Active/Completed */
+            .progress-step.completed .icon,
+            .progress-step.active .icon {
+                background-color: var(--bs-success);
+            }
+
+            .progress-step.completed .text {
+                color: var(--bs-success);
+                font-weight: 500;
+            }
+
+            .progress-step.active .text {
+                color: var(--cf-dark-brown);
+                font-weight: 700;
+            }
+
+            .progress-step.completed:not(:first-child)::before {
+                background-color: var(--bs-success);
+            }
+
+        /* CSS cho Timeline Vận Chuyển */
+        .timeline {
+            list-style: none;
+            padding: 0;
+            position: relative;
+        }
+
+            .timeline::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 20px;
+                width: 4px;
+                background-color: #eee;
+            }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 25px;
+        }
+
+        .timeline-icon {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 4px solid #f9f9f9;
+            z-index: 2;
+        }
+
+        .timeline-item.active .timeline-icon {
+            background-color: var(--bs-success);
+        }
+
+        .timeline-content {
+            padding-top: 5px;
+        }
+
+            .timeline-content .status {
+                font-weight: 600;
+                color: var(--cf-dark-brown);
+            }
+
+            .timeline-content .description {
+                color: #6c757d;
+                font-size: 0.9rem;
+            }
+
+            .timeline-content .timestamp {
+                font-size: 0.85rem;
+                color: #9e9e9e;
+            }
+
+        .timeline-item.active .timeline-content .status {
+            color: var(--bs-success);
+        }
+
+        /* CSS cho thẻ đơn hàng (Copy từ LichSuDonHangView) */
+        .order-card {
+            background-color: var(--cf-white);
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .order-card-header {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .order-item {
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .order-item-img img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+            .order-item-info h6 {
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+            }
+
+            .order-item-info .qty {
+                font-size: 0.9rem;
+                color: #666;
+            }
+
+        .order-item-price {
+            font-weight: 500;
+            color: var(--cf-text);
+            font-size: 0.9rem;
+        }
+
+        .order-total-summary {
+            list-style: none;
+            padding: 0;
+            font-size: 1.1rem;
+        }
+
+            .order-total-summary li {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.5rem;
+            }
+
+                .order-total-summary li span:first-child {
+                    color: #6c757d;
+                }
+
+                .order-total-summary li.total {
+                    font-size: 1.3rem;
+                    font-weight: 700;
+                    color: var(--bs-danger);
+                    border-top: 1px dashed #eee;
+                    padding-top: 1rem;
+                    margin-top: 0.5rem;
+                }
+    </style>
+}
+
+<h3 class="page-title-account">@ViewData["Title"]</h3>
+<p class="page-lead-account">Theo dõi chi tiết đơn hàng giao tận nơi của bạn.</p>
+
+<hr class="my-4" />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else if (Model.OrderDetails != null)
+{
+    var order = Model.OrderDetails;
+
+    <div class="card order-card">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Mã đơn hàng: <strong>@order.MaDonHang</strong></h5>
+                    <span class="text-muted">Ngày đặt: @order.ThoiGianTao.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="text-end">
+                    <h5 class="mb-0 text-uppercase" style="color: var(--cf-orange);">@order.TrangThaiGiaoHang</h5>
+                </div>
+            </div>
+
+            <hr />
+
+            <ul class="progress-tracker">
+                @{
+                    bool cxn = order.TrangThaiGiaoHang == "Chờ xác nhận";
+                    bool clh = order.TrangThaiGiaoHang == "Chờ lấy hàng";
+                    bool dg = order.TrangThaiGiaoHang == "Đang giao";
+                    bool ht = order.TrangThaiGiaoHang == "Hoàn thành";
+                    bool dh = order.TrangThaiGiaoHang == "Đã Hủy";
+                }
+                <li class="progress-step @(cxn || clh || dg || ht ? "completed" : "") @(cxn ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">receipt_long</span></span>
+                    <span class="text">Đã Đặt</span>
+                </li>
+                <li class="progress-step @(clh || dg || ht ? "completed" : "") @(clh ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">inventory_2</span></span>
+                    <span class="text">Chờ Lấy Hàng</span>
+                </li>
+                <li class="progress-step @(dg || ht ? "completed" : "") @(dg ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">local_shipping</span></span>
+                    <span class="text">Đang Giao</span>
+                </li>
+                <li class="progress-step @(ht ? "completed" : "") @(ht ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">task_alt</span></span>
+                    <span class="text">Hoàn Thành</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card order-card h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Địa Chỉ Nhận Hàng</h5>
+                    <h6 class="fw-bold">@order.HoTen</h6>
+                    <p class="mb-1 text-muted">@order.SoDienThoai</p>
+                    <p class="mb-0 text-muted">@order.DiaChiGiaoHang</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card order-card h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-4">Lịch sử vận chuyển</h5>
+                    <ul class="timeline">
+                        @foreach (var tracking in order.TrackingEvents)
+                        {
+                            <li class="timeline-item @(tracking.IsCurrent ? "active" : "")">
+                                <div class="timeline-icon">
+                                    <span class="material-symbols-outlined">@(tracking.Status == "Đơn hàng đã đặt" ? "receipt_long" : (tracking.Status == "Giao hàng thành công" ? "task_alt" : "local_shipping"))</span>
+                                </div>
+                                <div class="timeline-content">
+                                    <span class="status">@tracking.Status</span>
+                                    <p class="description mb-0">@tracking.Description</p>
+                                    <span class="timestamp">@tracking.Timestamp.ToString("HH:mm dd/MM/yyyy")</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card order-card">
+                <div class="order-card-header">
+                    <span class="shop-name">
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">storefront</span>
+                        Cafebook
+                    </span>
+                </div>
+                <div class="order-items-container">
+                    @foreach (var item in order.Items)
+                    {
+                        var imgUrl = item.HinhAnhUrl ?? "/images/default-food-icon.png";
+                        <div class="order-item">
+                            <div class="order-item-img">
+                                <img src="@imgUrl" alt="@item.TenSanPham" />
+                            </div>
+                            <div class="order-item-info">
+                                <h6>@item.TenSanPham</h6>
+                                <div class="qty">x @item.SoLuong</div>
+                            </div>
+                            <div class="order-item-price">
+                                @item.DonGia.ToString("N0") đ
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card order-card">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Tổng cộng</h5>
+                    <ul class="order-total-summary">
+                        <li>
+                            <span>Tổng tiền hàng</span>
+                            <span>@order.TongTienHang.ToString("N0") đ</span>
+                        </li>
+                        <li>
+                            <span>Giảm giá</span>
+                            <span class="text-danger">-@order.GiamGia.ToString("N0") đ</span>
+                        </li>
+                        <li class="total">
+                            <span>Thành tiền</span>
+                            <span>@order.ThanhTien.ToString("N0") đ</span>
+                        </li>
+                    </ul>
+                    <hr />
+                    <p class="mb-0">
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem; color: #6c757d;">payments</span>
+                        <span class="text-muted">Đã thanh toán bằng @order.PhuongThucThanhToan</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">Đang tải chi tiết đơn hàng...</div>
+}

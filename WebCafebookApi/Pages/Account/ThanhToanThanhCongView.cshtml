@@ -1,0 +1,84 @@
+﻿@page "/Account/ThanhToanThanhCong/{id:int}"
+@model WebCafebookApi.Pages.Account.ThanhToanThanhCongViewModel
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+    Layout = "_Layout"; // Dùng layout chính
+}
+
+<div class="container mt-5">
+    <div class="main-content-card">
+        <div class="text-center" style="padding: 40px 20px;">
+
+            @if (Model.ErrorMessage != null)
+            {
+                <span class="material-symbols-outlined text-danger" style="font-size: 60px;">error</span>
+                <h1 class="display-5 fw-bold mt-3">Đã có lỗi xảy ra</h1>
+                <p class="lead">@Model.ErrorMessage</p>
+                <a asp-page="/GioHangView" class="btn btn-outline-primary mt-3">Quay lại giỏ hàng</a>
+            }
+            else if (Model.HoaDon != null)
+            {
+                <span class="material-symbols-outlined text-success" style="font-size: 60px;">task_alt</span>
+                <h1 class="display-5 fw-bold mt-3">Đặt hàng thành công!</h1>
+                <p class="lead text-muted">
+                    Cảm ơn bạn đã đặt hàng.
+                    Đơn hàng của bạn <strong>#@Model.HoaDon.IdHoaDonMoi</strong> đã được ghi nhận.
+                </p>
+                <p>Nhân viên của chúng tôi sẽ gọi điện xác nhận đơn hàng đến SĐT <strong>@Model.HoaDon.SoDienThoai</strong> trong thời gian sớm nhất.</p>
+
+                <hr class="my-4" />
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 text-start">
+                        <h5 class="mb-3">Tóm tắt đơn hàng</h5>
+                        <ul class="list-group mb-3">
+                            @foreach (var item in Model.HoaDon.Items)
+                            {
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">@item.TenHienThi</h6>
+                                        <small class="text-muted">Số lượng: @item.SoLuong</small>
+                                    </div>
+                                    <span class="text-muted">@item.ThanhTien.ToString("N0") đ</span>
+                                </li>
+                            }
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Tiền hàng</span>
+                                <strong>@Model.HoaDon.TongTienHang.ToString("N0") đ</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between text-danger">
+                                <span>Giảm giá (KM + Điểm)</span>
+                                <span>-@Model.HoaDon.GiamGia.ToString("N0") đ</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between fs-5">
+                                <strong>Tổng cộng</strong>
+                                <strong>@Model.HoaDon.ThanhTien.ToString("N0") đ</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <a asp-page="/TrangChuView" class="btn btn-outline-secondary">Tiếp tục mua sắm</a>
+                    <a asp-page="/Account/LichSuDatHangView" class="btn btn-primary">Xem lịch sử đơn hàng</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .page-title-account {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--cf-dark-brown);
+        }
+
+        .page-lead-account {
+            font-size: 1.1rem;
+            color: var(--cf-text);
+            margin-bottom: 0;
+        }
+    </style>
+}

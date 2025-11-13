@@ -1,0 +1,457 @@
+﻿@page "/Account/ThanhToanView"
+@model WebCafebookApi.Pages.Account.ThanhToanViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Thanh Toán";
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="main-content-card">
+
+        <h3 class="page-title-account">@ViewData["Title"]</h3>
+        <p class="page-lead-account">Hoàn tất thông tin để đặt hàng (Chỉ áp dụng cho Thức uống/Món).</p>
+
+        <hr class="my-4" />
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success">@Model.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+
+        @* SỬA: Đã xóa khối div cảnh báo sách *@
+
+        <form method="post">
+            <div class="row g-5">
+                
+                <div class="col-lg-7">
+                    <h4 class="mb-3">Thông tin giao hàng</h4>
+                    
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="material-input-group">
+                                <label asp-for="Input.HoTen" class="form-label fw-bold"></label>
+                                <input asp-for="Input.HoTen" class="material-input" />
+                                <span asp-validation-for="Input.HoTen" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="material-input-group">
+                                <label asp-for="Input.SoDienThoai" class="form-label fw-bold"></label>
+                                <input asp-for="Input.SoDienThoai" class="material-input" />
+                                <span asp-validation-for="Input.SoDienThoai" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="material-input-group">
+                                <label asp-for="Input.Email" class="form-label fw-bold"></label>
+                                <input asp-for="Input.Email" class="material-input" />
+                                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="material-input-group">
+                                <label asp-for="Input.DiaChiGiaoHang" class="form-label fw-bold">Địa chỉ giao hàng</label>
+                                <input asp-for="Input.DiaChiGiaoHang" class="material-input" placeholder="Số nhà, đường, phường/xã, quận/huyện..." />
+                                <span asp-validation-for="Input.DiaChiGiaoHang" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="material-input-group">
+                                <label asp-for="Input.GhiChu" class="form-label fw-bold">Ghi chú (Không bắt buộc)</label>
+                                <textarea asp-for="Input.GhiChu" class="material-input" rows="3" placeholder="Yêu cầu thêm (ít đường, nhiều đá...)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h4 class="mb-3">Phương thức thanh toán</h4>
+                    <div class="my-3">
+                        <div class="form-check">
+                            <input asp-for="Input.PhuongThucThanhToan" type="radio" value="COD" class="form-check-input" checked />
+                            <label class="form-check-label" for="Input_PhuongThucThanhToan_COD">
+                                Thanh toán khi nhận hàng (COD)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="Input.PhuongThucThanhToan" type="radio" value="ChuyenKhoan" class="form-check-input" />
+                            <label class="form-check-label" for="Input_PhuongThucThanhToan_ChuyenKhoan">
+                                Chuyển khoản (Chúng tôi sẽ gọi xác nhận)
+                            </label>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Input.PhuongThucThanhToan" class="text-danger small"></span>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="card sticky-top" style="top: 20px;">
+                        <div class="card-body">
+                            <h4 class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-primary">Đơn hàng của bạn</span>
+                                <span class="badge bg-primary rounded-pill">@Model.PageData.SanPhamItems.Count</span>
+                            </h4>
+
+                            <ul class="list-group mb-3">
+                                @foreach (var item in Model.PageData.SanPhamItems)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between lh-sm">
+                                        <div>
+                                            <h6 class="my-0">@item.TenHienThi</h6>
+                                            <small class="text-muted">Số lượng: @item.SoLuong</small>
+                                        </div>
+                                        <span class="text-muted">@item.ThanhTien.ToString("N0") đ</span>
+                                    </li>
+                                }
+                                
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <h6 class="my-0">Tiền hàng</h6>
+                                    <strong>@Model.PageData.TongTienHang.ToString("N0") đ</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">Khuyến mãi</h6>
+                                        <small class="text-muted" id="selected-promo-name">-- Chưa áp dụng --</small>
+                                        <input type="hidden" asp-for="Input.IdKhuyenMai" id="selected-promo-id" value="" />
+                                    </div>
+                                    <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#promoModal" id="btn-chon-km">
+                                        Chọn mã
+                                    </button>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between text-success">
+                                    <span>Giảm giá (KM)</span>
+                                    <span id="discount-amount">- 0 đ</span>
+                                </li>
+                                
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">Dùng điểm tích lũy</h6>
+                                        <small class="text-muted">Bạn có: @Model.PageData.KhachHang.DiemTichLuy điểm</small>
+                                        <div class="input-group input-group-sm mt-1" style="max-width: 150px;">
+                                            <input asp-for="Input.DiemSuDung" type="number" class="form-control" value="0" min="0" max="@Model.PageData.KhachHang.DiemTichLuy" id="Input_DiemSuDung" />
+                                            <span class="input-group-text">điểm</span>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between text-info">
+                                    <span>Giảm giá (Điểm)</span>
+                                    <span id="point-discount-amount">- 0 đ</span>
+                                </li>
+
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Tổng (VND)</span>
+                                    <strong id="total-amount" class="fs-5">@Model.PageData.TongTienHang.ToString("N0") đ</strong>
+                                </li>
+                            </ul>
+
+                            <button type="submit" class="w-100 btn btn-primary btn-lg">
+                                Xác nhận Đặt Hàng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<div class="modal fade" id="promoModal" tabindex="-1" aria-labelledby="promoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promoModalLabel">Chọn Khuyến Mãi Áp Dụng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group-item list-group-item-action promo-item-modal" data-id="0">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">-- Không áp dụng --</h6>
+                        <span class="badge bg-success">Có thể áp dụng</span>
+                    </div>
+                    <p class="mb-1 small text-muted">Chọn mục này để gỡ bỏ khuyến mãi hiện tại.</p>
+                </div>
+                
+                @foreach (var promo in Model.PageData.KhuyenMaisHopLe)
+                {
+                    <div class="list-group-item list-group-item-action promo-item-modal" 
+                         data-id="@promo.IdKhuyenMai"
+                         data-loai="@promo.LoaiGiamGia"
+                         data-giatri="@promo.GiaTriGiam.ToString(CultureInfo.InvariantCulture)"
+                         data-giamtoida="@((promo.GiamToiDa ?? 0).ToString(CultureInfo.InvariantCulture))"
+                         data-idspapdung="@(promo.IdSanPhamApDung ?? 0)"
+                         data-hdttoithieu="@((promo.HoaDonToiThieu ?? 0).ToString(CultureInfo.InvariantCulture))">
+
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 promo-title">@promo.TenChuongTrinh (@promo.MaKhuyenMai)</h6>
+                            <span class="badge promo-status"></span>
+                        </div>
+                        <p class="mb-1 small text-muted promo-description">@promo.DieuKienApDung</p>
+                        <small class="text-danger promo-reason"></small>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="btnApplyPromo">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // 1. Dữ liệu từ Backend
+        const subtotal = @Model.PageData.TongTienHang.ToString(CultureInfo.InvariantCulture);
+        const tiLeDoiDiem = @Model.PageData.TiLeDoiDiemVND.ToString(CultureInfo.InvariantCulture);
+        const maxPoints = @Model.PageData.KhachHang.DiemTichLuy;
+        
+        const cartItems = {
+        @foreach (var item in Model.PageData.SanPhamItems)
+        {
+            @Html.Raw($"'{item.Id}': {item.ThanhTien.ToString(CultureInfo.InvariantCulture)},")
+        }
+        };
+
+        // Biến toàn cục lưu trữ KM đã chọn
+        let selectedPromo = {
+            id: 0,
+            name: "-- Chưa áp dụng --",
+            discount: 0
+        };
+
+        // 2. DOM Elements
+        const $diemInput = $('#Input_DiemSuDung');
+        const $promoModal = $('#promoModal');
+        const $promoAmountText = $('#discount-amount');
+        const $diemAmountText = $('#point-discount-amount');
+        const $totalAmountText = $('#total-amount');
+        const $selectedPromoIdInput = $('#selected-promo-id');
+        const $selectedPromoNameText = $('#selected-promo-name');
+        const $btnChonKmTrigger = $('#btn-chon-km'); 
+
+        // 3. Hàm kiểm tra điều kiện KM (Logic giống WPF)
+        function checkEligibility(promoData) {
+            const minSpend = parseFloat(promoData.hdttoithieu); 
+            const idSpApDung = parseInt(promoData.idspapdung);
+
+            if (minSpend > 0 && subtotal < minSpend) {
+                return { eligible: false, reason: `Cần hóa đơn tối thiểu ${minSpend.toLocaleString('vi-VN')} đ.` };
+            }
+
+            if (idSpApDung > 0 && !cartItems.hasOwnProperty(idSpApDung)) {
+                return { eligible: false, reason: "Khuyến mãi này chỉ áp dụng cho một số sản phẩm nhất định (hiện không có trong giỏ)." };
+            }
+
+            let subtotalForPromo = subtotal;
+            if (idSpApDung > 0) {
+                subtotalForPromo = cartItems[idSpApDung] || 0;
+            }
+
+            let discount = 0;
+            const loai = promoData.loai;
+            const giaTri = parseFloat(promoData.giatri);
+            const giamToiDa = parseFloat(promoData.giamtoida);
+
+            if (loai.toLowerCase() === 'phantram') {
+                discount = subtotalForPromo * (giaTri / 100);
+                if (giamToiDa > 0 && discount > giamToiDa) {
+                    discount = giamToiDa;
+                }
+            } else { // SoTien
+                discount = giaTri;
+            }
+            
+            discount = Math.min(discount, subtotalForPromo);
+            return { eligible: true, reason: null, discount: discount };
+        }
+
+        // 4. Hàm cập nhật tổng tiền
+        function updateTotal() {
+            // 4.1. Lấy giá trị khuyến mãi (KM)
+            const promoDiscount = selectedPromo.discount;
+            $promoAmountText.text('- ' + promoDiscount.toLocaleString('vi-VN') + ' đ');
+            $selectedPromoNameText.text(selectedPromo.name);
+            $btnChonKmTrigger.text(selectedPromo.name); 
+            $selectedPromoIdInput.val(selectedPromo.id);
+
+            // 4.2. Lấy giá trị điểm và validate
+            let points = parseInt($diemInput.val()) || 0;
+            if (points < 0) { points = 0; }
+            if (points > maxPoints) { points = maxPoints; $diemInput.val(maxPoints); }
+            
+            let pointDiscount = points * tiLeDoiDiem;
+            const totalAfterPromo = subtotal - promoDiscount; 
+
+            // Logic 50%
+            const maxAllowedPointDiscount = totalAfterPromo * 0.5; 
+            
+            if (pointDiscount > maxAllowedPointDiscount) {
+                pointDiscount = maxAllowedPointDiscount;
+                let pointsUsed = Math.ceil(pointDiscount / tiLeDoiDiem); 
+                if (pointsUsed > maxPoints) { pointsUsed = maxPoints; } 
+                
+                if (parseInt($diemInput.val()) !== pointsUsed) {
+                    $diemInput.val(pointsUsed);
+                }
+                points = pointsUsed;
+            }
+
+            $diemAmountText.text('- ' + pointDiscount.toLocaleString('vi-VN') + ' đ');
+
+            // 4.3. Tính tổng cuối cùng
+            let total = subtotal - promoDiscount - pointDiscount; 
+            if (total < 0) total = 0;
+
+            $totalAmountText.text(total.toLocaleString('vi-VN') + ' đ');
+        }
+
+        // =======================================
+        // === SỬA LOGIC KHUYẾN MÃI TẠI ĐÂY ===
+        // =======================================
+
+        // 5. Sự kiện khi mở Modal (SỬA: Thêm logic highlight)
+        $promoModal.on('show.bs.modal', function () {
+            const currentPromoId = selectedPromo.id; // Lấy ID KM đang áp dụng
+
+            $('.promo-item-modal').each(function() {
+                const $item = $(this);
+                const id = parseInt($item.data('id'));
+                
+                // Bỏ active cũ
+                $item.removeClass('active');
+
+                // Check active mới
+                if (id === currentPromoId) {
+                    $item.addClass('active'); // Highlight KM đang được chọn
+                }
+
+                if (id === 0) return; // Bỏ qua mục "Không áp dụng"
+
+                const promoData = $item.data();
+                const result = checkEligibility(promoData);
+
+                const $status = $item.find('.promo-status');
+                const $reason = $item.find('.promo-reason');
+
+                if (result.eligible) {
+                    $item.removeClass('disabled-promo');
+                    $status.text('Có thể áp dụng').removeClass('bg-danger').addClass('bg-success');
+                    $reason.text('');
+                } else {
+                    $item.addClass('disabled-promo');
+                    $status.text('Không hợp lệ').removeClass('bg-success').addClass('bg-danger');
+                    $reason.text(result.reason);
+                }
+            });
+        });
+
+        // 6. Sự kiện khi click CHỌN 1 KM (SỬA: Chỉ highlight)
+        $('.promo-item-modal').on('click', function() {
+            const $item = $(this);
+            if ($item.hasClass('disabled-promo')) {
+                return; // Không cho click vào KM không hợp lệ
+            }
+            
+            // Bỏ highlight tất cả các item khác
+            $('.promo-item-modal').removeClass('active');
+            
+            // Highlight item này
+            $item.addClass('active');
+            
+            // KHÔNG đóng modal, KHÔNG update total
+        });
+
+        // 7. SỰ KIỆN MỚI: Khi nhấn nút "Áp dụng" trong modal
+        $('#btnApplyPromo').on('click', function() {
+            // Tìm item đang được active
+            const $item = $('.promo-item-modal.active');
+            
+            if ($item.length === 0) {
+                // Nếu không chọn gì mà bấm áp dụng, coi như là "Không áp dụng"
+                selectedPromo = { id: 0, name: "Chọn mã", discount: 0 };
+            } else {
+                const id = parseInt($item.data('id'));
+                
+                if (id === 0) {
+                    // Chọn "Không áp dụng"
+                    selectedPromo = { id: 0, name: "Chọn mã", discount: 0 };
+                } else {
+                    // Chọn 1 KM
+                    const promoData = $item.data();
+                    const result = checkEligibility(promoData); 
+                    selectedPromo = {
+                        id: id,
+                        name: $item.find('.promo-title').text(),
+                        discount: result.discount
+                    };
+                }
+            }
+            
+            updateTotal(); // Cập nhật lại toàn bộ
+            $promoModal.modal('hide'); // Đóng modal
+        });
+
+        // 8. Sự kiện khi nhập điểm (Giữ nguyên)
+        $diemInput.on('input', updateTotal);
+        
+        // Chạy lần đầu khi tải trang
+        updateTotal();
+    </script>
+}
+
+@section Styles {
+    <style>
+        .page-title-account {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--cf-dark-brown);
+        }
+        .page-lead-account {
+            font-size: 1.1rem;
+            color: var(--cf-text);
+            margin-bottom: 0;
+        }
+        .material-input-group {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .promo-item-modal {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .promo-item-modal:hover {
+            background-color: #f8f9fa;
+        }
+        .promo-item-modal.disabled-promo {
+            cursor: not-allowed;
+            background-color: #f8f8f8;
+            opacity: 0.7;
+        }
+        .promo-item-modal.disabled-promo .promo-title {
+            color: #6c757d;
+        }
+        
+        /* ======================================= */
+        /* === THÊM STYLE NÀY (THEO YÊU CẦU) === */
+        /* ======================================= */
+        .promo-item-modal.active {
+            background-color: var(--cf-cream, #FFF8E1);
+            border-left: 4px solid var(--cf-orange, #D27D2D);
+            font-weight: 500;
+        }
+
+        #btn-chon-km {
+            text-decoration: none;
+            font-weight: 500;
+        }
+    </style>
+}

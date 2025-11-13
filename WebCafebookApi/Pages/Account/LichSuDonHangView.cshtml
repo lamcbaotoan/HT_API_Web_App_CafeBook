@@ -1,0 +1,255 @@
+﻿@page "/Account/LichSuDonHangView"
+@model WebCafebookApi.Pages.Account.LichSuDonHangViewModel
+@{
+    ViewData["Title"] = "Lịch sử mua hàng";
+    Layout = "_Layout_Account";
+}
+
+@section Styles {
+    <style>
+        /* CSS cho các tab (giống Shopee) */
+        .order-tabs .nav-link {
+            color: var(--cf-text);
+            background-color: var(--cf-white);
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            font-weight: 500;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+            .order-tabs .nav-link.active {
+                color: var(--cf-orange);
+                border-bottom-color: var(--cf-orange);
+                background-color: var(--cf-white);
+            }
+
+            .order-tabs .nav-link:hover {
+                color: var(--cf-orange);
+            }
+
+        .order-tabs {
+            background-color: var(--cf-white);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 1px 3px var(--cf-shadow);
+        }
+
+        /* CSS cho thẻ đơn hàng (Order Card) */
+        .order-card {
+            background-color: var(--cf-white);
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px var(--cf-shadow);
+        }
+
+        .order-card-header {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .order-card-header .shop-name {
+                font-weight: 600;
+                color: var(--cf-dark-brown);
+            }
+
+            .order-card-header .status-delivery {
+                font-weight: 500;
+                color: var(--cf-orange);
+                text-transform: uppercase;
+                font-size: 0.9rem;
+            }
+
+            .order-card-header .status-cancelled {
+                color: var(--bs-danger);
+            }
+
+            .order-card-header .status-completed {
+                color: var(--bs-success);
+            }
+
+        /* SỬA: Thêm CSS cho vùng item có thể nhấp */
+        a.order-items-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+            a.order-items-link:hover {
+                background-color: #fcfcfc;
+            }
+
+        .order-item {
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px dashed #eee;
+        }
+
+            .order-item:last-child {
+                border-bottom: none;
+            }
+
+        .order-item-img img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+            .order-item-info h6 {
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+            }
+
+            .order-item-info .qty {
+                font-size: 0.9rem;
+                color: #666;
+            }
+
+        .order-item-price {
+            font-weight: 500;
+            color: var(--cf-text);
+            font-size: 0.9rem;
+        }
+
+        .order-card-footer {
+            padding: 1rem 1.25rem;
+            background-color: #fcfcfc;
+            border-top: 1px solid #f0f0f0;
+            text-align: right;
+        }
+
+        .order-total-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--bs-danger);
+        }
+
+        .order-card-actions {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            flex-wrap: wrap; /* Đảm bảo các nút xuống dòng nếu không đủ chỗ */
+        }
+    </style>
+}
+
+<h3 class="page-title-account">@ViewData["Title"]</h3>
+<p class="page-lead-account">Theo dõi các đơn hàng giao tận nơi của bạn.</p>
+
+<hr class="my-4" />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<ul class="nav nav-tabs order-tabs">
+    @foreach (var tabName in Model.StatusTabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.StatusFilter == tabName ? "active" : "")"
+               asp-page="/Account/LichSuDonHangView"
+               asp-route-StatusFilter="@tabName">@tabName</a>
+        </li>
+    }
+</ul>
+
+<div class="mt-4">
+    @if (!Model.FilteredOrders.Any())
+    {
+        <div class="alert alert-info text-center" style="padding: 50px;">
+            <span class="material-symbols-outlined" style="font-size: 48px;">receipt_long</span>
+            <h4 class="mt-3">Không có đơn hàng</h4>
+            <p>Không tìm thấy đơn hàng nào trong mục này.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var order in Model.FilteredOrders)
+        {
+            var statusText = order.TrangThaiGiaoHang;
+            var statusClass = "status-delivery";
+
+            if (order.TrangThaiThanhToan == "Đã hủy")
+            {
+                statusText = "Đã Hủy";
+                statusClass = "status-cancelled";
+            }
+            else if (order.TrangThaiGiaoHang == "Hoàn thành")
+            {
+                statusText = "Giao hàng thành công";
+                statusClass = "status-completed";
+            }
+
+            <div class="order-card">
+                <div class="order-card-header">
+                    <span class="shop-name">
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">storefront</span>
+                        Cafebook
+                    </span>
+                    <span class="status-delivery @statusClass">
+                        @statusText
+                    </span>
+                </div>
+
+                <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="order-items-link">
+                    <div class="order-items-container">
+                        @foreach (var item in order.Items)
+                        {
+                            var imgUrl = item.HinhAnhUrl ?? "/images/default-food-icon.png";
+                            <div class="order-item">
+                                <div class="order-item-img">
+                                    <img src="@imgUrl" alt="@item.TenSanPham" />
+                                </div>
+                                <div class="order-item-info">
+                                    <h6>@item.TenSanPham</h6>
+                                    <div class="qty">x @item.SoLuong</div>
+                                </div>
+                                <div class="order-item-price">
+                                    @item.DonGia.ToString("N0") đ
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </a>
+
+                <div class="order-card-footer">
+                    <span class="me-2">Thành tiền:</span>
+                    <span class="order-total-amount">@order.ThanhTien.ToString("N0") đ</span>
+                </div>
+
+                <div class="order-card-actions">
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Liên Hệ Shop (Sắp có)</button>
+
+                    @if (order.TrangThaiGiaoHang == "Chờ xác nhận" && order.TrangThaiThanhToan != "Đã hủy")
+                    {
+                        <button class="btn btn-outline-danger btn-sm" disabled>Hủy Đơn (Sắp có)</button>
+                    }
+
+                    @if (order.TrangThaiGiaoHang == "Hoàn thành")
+                    {
+                        <button class="btn btn-outline-secondary btn-sm" disabled>Mua Lại (Sắp có)</button>
+                        <button class="btn btn-primary btn-sm" disabled>Đánh Giá (Sắp có)</button>
+                    }
+
+                    <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="btn btn-outline-primary btn-sm ms-auto">Xem Chi Tiết</a>
+                </div>
+            </div>
+        }
+    }
+</div>
