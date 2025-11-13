@@ -14,6 +14,7 @@ namespace CafebookApi.Controllers.Web
 {
     [Route("api/web/taikhoankhach")]
     [ApiController]
+
     public class KhachHangTaiKhoanController : ControllerBase
     {
         private readonly CafebookDbContext _context;
@@ -143,7 +144,7 @@ namespace CafebookApi.Controllers.Web
                     HoTen = model.Email,
                     Email = model.Email,
                     SoDienThoai = model.SoDienThoai,
-                    TenDangNhap = null, // Không dùng TenDangNhap nữa
+                    TenDangNhap = model.Email, // Không dùng TenDangNhap nữa
                     MatKhau = model.Password,
                     NgayTao = DateTime.Now,
                     DiemTichLuy = 0, // Tài khoản mới bắt đầu từ 0
