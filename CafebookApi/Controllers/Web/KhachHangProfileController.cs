@@ -126,21 +126,62 @@ namespace CafebookApi.Controllers.Web
         [HttpPut("update-info/{id}")]
         public async Task<IActionResult> UpdateProfile(int id, [FromForm] ProfileUpdateModel model, IFormFile? avatarFile)
         {
+            // Kiểm tra validation thủ công (vì FromForm không tự trigger)
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
             var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null) return NotFound();
 
             // ==========================================================
-            // === SỬA: Lấy HoTen làm slug (thay vì tên tệp) ===
+            // === THÊM MỚI: KIỂM TRA TRÙNG LẶP ===
             // ==========================================================
+
+            // 1. Kiểm tra Tên đăng nhập
+            if (!string.IsNullOrEmpty(model.TenDangNhap) && model.TenDangNhap != kh.TenDangNhap)
+            {
+                var tenDangNhapExists = await _context.KhachHangs
+                    .AnyAsync(k => k.IdKhachHang != id && k.TenDangNhap == model.TenDangNhap);
+                if (tenDangNhapExists)
+                {
+                    // Trả về lỗi mà PageModel có thể đọc được
+                    ModelState.AddModelError(nameof(model.TenDangNhap), "Tên đăng nhập này đã được sử dụng.");
+                    return ValidationProblem(ModelState);
+                }
+            }
+
+            // 2. Kiểm tra Email
+            if (!string.IsNullOrEmpty(model.Email) && model.Email != kh.Email)
+            {
+                var emailExists = await _context.KhachHangs
+                    .AnyAsync(k => k.IdKhachHang != id && k.Email == model.Email);
+                if (emailExists)
+                {
+                    ModelState.AddModelError(nameof(model.Email), "Email này đã được sử dụng.");
+                    return ValidationProblem(ModelState);
+                }
+            }
+
+            // 3. Kiểm tra Số điện thoại
+            if (!string.IsNullOrEmpty(model.SoDienThoai) && model.SoDienThoai != kh.SoDienThoai)
+            {
+                var sdtExists = await _context.KhachHangs
+                    .AnyAsync(k => k.IdKhachHang != id && k.SoDienThoai == model.SoDienThoai);
+                if (sdtExists)
+                {
+                    ModelState.AddModelError(nameof(model.SoDienThoai), "Số điện thoại này đã được sử dụng.");
+                    return ValidationProblem(ModelState);
+                }
+            }
+            // ==========================================================
+
+            // Xử lý ảnh (giữ nguyên)
             if (avatarFile != null)
             {
-                DeleteImage(kh.AnhDaiDien); // Xóa ảnh cũ
-
-                // Lấy HoTen (model.HoTen) làm cơ sở cho slug
-                // Dùng model.HoTen thay vì kh.HoTen để đảm bảo tên slug khớp với tên mới
+                DeleteImage(kh.AnhDaiDien);
                 string baseSlug = SlugifyUtil.GenerateSlug(model.HoTen);
-
-                // Truyền slug và ID vào helper
                 kh.AnhDaiDien = await SaveImageAsync(avatarFile, "avatars/avatarKH", baseSlug, id);
             }
             // ==========================================================
@@ -150,11 +191,11 @@ namespace CafebookApi.Controllers.Web
             kh.SoDienThoai = model.SoDienThoai;
             kh.Email = model.Email;
             kh.DiaChi = model.DiaChi;
+            kh.TenDangNhap = model.TenDangNhap; // Thêm dòng này
 
             await _context.SaveChangesAsync();
             return Ok(new { newAvatarUrl = GetFullImageUrl(kh.AnhDaiDien) });
         }
-
         /// <summary>
         /// API đổi mật khẩu (KHÔNG HASH)
         /// </summary>

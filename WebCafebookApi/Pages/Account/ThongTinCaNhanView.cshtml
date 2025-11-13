@@ -42,8 +42,10 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
                 <div class="material-input-group mb-3">
-                    <label class="form-label fw-bold">Tên đăng nhập (Không thể đổi)</label>
-                    <input type="text" class="material-input" value="@Model.TenDangNhap" readonly disabled />
+                    <label asp-for="Input.TenDangNhap" class="form-label fw-bold">Tên đăng nhập</label>
+                    @* Xóa "readonly disabled" và thay value bằng asp-for *@
+                    <input asp-for="Input.TenDangNhap" class="material-input" />
+                    <span asp-validation-for="Input.TenDangNhap" class="text-danger small"></span>
                 </div>
 
                 <div class="material-input-group mb-3">
@@ -100,7 +102,8 @@ else
             </div>
             <div class="profile-display-group">
                 <label>Tên đăng nhập</label>
-                <p>@Model.TenDangNhap</p>
+                @* Sửa "Model.TenDangNhap" thành "Model.Input.TenDangNhap" *@
+                <p>@(string.IsNullOrWhiteSpace(Model.Input.TenDangNhap) ? "(Chưa cập nhật)" : Model.Input.TenDangNhap)</p>
             </div>
             <div class="profile-display-group">
                 <label>Email</label>

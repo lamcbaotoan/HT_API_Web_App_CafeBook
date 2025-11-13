@@ -65,7 +65,7 @@ namespace WebCafebookApi.Pages.Account
                     Input.SoDienThoai = profile.SoDienThoai;
                     Input.Email = profile.Email;
                     Input.DiaChi = profile.DiaChi;
-                    TenDangNhap = profile.TenDangNhap ?? "(Chưa có)";
+                    Input.TenDangNhap = profile.TenDangNhap ?? ""; // Gán vào Input
                     AvatarHienTaiUrl = profile.AnhDaiDienUrl ?? "/images/default-avatar.png";
                 }
                 return Page();
@@ -94,6 +94,12 @@ namespace WebCafebookApi.Pages.Account
             formData.Add(new StringContent(Input.Email ?? ""), nameof(Input.Email));
             formData.Add(new StringContent(Input.DiaChi ?? ""), nameof(Input.DiaChi));
 
+            // ==================================
+            // === THÊM MỚI ===
+            // ==================================
+            formData.Add(new StringContent(Input.TenDangNhap), nameof(Input.TenDangNhap));
+            // ==================================
+
             if (AvatarFile != null)
             {
                 formData.Add(new StreamContent(AvatarFile.OpenReadStream()), "avatarFile", AvatarFile.FileName);
@@ -111,13 +117,41 @@ namespace WebCafebookApi.Pages.Account
                     if (!string.IsNullOrEmpty(result?.newAvatarUrl))
                     {
                         HttpContext.Session.SetString("AvatarUrl", result.newAvatarUrl);
-                        await UpdateClaims(Input.HoTen);
                     }
+                    // Cập nhật claims
+                    await UpdateClaims(Input.HoTen, Input.TenDangNhap);
                 }
                 else
                 {
-                    ErrorMessage = $"Lỗi từ API: {await response.Content.ReadAsStringAsync()}";
-                    return await OnGetAsync("Edit");
+                    // ==================================
+                    // === SỬA LẠI: Hiển thị lỗi rõ ràng ===
+                    // ==================================
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    // Thử parse lỗi validation từ API (nếu có)
+                    try
+                    {
+                        var errorResult = System.Text.Json.JsonSerializer.Deserialize<ValidationProblemDetails>(errorBody);
+                        if (errorResult?.Errors != null)
+                        {
+                            foreach (var err in errorResult.Errors)
+                            {
+                                ModelState.AddModelError($"Input.{err.Key}", err.Value.FirstOrDefault() ?? "Lỗi không xác định");
+                            }
+                        }
+                        else
+                        {
+                            ModelState.AddModelError(string.Empty, errorBody);
+                        }
+                    }
+                    catch
+                    {
+                        ModelState.AddModelError(string.Empty, $"Lỗi từ API: {errorBody}");
+                    }
+
+                    AvatarHienTaiUrl = HttpContext.Session.GetString("AvatarUrl") ?? "/images/default-avatar.png";
+                    IsEditMode = true;
+                    return Page();
+                    // ==================================
                 }
             }
             catch (System.Exception ex)
@@ -130,14 +164,22 @@ namespace WebCafebookApi.Pages.Account
         }
 
         // (Hàm helper UpdateClaims và class UpdateAvatarResponse giữ nguyên)
-        private async Task UpdateClaims(string newHoTen)
+        private async Task UpdateClaims(string newHoTen, string newTenDangNhap)
         {
             var user = User.Identity as ClaimsIdentity;
             if (user != null)
             {
-                var oldClaim = user.FindFirst(ClaimTypes.GivenName);
-                if (oldClaim != null) user.RemoveClaim(oldClaim);
+                var oldGivenName = user.FindFirst(ClaimTypes.GivenName);
+                if (oldGivenName != null) user.RemoveClaim(oldGivenName);
                 user.AddClaim(new Claim(ClaimTypes.GivenName, newHoTen));
+
+                // ==================================
+                // === THÊM MỚI: Cập nhật ClaimTypes.Name (dùng cho TenDangNhap) ===
+                // ==================================
+                var oldName = user.FindFirst(ClaimTypes.Name);
+                if (oldName != null) user.RemoveClaim(oldName);
+                user.AddClaim(new Claim(ClaimTypes.Name, newTenDangNhap));
+                // ==================================
 
                 await HttpContext.SignOutAsync();
                 await HttpContext.SignInAsync(new ClaimsPrincipal(user));

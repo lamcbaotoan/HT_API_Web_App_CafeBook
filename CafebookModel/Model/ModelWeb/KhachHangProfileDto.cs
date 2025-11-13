@@ -42,6 +42,13 @@ namespace CafebookModel.Model.ModelWeb
         public string? Email { get; set; }
 
         public string? DiaChi { get; set; }
+
+        // ==================================
+        // === THÊM MỚI ===
+        // ==================================
+        [Required(ErrorMessage = "Tên đăng nhập không được để trống")]
+        [StringLength(100, ErrorMessage = "Tên đăng nhập phải dài từ 6 đến 100 ký tự.", MinimumLength = 6)]
+        public string TenDangNhap { get; set; } = string.Empty;
     }
 
     /// <summary>
