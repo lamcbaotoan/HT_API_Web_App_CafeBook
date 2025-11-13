@@ -170,6 +170,257 @@ Cung cấp các phương thức thanh toán linh hoạt cho cả thuê sách và
   * Thêm “Đặt bàn” (liên kết với Hóa đơn).
   * Thêm “Mua sách” (liên kết với Phiếu thuê).
 //////////////////
+🧾 ĐẶC TẢ CHỨC NĂNG MỚI: THANH TOÁN (KHÁCH HÀNG ONLINE)
+
+Mã chức năng: FS-09
+
+🎯 1️⃣ Mục đích
+
+Cho phép khách hàng tự thanh toán đơn hàng thuê sách hoặc đặt món online với các tính năng:
+
+
+
+Sử dụng điểm tích lũy để giảm giá.
+
+Nhập mã khuyến mãi / giảm giá.
+
+Chọn phương thức thanh toán: COD, chuyển khoản, ví điện tử.
+
+Lưu toàn bộ giao dịch vào bảng ThanhToanOnline (mới).
+
+Tự động cộng điểm thưởng sau khi hoàn tất thanh toán.
+
+👥 2️⃣ Actor liên quan
+
+ActorVai tròKhách hàngTự thao tác thanh toán online cho đơn hàngHệ thống thanh toánKiểm tra mã giảm giá, trừ điểm, xác nhận giao dịchNhân viên / Quản lýTheo dõi và xử lý các giao dịch online (nếu cần tra soát)
+
+⚙️ 3️⃣ Luồng nghiệp vụ chính
+
+BướcHành động của khách hàngHệ thống xử lý1️⃣Khách hàng mở màn hình thanh toán cho đơn (thuê sách hoặc gọi món)Gọi API GET /api/client/thanhtoan/init/{idDon} để tải dữ liệu (sản phẩm, tổng tiền, điểm hiện có, khuyến mãi hợp lệ)2️⃣Khách nhập mã khuyến mãi (nếu có)Hệ thống gọi POST /api/client/thanhtoan/check-km để kiểm tra điều kiện3️⃣Khách chọn “dùng điểm thưởng”Hệ thống trừ điểm tạm tính, hiển thị tổng tiền giảm4️⃣Khách chọn phương thức thanh toán (COD / chuyển khoản / ví điện tử)Hiển thị hướng dẫn / chuyển hướng cổng thanh toán nếu online5️⃣Khách xác nhận “Thanh toán”Gửi POST /api/client/thanhtoan/confirm chứa dữ liệu mã KM, điểm sử dụng, phương thức6️⃣Nếu thanh toán thành công- Lưu ThanhToanOnline
+
+Giảm điểm đã sử dụng
+
+Cộng điểm mới theo cấu hình (CaiDatTichDiem)
+
+Gửi thông báo xác nhận qua Email / App |
+
+
+
+| 7️⃣ | Hiển thị màn hình “Thanh toán thành công” | Kèm mã giao dịch và chi tiết giảm giá |
+
+🔁 4️⃣ Luồng lỗi
+
+Tình huốngHệ thống xử lýMã giảm giá không hợp lệ / hết hạnHiển thị thông báo và yêu cầu nhập mã khácĐiểm tích lũy không đủTự động điều chỉnh xuống mức tối đa có thể sử dụngGiao dịch thanh toán thất bạiĐánh dấu ThanhToanOnline.TrangThai = 'Thất bại' và thông báo kháchKết nối ví điện tử bị gián đoạnCho phép chọn lại phương thức thanh toán khác
+
+💾 5️⃣ Cấu trúc dữ liệu và bảng mới
+
+🆕 Bảng 1: ThanhToanOnline
+
+Ghi nhận các giao dịch thanh toán của khách hàng trên app/web.
+
+
+
+
+
+CREATE TABLE ThanhToanOnline (
+
+    IdThanhToan INT IDENTITY(1,1) PRIMARY KEY,
+
+    LoaiDon NVARCHAR(50),         -- 'HoaDon' hoặc 'PhieuThueSach'
+
+    IdDon INT NOT NULL,           
+
+    IdKhachHang INT NOT NULL,
+
+    PhuongThuc NVARCHAR(50),      -- 'COD', 'Chuyển khoản', 'Ví điện tử'
+
+    SoTien DECIMAL(18,2),
+
+    MaGiaoDich NVARCHAR(100),
+
+    TrangThai NVARCHAR(50),       -- 'Thành công', 'Thất bại', 'Đang xử lý'
+
+    NgayThanhToan DATETIME DEFAULT GETDATE(),
+
+    DiemSuDung INT DEFAULT 0,
+
+    GiamTuDiem DECIMAL(18,2) DEFAULT 0,
+
+    IdKhuyenMai INT NULL,
+
+    GiamTuKhuyenMai DECIMAL(18,2) DEFAULT 0,
+
+    DiemTichLuyCong INT DEFAULT 0,
+
+    FOREIGN KEY (IdKhachHang) REFERENCES KhachHang(IdKhachHang)
+
+);
+
+🆕 Bảng 2: LichSuThanhToanOnline
+
+Lưu vết (log) chi tiết các lần xác thực giao dịch (đặc biệt cho ví điện tử hoặc ngân hàng).
+
+
+
+
+
+CREATE TABLE LichSuThanhToanOnline (
+
+    IdLichSu INT IDENTITY(1,1) PRIMARY KEY,
+
+    IdThanhToan INT NOT NULL,
+
+    TrangThai NVARCHAR(100),
+
+    NoiDung NVARCHAR(MAX),
+
+    ThoiGian DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (IdThanhToan) REFERENCES ThanhToanOnline(IdThanhToan)
+
+);
+
+⚙️ 6️⃣ API endpoints cho khách hàng
+
+APIMô tảMethod/api/client/thanhtoan/init/{idDon}Lấy thông tin đơn, tổng tiền, điểm hiện cóGET/api/client/thanhtoan/check-kmKiểm tra điều kiện mã giảm giáPOST/api/client/thanhtoan/confirmXác nhận thanh toán và lưu dữ liệuPOST/api/client/thanhtoan/status/{maGiaoDich}Kiểm tra trạng thái giao dịchGET
+
+💳 7️⃣ Quy tắc tính điểm & giảm giá
+
+Quy tắcCông thứcĐiểm tích lũy mớifloor(Tổng tiền thanh toán / TiLeNhanDiem)Giảm từ điểmĐiểm sử dụng * TiLeDoiDiemGiảm từ khuyến mãiTheo loại: phần trăm hoặc giá trị cố địnhTổng tiền cuối cùngTổng gốc + Phụ thu - Giảm KM - Giảm điểm
+
+🧩 8️⃣ Giao diện (Khách hàng)
+
+Màn hình hiển thị:
+
+Tổng tiền
+
+Ô nhập mã khuyến mãi
+
+Ô nhập “Số điểm muốn sử dụng”
+
+Kết quả giảm giá hiển thị động (Giảm KM + Giảm điểm)
+
+Lựa chọn phương thức thanh toán
+
+Nút “Xác nhận thanh toán”
+
+Sau khi thanh toán:
+
+Hiển thị màn hình xác nhận (Success screen)
+
+Cho phép xem lại chi tiết giao dịch (link /LichSuThanhToan).
+
+✅ 9️⃣ Tích hợp với hệ thống hiện có
+
+Dùng chung bảng KhachHang (để lấy và cập nhật điểm).
+
+Dùng KhuyenMai để kiểm tra mã hợp lệ.
+
+Gọi API hiện có /api/app/nhanvien/khuyenmai/available nội bộ để lọc khuyến mãi hợp lệ cho đơn khách.
+
+Khi thanh toán xong, cập nhật:
+
+KhachHang.DiemTichLuy = DiemTichLuy - DiemSuDung + DiemTichLuyCong
+
+Ghi ThanhToanOnline và LichSuThanhToanOnline.
+
+🧱 10️⃣ Tóm tắt nghiệp vụ
+
+Tên chức năngMục tiêuActorBảng liên quanThanh toán OnlineCho phép khách tự thanh toán đơnKhách hàngThanhToanOnline, LichSuThanhToanOnlineÁp dụng điểm thưởngTrừ điểm để giảm giáKhách hàngKhachHang, LichSuDiemÁp dụng mã giảm giáGiảm giá trực tiếp theo chương trìnhKhách hàngKhuyenMai, HoaDon_KhuyenMaiCộng điểm sau thanh toánThưởng cho khách hàng trung thànhHệ thốngKhachHang, LichSuDiem
+
+🧠 Kết luận
+
+ThanhToanOnline là module song song với ThanhToanView của nhân viên, nhưng logic tính toán tương tự.
+
+Khách hàng chỉ thao tác phần đầu, không xử lý tách hóa đơn hay phụ thu.
+
+Hệ thống tự động áp dụng khuyến mãi, trừ điểm và ghi giao dịch.
+
+Dữ liệu có thể đồng bộ ngược về backend để nhân viên tra soát và in biên lai nếu cần.
+
+🧩 1️⃣ Giai đoạn 1 – Tạo và quản lý giỏ hàng (Session-based)
+
+🔹 Đối tượng: CartItemDto
+
+Lưu trong Session theo khóa SessionExtensions.CartKey.
+
+Thuộc tínhMô tảIdID của sách hoặc sản phẩmLoai“Sach” hoặc “SanPham”SoLuongSố lượng (sách = 1 cố định)
+
+🔹 Quy trình:
+
+Khi người dùng nhấn “Thêm vào giỏ hàng”:
+
+App kiểm tra HttpContext.Session.
+
+Nếu chưa có giỏ hàng, tạo mới List<CartItemDto>.
+
+Thêm item (sách hoặc món).
+
+Lưu lại session qua HttpContext.Session.Set().
+
+Khi người dùng vào trang /giohang:
+
+Controller (GioHangViewPageModel) đọc session.
+
+Gọi API (qua HttpClient) để lấy thông tin chi tiết từng item:
+
+Nếu Loai == "Sach" → gọi api/web/thuvien/{id}
+
+Nếu Loai == "SanPham" → gọi api/web/thucdon/{id}
+
+Dựng GioHangItemViewModel với:
+
+TenHienThi, HinhAnhUrl, DonGia, SoLuong, ThanhTien
+
+Trả về view hiển thị danh sách và tổng tiền (GioHangViewModel.TongTien).
+
+Người dùng có thể:
+
+❌ Xóa item khỏi giỏ (OnPostRemove)
+
+🔄 Cập nhật số lượng (OnPostUpdateQuantity)
+
+
+
+→ Nếu là “Sách”, số lượng luôn = 1.
+
+🧱 => Giai đoạn này là tạm thời, dữ liệu chỉ nằm trong Session, chưa ghi vào database.
+
+💳 2️⃣ Giai đoạn 2 – Tiến hành thanh toán
+
+Sau khi người dùng nhấn “Thanh toán”, hệ thống chuyển sang ThanhToanView.
+
+
+
+🔹 Input từ giỏ hàng:
+
+Danh sách sản phẩm trong session.
+
+Tổng tiền tạm tính (GioHangViewModel.TongTien).
+
+🔹 Tại trang ThanhToanView (đã có bản nhân viên → sẽ tái sử dụng cho khách hàng):
+
+Hệ thống thực hiện:
+
+BướcMô tả xử lýKết quả1Tải lại danh sách món / sách trong giỏHiển thị tổng tiền tạm tính2Cho phép nhập mã giảm giá (KhuyenMai)Gọi API kiểm tra hợp lệ3Cho phép nhập điểm thưởng cần sử dụng (DiemTichLuy)Giảm giá tạm thời4Chọn phương thức thanh toán (COD / Chuyển khoản / Ví điện tử)Cập nhật lựa chọn5Xác nhận Thanh toánGửi API POST /api/client/thanhtoan/confirm
+🧾 3️⃣ Giai đoạn 3 – Ghi nhận đơn hàng
+🔹 Nếu là đặt món / đồ uống:
+Sinh HoaDon + ChiTietHoaDon
+Ghi ThanhToanOnline (kèm giảm giá, điểm)
+Giảm KhuyenMai.soLuongConLai
+Cập nhật KhachHang.DiemTichLuy
+🔹 Nếu là thuê sách:
+Sinh PhieuThueSach + ChiTietPhieuThue
+Ghi ThanhToanOnline
+Trừ sách tồn kho (Sach.soLuongHienCo)
+Áp dụng logic điểm thưởng tương tự.
+🧩 4️⃣ Mô hình dữ liệu tham gia
+Mục đíchBảng / Dữ liệu liên quanLưu giỏ hàng tạm thờiSession[List<CartItemDto>]Đơn đặt mónHoaDon, ChiTietHoaDonĐơn thuê sáchPhieuThueSach, ChiTietPhieuThueKhuyến mãiKhuyenMai, HoaDon_KhuyenMaiĐiểm thưởngKhachHang, LichSuDiemThanh toán onlineThanhToanOnline, LichSuThanhToanOnline
+🧮 5️⃣ Quy tắc tính toán
+Công thứcDiễn giảiTổng tạm tính = Σ (Đơn giá × Số lượng)Tính từ GioHangViewModelGiảm từ khuyến mãi = phần trăm hoặc số tiềnTheo KhuyenMaiGiảm từ điểm = DiemSuDung × TiLeDoiDiemTheo cấu hìnhTổng thanh toán = Tổng tạm tính - Giảm KM - Giảm điểmKết quả cuốiĐiểm thưởng mới = floor(Tổng thanh toán / TiLeNhanDiem)Cộng vào tài khoản khách
+📦 6️⃣ Giai đoạn 4 – Sau thanh toán
+Hành độngHệ thống xử lýGiao dịch thành côngCập nhật ThanhToanOnline.TrangThai = 'Hoàn tất'Giao dịch lỗiTrangThai = 'Thất bại', hoàn điểm và khuyến mãiXóa session giỏ hàngKhi đơn đã xác nhậnGửi thông báoEmail / Thông báo app xác nhận giao dịch thành công
+///////////
 + nâng cấp chức năng giỏ hàng để đặt món/ sách online(giỏ hàng lưu tạm thời sesion),(Chức năng thanh toán online qua ví điện tử, chuyển khoản ngân hàng, COD (phát triển sau))
 * file GioHangControllers.cs, GioHangDto.cs, GioHangView.cshtml.cs, GioHangView.cshtml.
 * file ThanhToanControllers.cs, ThanhToanDto.cs, ThanhToanView.cshtml.cs, ThanhToanView.cshtml.
