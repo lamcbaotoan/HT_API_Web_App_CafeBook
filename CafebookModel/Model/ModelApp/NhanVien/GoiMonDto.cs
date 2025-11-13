@@ -100,6 +100,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public DateTime NgayTao { get; set; }
         public string TenNhanVien { get; set; } = string.Empty;
         public string SoBan { get; set; } = string.Empty;
+        public string? GhiChu { get; set; }
         public List<ChiTietDto> ChiTiet { get; set; } = new List<ChiTietDto>();
         public decimal TongTienGoc { get; set; }
         public decimal GiamGia { get; set; }

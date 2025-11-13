@@ -31,17 +31,19 @@ namespace AppCafebookApi.View.nhanvien
             _sidebarTimer.Tick += SidebarTimer_Tick;
         }
 
-        // *** SỬA HÀM NÀY ***
+        // Hàm Load màn hình chính của nhân viên (đã mở rộng: hỗ trợ vai trò "Cửa Hàng Trưởng" = full quyền)
         private async void ManHinhNhanVien_Loaded(object sender, RoutedEventArgs e)
         {
             var currentUser = AuthService.CurrentUser;
-            if (currentUser != null)
-            {
-                // 1. Cập nhật tên và vai trò
-                txtUserName.Text = currentUser.HoTen;
-                txtUserRole.Text = currentUser.TenVaiTro;
+            if (currentUser == null) return;
 
-                // 2. Cập nhật Avatar
+            // 1. Cập nhật tên và vai trò
+            txtUserName.Text = currentUser.HoTen ?? string.Empty;
+            txtUserRole.Text = currentUser.TenVaiTro ?? string.Empty;
+
+            // 2. Cập nhật Avatar
+            try
+            {
                 AvatarBorder.Child = null;
                 BitmapImage avatarImage = HinhAnhHelper.LoadImage(
                     currentUser.AnhDaiDien,
@@ -51,58 +53,87 @@ namespace AppCafebookApi.View.nhanvien
                 {
                     Stretch = Stretch.UniformToFill
                 };
+            }
+            catch
+            {
+                // Nếu lỗi load ảnh, bỏ qua để tránh crash
+            }
 
-                // --- 3. PHÂN QUYỀN CHỨC NĂNG (Đã cập nhật) ---
+            // --- 3. PHÂN QUYỀN CHỨC NĂNG (Cập nhật) ---
+            // Nếu là "Cửa Hàng Trưởng" => full quyền (hiển thị tất cả chức năng)
+            bool isFullRole = string.Equals(currentUser.TenVaiTro?.Trim(),
+                                            "Cửa Hàng Trưởng",
+                                            StringComparison.OrdinalIgnoreCase);
 
-                // Các chức năng chung (luôn hiển thị)
-                btnSoDoBan.Visibility = Visibility.Visible;
-                btnThongTinCaNhan.Visibility = Visibility.Visible;
-                btnChamCong.Visibility = Visibility.Visible;
-                btnLichLamViecCuaToi.Visibility = Visibility.Visible;
-                btnPhieuLuongCuaToi.Visibility = Visibility.Visible;
+            // Nút chung (luôn hiển thị)
+            btnThongTinCaNhan.Visibility = Visibility.Visible;
+            btnChamCong.Visibility = Visibility.Visible;
+            btnLichLamViecCuaToi.Visibility = Visibility.Visible;
+            btnPhieuLuongCuaToi.Visibility = Visibility.Visible;
 
-                // Chức năng đặc thù (Phục vụ/Thu ngân)
-                bool coQuyenOrder = AuthService.CoQuyen("BanHang.XemSoDo", "BanHang.ThanhToan");
-                btnSoDoBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
-                btnDatBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
+            // Danh sách các nút điều hướng có trong sidebar (để dễ quản lý)
+            var navButtons = new List<ToggleButton>
+            {
+                btnSoDoBan, btnCheBien, btnDatBan, btnGiaoHang, btnThueSach,
+                btnThongTinCaNhan, btnChamCong, btnLichLamViecCuaToi, btnPhieuLuongCuaToi
+            };
 
-                // *** SỬA LỖI: Kích hoạt nút Giao Hàng ***
-                // (Giả định rằng Thu ngân/Quản lý có quyền xem)
-                bool coQuyenGiaoHang = AuthService.CoQuyen("BanHang.ThanhToan", "GiaoHang.Xem");
-                btnGiaoHang.Visibility = coQuyenGiaoHang ? Visibility.Visible : Visibility.Collapsed;
-                // *** KẾT THÚC SỬA LỖI ***
-
-                // Chức năng Thuê Sách (Thu ngân/Quản lý)
-                bool coQuyenSach = AuthService.CoQuyen("Sach.QuanLy");
-                btnThueSach.Visibility = coQuyenSach ? Visibility.Visible : Visibility.Collapsed;
-
-                // (Thêm chức năng Chế biến - Giả định quyền là "CheBien.Xem")
-                bool coQuyenCheBien = AuthService.CoQuyen("CheBien.Xem");
-                btnCheBien.Visibility = coQuyenCheBien ? Visibility.Visible : Visibility.Collapsed;
-
-                // Chọn trang mặc định
-                if (btnSoDoBan.Visibility == Visibility.Visible)
+            // Nếu full role thì bật tất cả
+            if (isFullRole)
+            {
+                foreach (var btn in navButtons)
                 {
-                    btnSoDoBan.IsChecked = true;
-                    NavigateToPage(btnSoDoBan, new SoDoBanView());
-                }
-                else
-                {
-                    btnThongTinCaNhan.IsChecked = true;
-                    NavigateToPage(btnThongTinCaNhan, new AppCafebookApi.View.nhanvien.pages.ThongTinCaNhanView());
-                }
-
-                if (AuthService.CurrentUser != null)
-                {
-                    await UpdateSidebarStatusAsync();
-                    _sidebarTimer.Start();
+                    if (btn != null)
+                        btn.Visibility = Visibility.Visible;
                 }
             }
+            else
+            {
+                // Giữ lại logic phân quyền hiện có cho các vai trò khác
+
+                // Các chức năng đặc thù (Phục vụ/Thu ngân)
+                bool coQuyenOrder = AuthService.CoQuyen("BanHang.XemSoDo", "BanHang.ThanhToan");
+                if (btnSoDoBan != null) btnSoDoBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
+                if (btnDatBan != null) btnDatBan.Visibility = coQuyenOrder ? Visibility.Visible : Visibility.Collapsed;
+
+                // Giao hàng (ví dụ: Thu ngân/Quản lý)
+                bool coQuyenGiaoHang = AuthService.CoQuyen("BanHang.ThanhToan", "GiaoHang.Xem");
+                if (btnGiaoHang != null) btnGiaoHang.Visibility = coQuyenGiaoHang ? Visibility.Visible : Visibility.Collapsed;
+
+                // Thuê sách (Thu ngân/Quản lý)
+                bool coQuyenSach = AuthService.CoQuyen("Sach.QuanLy");
+                if (btnThueSach != null) btnThueSach.Visibility = coQuyenSach ? Visibility.Visible : Visibility.Collapsed;
+
+                // Chế biến (ví dụ quyền: "CheBien.Xem")
+                bool coQuyenCheBien = AuthService.CoQuyen("CheBien.Xem");
+                if (btnCheBien != null) btnCheBien.Visibility = coQuyenCheBien ? Visibility.Visible : Visibility.Collapsed;
+
+                // Các nút chung đã set visible phía trên; nếu cần ẩn khi không có quyền thì thêm logic ở đây
+            }
+
+            // --- Chọn trang mặc định ---
+            // Nếu có quyền xem sơ đồ bàn => ưu tiên mở SoDoBan
+            if (btnSoDoBan != null && btnSoDoBan.Visibility == Visibility.Visible)
+            {
+                btnSoDoBan.IsChecked = true;
+                NavigateToPage(btnSoDoBan, new SoDoBanView());
+            }
+            else
+            {
+                if (btnThongTinCaNhan != null)
+                {
+                    btnThongTinCaNhan.IsChecked = true;
+                    NavigateToPage(btnThongTinCaNhan, new ThongTinCaNhanView());
+                }
+            }
+
+            // Khởi động cập nhật sidebar status
+            await UpdateSidebarStatusSafeAsync();
+            _sidebarTimer.Start();
         }
 
         private void UncheckOtherButtons(ToggleButton? exception)
         {
-            // Danh sách này đã đúng
             var navButtons = new List<ToggleButton>
             {
                 btnSoDoBan, btnCheBien, btnDatBan, btnGiaoHang, btnThueSach,
@@ -155,7 +186,7 @@ namespace AppCafebookApi.View.nhanvien
 
         private void BtnThongTinCaNhan_Click(object sender, RoutedEventArgs e)
         {
-            NavigateToPage(sender as ToggleButton, new AppCafebookApi.View.nhanvien.pages.ThongTinCaNhanView());
+            NavigateToPage(sender as ToggleButton, new ThongTinCaNhanView());
         }
 
         private void BtnChamCong_Click(object sender, RoutedEventArgs e)
@@ -180,7 +211,8 @@ namespace AppCafebookApi.View.nhanvien
             if (sender is ToggleButton btn)
             {
                 btn.IsChecked = false;
-                btnSoDoBan.IsChecked = true;
+                if (btnSoDoBan != null)
+                    btnSoDoBan.IsChecked = true;
             }
         }
 
@@ -191,7 +223,24 @@ namespace AppCafebookApi.View.nhanvien
 
         private async void SidebarTimer_Tick(object? sender, EventArgs e)
         {
-            await UpdateSidebarStatusAsync();
+            await UpdateSidebarStatusSafeAsync();
+        }
+
+        private async Task UpdateSidebarStatusSafeAsync()
+        {
+            try
+            {
+                await UpdateSidebarStatusAsync();
+            }
+            catch
+            {
+                // Không cho phép lỗi crash UI nếu sync status thất bại
+                if (lblSidebarStatus != null)
+                {
+                    lblSidebarStatus.Text = "Lỗi đồng bộ";
+                    lblSidebarStatus.Foreground = Brushes.OrangeRed;
+                }
+            }
         }
 
         private async Task UpdateSidebarStatusAsync()

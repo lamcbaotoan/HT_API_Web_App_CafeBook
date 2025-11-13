@@ -13,7 +13,8 @@
         <p class="page-lead-account">Hoàn tất thông tin để đặt hàng (Chỉ áp dụng cho Thức uống/Món).</p>
 
         <hr class="my-4" />
-
+        
+        @* (Phần Form Input và Hóa đơn giữ nguyên) *@
         @if (!string.IsNullOrEmpty(Model.SuccessMessage))
         {
             <div class="alert alert-success">@Model.SuccessMessage</div>
@@ -22,9 +23,7 @@
         {
             <div class="alert alert-danger">@Model.ErrorMessage</div>
         }
-
-        @* SỬA: Đã xóa khối div cảnh báo sách *@
-
+        
         <form method="post">
             <div class="row g-5">
                 
@@ -158,7 +157,6 @@
                 </div>
             </div>
         </form>
-
     </div>
 </div>
 
@@ -170,7 +168,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="list-group-item list-group-item-action promo-item-modal" data-id="0">
+                <div class="list-group-item list-group-item-action promo-item-modal active" data-id="0">
                     <div class="d-flex w-100 justify-content-between">
                         <h6 class="mb-1">-- Không áp dụng --</h6>
                         <span class="badge bg-success">Có thể áp dụng</span>
@@ -186,7 +184,11 @@
                          data-giatri="@promo.GiaTriGiam.ToString(CultureInfo.InvariantCulture)"
                          data-giamtoida="@((promo.GiamToiDa ?? 0).ToString(CultureInfo.InvariantCulture))"
                          data-idspapdung="@(promo.IdSanPhamApDung ?? 0)"
-                         data-hdttoithieu="@((promo.HoaDonToiThieu ?? 0).ToString(CultureInfo.InvariantCulture))">
+                         data-hdttoithieu="@((promo.HoaDonToiThieu ?? 0).ToString(CultureInfo.InvariantCulture))"
+                         
+                         data-ngaytrongtuan="@(promo.NgayTrongTuan ?? "")"
+                         data-giobatdau="@(promo.GioBatDau?.ToString(@"hh\:mm") ?? "")"
+                         data-gioketthuc="@(promo.GioKetThuc?.ToString(@"hh\:mm") ?? "")">
 
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1 promo-title">@promo.TenChuongTrinh (@promo.MaKhuyenMai)</h6>
@@ -237,10 +239,45 @@
         const $selectedPromoNameText = $('#selected-promo-name');
         const $btnChonKmTrigger = $('#btn-chon-km'); 
 
-        // 3. Hàm kiểm tra điều kiện KM (Logic giống WPF)
+        // =======================================
+        // === THÊM MỚI: HÀM HELPER THỜI GIAN ===
+        // =======================================
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        function getCurrentDayOfWeek() {
+            const days = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+            const now = new Date();
+            return days[now.getDay()];
+        }
+
+        // 3. Hàm kiểm tra điều kiện KM (ĐÃ NÂNG CẤP)
         function checkEligibility(promoData) {
             const minSpend = parseFloat(promoData.hdttoithieu); 
             const idSpApDung = parseInt(promoData.idspapdung);
+
+            // === YÊU CẦU MỚI: KIỂM TRA THỜI GIAN ===
+            const ngayTrongTuan = promoData.ngaytrongtuan; // "Thứ 2, Thứ 3"
+            const gioBatDau = promoData.giobatdau;       // "14:00"
+            const gioKetThuc = promoData.gioketthuc;     // "16:00"
+
+            if (gioBatDau && gioKetThuc) {
+                const currentTime = getCurrentTime();
+                if (currentTime < gioBatDau || currentTime > gioKetThuc) {
+                    return { eligible: false, reason: `Chỉ áp dụng trong khung giờ ${gioBatDau} - ${gioKetThuc}.` };
+                }
+            }
+            if (ngayTrongTuan) {
+                const currentDay = getCurrentDayOfWeek(); // "Thứ 5"
+                if (!ngayTrongTuan.includes(currentDay)) {
+                    return { eligible: false, reason: `Chỉ áp dụng vào các ngày: ${ngayTrongTuan}.` };
+                }
+            }
+            // === KẾT THÚC LOGIC MỚI ===
 
             if (minSpend > 0 && subtotal < minSpend) {
                 return { eligible: false, reason: `Cần hóa đơn tối thiểu ${minSpend.toLocaleString('vi-VN')} đ.` };
@@ -250,6 +287,7 @@
                 return { eligible: false, reason: "Khuyến mãi này chỉ áp dụng cho một số sản phẩm nhất định (hiện không có trong giỏ)." };
             }
 
+            // Nếu qua hết, tính toán giảm giá
             let subtotalForPromo = subtotal;
             if (idSpApDung > 0) {
                 subtotalForPromo = cartItems[idSpApDung] || 0;
@@ -273,7 +311,7 @@
             return { eligible: true, reason: null, discount: discount };
         }
 
-        // 4. Hàm cập nhật tổng tiền
+        // 4. Hàm cập nhật tổng tiền (ĐÃ SỬA LỖI 50%)
         function updateTotal() {
             // 4.1. Lấy giá trị khuyến mãi (KM)
             const promoDiscount = selectedPromo.discount;
@@ -313,27 +351,20 @@
             $totalAmountText.text(total.toLocaleString('vi-VN') + ' đ');
         }
 
-        // =======================================
-        // === SỬA LOGIC KHUYẾN MÃI TẠI ĐÂY ===
-        // =======================================
-
-        // 5. Sự kiện khi mở Modal (SỬA: Thêm logic highlight)
+        // 5. Sự kiện khi mở Modal (Đã sửa)
         $promoModal.on('show.bs.modal', function () {
-            const currentPromoId = selectedPromo.id; // Lấy ID KM đang áp dụng
+            const currentPromoId = selectedPromo.id; 
 
             $('.promo-item-modal').each(function() {
                 const $item = $(this);
                 const id = parseInt($item.data('id'));
                 
-                // Bỏ active cũ
                 $item.removeClass('active');
-
-                // Check active mới
                 if (id === currentPromoId) {
-                    $item.addClass('active'); // Highlight KM đang được chọn
+                    $item.addClass('active'); 
                 }
 
-                if (id === 0) return; // Bỏ qua mục "Không áp dụng"
+                if (id === 0) return; 
 
                 const promoData = $item.data();
                 const result = checkEligibility(promoData);
@@ -353,38 +384,28 @@
             });
         });
 
-        // 6. Sự kiện khi click CHỌN 1 KM (SỬA: Chỉ highlight)
+        // 6. Sự kiện khi click CHỌN 1 KM (Chỉ highlight)
         $('.promo-item-modal').on('click', function() {
             const $item = $(this);
             if ($item.hasClass('disabled-promo')) {
-                return; // Không cho click vào KM không hợp lệ
+                return; 
             }
-            
-            // Bỏ highlight tất cả các item khác
             $('.promo-item-modal').removeClass('active');
-            
-            // Highlight item này
             $item.addClass('active');
-            
-            // KHÔNG đóng modal, KHÔNG update total
         });
 
-        // 7. SỰ KIỆN MỚI: Khi nhấn nút "Áp dụng" trong modal
+        // 7. SỰ KIỆN MỚI: Khi nhấn nút "Áp dụng"
         $('#btnApplyPromo').on('click', function() {
-            // Tìm item đang được active
             const $item = $('.promo-item-modal.active');
             
             if ($item.length === 0) {
-                // Nếu không chọn gì mà bấm áp dụng, coi như là "Không áp dụng"
                 selectedPromo = { id: 0, name: "Chọn mã", discount: 0 };
             } else {
                 const id = parseInt($item.data('id'));
                 
                 if (id === 0) {
-                    // Chọn "Không áp dụng"
                     selectedPromo = { id: 0, name: "Chọn mã", discount: 0 };
                 } else {
-                    // Chọn 1 KM
                     const promoData = $item.data();
                     const result = checkEligibility(promoData); 
                     selectedPromo = {
@@ -395,8 +416,8 @@
                 }
             }
             
-            updateTotal(); // Cập nhật lại toàn bộ
-            $promoModal.modal('hide'); // Đóng modal
+            updateTotal(); 
+            $promoModal.modal('hide'); 
         });
 
         // 8. Sự kiện khi nhập điểm (Giữ nguyên)
@@ -422,7 +443,6 @@
         .material-input-group {
             margin-bottom: 1.5rem !important;
         }
-        
         .promo-item-modal {
             padding: 0.75rem 1rem;
             cursor: pointer;
@@ -439,16 +459,11 @@
         .promo-item-modal.disabled-promo .promo-title {
             color: #6c757d;
         }
-        
-        /* ======================================= */
-        /* === THÊM STYLE NÀY (THEO YÊU CẦU) === */
-        /* ======================================= */
         .promo-item-modal.active {
             background-color: var(--cf-cream, #FFF8E1);
             border-left: 4px solid var(--cf-orange, #D27D2D);
             font-weight: 500;
         }
-
         #btn-chon-km {
             text-decoration: none;
             font-weight: 500;

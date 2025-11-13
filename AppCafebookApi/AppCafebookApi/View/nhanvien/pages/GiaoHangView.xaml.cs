@@ -1,6 +1,7 @@
 ﻿// Tệp: AppCafebookApi/View/nhanvien/pages/GiaoHangView.xaml.cs
-// (*** TẠO TỆP MỚI NÀY ***)
 using AppCafebookApi.Services;
+using AppCafebookApi.View.common;
+using AppCafebookApi.View.Common;
 using CafebookModel.Model.ModelApp.NhanVien;
 using System;
 using System.Net.Http.Json;
@@ -8,17 +9,33 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Collections.Generic; // THÊM
+using System.Net.Http; // THÊM
+using System.Windows.Threading; // THÊM cho Timer
 
 namespace AppCafebookApi.View.nhanvien.pages
 {
     public partial class GiaoHangView : Page
     {
-        // Biến cờ để ngăn sự kiện SelectionChanged chạy khi đang tải dữ liệu
         private bool _isLoading = false;
+
+        // =======================================
+        // === THÊM TIMER CHO LIVE SEARCH (YÊU CẦU 2) ===
+        // =======================================
+        private DispatcherTimer _searchTimer;
 
         public GiaoHangView()
         {
             InitializeComponent();
+
+            // Khởi tạo timer
+            _searchTimer = new DispatcherTimer();
+            _searchTimer.Interval = TimeSpan.FromMilliseconds(500); // Chờ 500ms sau khi gõ
+            _searchTimer.Tick += async (s, e) =>
+            {
+                _searchTimer.Stop(); // Dừng timer
+                await LoadDataAsync(); // Gọi API
+            };
         }
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -28,17 +45,38 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async Task LoadDataAsync()
         {
+            if (_isLoading) return; // Chặn gọi API chồng chéo
             _isLoading = true;
+
             try
             {
-                var response = await ApiClient.Instance.GetFromJsonAsync<GiaoHangViewDto>("api/app/nhanvien/giaohang/load");
+                // LẤY DỮ LIỆU TỪ BỘ LỌC
+                string searchQuery = txtSearch.Text;
+                string statusQuery = (cmbStatusFilter.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Chờ xác nhận";
+
+                // Xử lý nếu lỡ tay gõ vào ô tìm kiếm
+                if (searchQuery == "Tìm theo Tên, SĐT khách hoặc Mã HĐ...")
+                {
+                    searchQuery = "";
+                }
+
+                // Xây dựng query string
+                var queryParams = new List<string>();
+                if (!string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    queryParams.Add($"search={Uri.EscapeDataString(searchQuery)}");
+                }
+                if (statusQuery != "Tất cả")
+                {
+                    queryParams.Add($"status={Uri.EscapeDataString(statusQuery)}");
+                }
+                string queryString = string.Join("&", queryParams);
+
+                var response = await ApiClient.Instance.GetFromJsonAsync<GiaoHangViewDto>($"api/app/nhanvien/giaohang/load?{queryString}");
+
                 if (response != null)
                 {
-                    // 1. Tải danh sách đơn hàng vào DataGrid
                     dgGiaoHang.ItemsSource = response.DonGiaoHang;
-
-                    // 2. Tải danh sách người giao hàng vào Resource của Page
-                    // (để ComboBox trong DataGrid có thể binding)
                     var shippersSource = (CollectionViewSource)this.FindResource("ShippersSource");
                     shippersSource.Source = response.NguoiGiaoHangSanSang;
                 }
@@ -52,36 +90,99 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
+            // SỬA: Reset về "Chờ xác nhận"
+            txtSearch.Text = "";
+            cmbStatusFilter.SelectedIndex = 1; // 0 = Tất cả, 1 = Chờ xác nhận
             await LoadDataAsync();
         }
 
-        /// <summary>
-        /// Xảy ra khi thay đổi Trạng Thái Giao Hàng trong DataGrid
-        /// </summary>
-        private async void CmbTrangThai_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // =======================================
+        // === SỬA/THÊM CÁC HÀM SỰ KIỆN (YÊU CẦU 2) ===
+        // =======================================
+
+        // XÓA: BtnFilter_Click(object sender, RoutedEventArgs e)
+
+        // THÊM: TxtSearch_TextChanged
+        private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_isLoading) return; // Không chạy nếu đang tải dữ liệu
-
-            var comboBox = sender as ComboBox;
-            // Lấy GiaoHangItemDto của dòng hiện tại
-            var selectedItem = (comboBox?.DataContext) as GiaoHangItemDto;
-            var newStatus = (comboBox?.SelectedItem as ComboBoxItem)?.Content.ToString();
-
-            if (selectedItem == null || newStatus == null) return;
-
-            // Cập nhật DTO
-            var requestDto = new GiaoHangUpdateRequestDto
-            {
-                TrangThaiGiaoHang = newStatus,
-                IdNguoiGiaoHang = selectedItem.IdNguoiGiaoHang // Giữ nguyên người giao hàng
-            };
-
-            await UpdateGiaoHangAsync(selectedItem.IdHoaDon, requestDto);
+            // Không gọi API ngay, chỉ reset timer
+            if (_isLoading) return;
+            _searchTimer.Stop();
+            _searchTimer.Start();
         }
 
-        /// <summary>
-        /// Xảy ra khi thay đổi Người Giao Hàng trong DataGrid
-        /// </summary>
+        // THÊM: CmbStatusFilter_SelectionChanged
+        private async void CmbStatusFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Gọi API ngay khi đổi filter
+            if (_isLoading || !this.IsLoaded) return;
+            _searchTimer.Stop(); // Hủy tìm kiếm nếu đang gõ
+            await LoadDataAsync();
+        }
+
+        // =======================================
+        // === CÁC HÀM CÒN LẠI (GIỮ NGUYÊN) ===
+        // =======================================
+
+        private async void BtnConfirmAll_Click(object sender, RoutedEventArgs e)
+        {
+            var confirm = MessageBox.Show("Bạn có chắc chắn muốn chuyển TẤT CẢ đơn 'Chờ xác nhận' sang Bếp không?",
+                                          "Xác nhận hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm == MessageBoxResult.No) return;
+
+            try
+            {
+                var response = await ApiClient.Instance.PostAsync("api/app/nhanvien/giaohang/confirm-all-pending", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Đã chuyển tất cả đơn sang Bếp thành công.", "Hoàn tất", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await LoadDataAsync();
+                }
+                else
+                {
+                    MessageBox.Show(await response.Content.ReadAsStringAsync(), "Lỗi API");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi API");
+            }
+        }
+
+        private async void BtnChuyenCheBien_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int idHoaDon)
+            {
+                var confirm = MessageBox.Show($"Bạn có muốn đẩy đơn hàng #{idHoaDon} sang Bếp/Bar để chuẩn bị không?",
+                                             "Xác nhận gửi bếp", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (confirm == MessageBoxResult.No) return;
+
+                var requestDto = new GiaoHangUpdateRequestDto
+                {
+                    TrangThaiGiaoHang = "Đang chuẩn bị",
+                    IdNguoiGiaoHang = (btn.DataContext as GiaoHangItemDto)?.IdNguoiGiaoHang
+                };
+                await UpdateGiaoHangAsync(idHoaDon, requestDto);
+            }
+        }
+
+        private async void BtnHuyDon_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int idHoaDon)
+            {
+                var confirm = MessageBox.Show($"Bạn có chắc chắn muốn HỦY đơn hàng #{idHoaDon} không? Hành động này không thể hoàn tác.",
+                                             "Xác nhận Hủy đơn", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (confirm == MessageBoxResult.No) return;
+
+                var requestDto = new GiaoHangUpdateRequestDto
+                {
+                    TrangThaiGiaoHang = "Hủy",
+                    IdNguoiGiaoHang = (btn.DataContext as GiaoHangItemDto)?.IdNguoiGiaoHang
+                };
+                await UpdateGiaoHangAsync(idHoaDon, requestDto);
+            }
+        }
+
         private async void CmbNguoiGiaoHang_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isLoading) return;
@@ -92,25 +193,20 @@ namespace AppCafebookApi.View.nhanvien.pages
 
             if (selectedItem == null) return;
 
-            // Cập nhật DTO
             var requestDto = new GiaoHangUpdateRequestDto
             {
-                TrangThaiGiaoHang = selectedItem.TrangThaiGiaoHang, // Giữ nguyên trạng thái
+                TrangThaiGiaoHang = selectedItem.TrangThaiGiaoHang,
                 IdNguoiGiaoHang = newShipperId
             };
 
             await UpdateGiaoHangAsync(selectedItem.IdHoaDon, requestDto);
 
-            // Tải lại nếu gán shipper mà trạng thái đang trống
             if (newShipperId.HasValue && string.IsNullOrEmpty(selectedItem.TrangThaiGiaoHang))
             {
                 await LoadDataAsync();
             }
         }
 
-        /// <summary>
-        /// Hàm chung để gọi API cập nhật
-        /// </summary>
         private async Task UpdateGiaoHangAsync(int idHoaDon, GiaoHangUpdateRequestDto dto)
         {
             try
@@ -121,13 +217,12 @@ namespace AppCafebookApi.View.nhanvien.pages
                 {
                     string error = await response.Content.ReadAsStringAsync();
                     MessageBox.Show($"Lỗi cập nhật: {error}", "Lỗi API");
-                    // Tải lại để reset thay đổi
                     await LoadDataAsync();
                 }
 
-                // Nếu thành công (ví dụ: giao hàng hoàn thành -> tự động thanh toán)
-                // Cần tải lại để cập nhật trạng thái thanh toán
-                if (dto.TrangThaiGiaoHang == "Hoàn thành")
+                if (dto.TrangThaiGiaoHang == "Hoàn thành" ||
+                    dto.TrangThaiGiaoHang == "Đang chuẩn bị" ||
+                    dto.TrangThaiGiaoHang == "Hủy")
                 {
                     await LoadDataAsync();
                 }
@@ -136,6 +231,27 @@ namespace AppCafebookApi.View.nhanvien.pages
             {
                 MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi API");
                 await LoadDataAsync();
+            }
+        }
+
+        private async void BtnInPhieu_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int idHoaDon)
+            {
+                try
+                {
+                    var printData = await ApiClient.Instance.GetFromJsonAsync<PhieuGoiMonPrintDto>($"api/app/nhanvien/giaohang/print-data/{idHoaDon}");
+
+                    if (printData != null)
+                    {
+                        var printWindow = new AppCafebookApi.View.Common.PhieuGiaoHangPreviewWindow(printData);
+                        printWindow.ShowDialog();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi lấy dữ liệu in: {ex.Message}");
+                }
             }
         }
     }

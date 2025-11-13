@@ -302,12 +302,22 @@ namespace AppCafebookApi.View.nhanvien.pages
 
                 decimal giamTuDiem = diem * _tiLeDoiDiem;
                 decimal tongTruocDiem = _currentTienGocTach + _currentTienPhuThuTach - _currentGiamGiaKM;
+                // Giới hạn 50% giống backend
+                decimal maxDiscount = tongTruocDiem * 0.5m;
+                int diemToiDaTheo50 = (int)Math.Floor(maxDiscount / _tiLeDoiDiem);
 
+                if (diem > diemToiDaTheo50)
+                {
+                    diem = diemToiDaTheo50;
+                    txtDiemSuDung.Text = diem.ToString();
+                }
+                /*
                 if (giamTuDiem > tongTruocDiem)
                 {
                     int diemToiDa = (int)Math.Floor(tongTruocDiem / _tiLeDoiDiem);
                     txtDiemSuDung.Text = diemToiDa.ToString();
                 }
+                */
             }
             UpdateTachTotals();
         }

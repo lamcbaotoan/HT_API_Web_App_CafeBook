@@ -17,38 +17,28 @@
         <SolidColorBrush x:Key="RedBrush" Color="#D32F2F"/>
         <SolidColorBrush x:Key="BlueBrush" Color="#1976D2"/>
         <SolidColorBrush x:Key="OrangeBrush" Color="#F57C00"/>
-
         <CollectionViewSource x:Key="ShippersSource" />
-
         <Style TargetType="ComboBox" x:Key="DataGridComboBoxStyle">
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-
         <Style TargetType="TextBlock" x:Key="DataGridTextBlockStyle">
             <Setter Property="Padding" Value="5,2"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-
-        <Style TargetType="TextBlock" x:Key="TrangThaiGiaoHangStyle" BasedOn="{StaticResource DataGridTextBlockStyle}">
+        <Style x:Key="DataGridButton" TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
+        <Style x:Key="ActionButton_ChoXacNhan" TargetType="Button" BasedOn="{StaticResource DataGridButton}">
+            <Setter Property="Visibility" Value="Collapsed"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Chờ xác nhận">
-                    <Setter Property="Foreground" Value="{StaticResource OrangeBrush}"/>
+                    <Setter Property="Visibility" Value="Visible"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Đang chuẩn bị">
-                    <Setter Property="Foreground" Value="{StaticResource BlueBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Chờ giao">
-                    <Setter Property="Foreground" Value="{StaticResource PrimaryBrownBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Đang giao">
-                    <Setter Property="Foreground" Value="{StaticResource BlueBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Hoàn thành">
-                    <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Hủy">
-                    <Setter Property="Foreground" Value="{StaticResource RedBrush}"/>
+                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Visible"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -57,20 +47,47 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="0,0,0,15">
             <TextBlock Text="Quản lý Đơn Giao Hàng" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrownBrush}" VerticalAlignment="Center"/>
-            <Button x:Name="btnRefresh" Content="Tải lại" HorizontalAlignment="Right" Padding="15,8" FontWeight="SemiBold" Click="BtnRefresh_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnConfirmAll" Content="Xác nhận tất cả đơn chờ" Padding="15,8" FontWeight="SemiBold" Click="BtnConfirmAll_Click" Background="{StaticResource GreenBrush}" Foreground="White" Margin="0,0,10,0"/>
+                <Button x:Name="btnRefresh" Content="Tải lại" Padding="15,8" FontWeight="SemiBold" Click="BtnRefresh_Click"/>
+            </StackPanel>
         </Grid>
 
-        <DataGrid Grid.Row="1" x:Name="dgGiaoHang" AutoGenerateColumns="False" CanUserAddRows="False"
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="200"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox x:Name="txtSearch" Grid.Column="0" Padding="8" VerticalContentAlignment="Center"
+                     Text="" ToolTip="Tìm theo Tên, SĐT khách hoặc Mã HĐ..."
+                     TextChanged="TxtSearch_TextChanged"/>
+
+            <ComboBox x:Name="cmbStatusFilter" Grid.Column="1" Margin="10,0,0,0" Padding="8,7" VerticalContentAlignment="Center"
+                      SelectedIndex="1"
+                      SelectionChanged="CmbStatusFilter_SelectionChanged">
+                <ComboBoxItem Content="Tất cả"/>
+                <ComboBoxItem Content="Chờ xác nhận"/>
+                <ComboBoxItem Content="Đang chuẩn bị"/>
+                <ComboBoxItem Content="Chờ lấy hàng"/>
+                <ComboBoxItem Content="Đang giao"/>
+                <ComboBoxItem Content="Hoàn thành"/>
+                <ComboBoxItem Content="Đã Hủy"/>
+            </ComboBox>
+
+        </Grid>
+
+        <DataGrid Grid.Row="2" x:Name="dgGiaoHang" AutoGenerateColumns="False" CanUserAddRows="False"
                   BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="HĐ #" Binding="{Binding IdHoaDon}" IsReadOnly="True" FontWeight="SemiBold"/>
                 <DataGridTextColumn Header="Thời gian" Binding="{Binding ThoiGianTao, StringFormat=dd/MM HH:mm}" IsReadOnly="True"/>
-
                 <DataGridTemplateColumn Header="Khách hàng" MinWidth="180" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -82,27 +99,10 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-
                 <DataGridTextColumn Header="Tổng tiền" Binding="{Binding ThanhTien, StringFormat=N0}" IsReadOnly="True" FontWeight="SemiBold"/>
-
                 <DataGridTextColumn Header="Thanh toán" Binding="{Binding TrangThaiThanhToan}" IsReadOnly="True"/>
 
-                <DataGridTemplateColumn Header="Trạng thái Giao hàng" MinWidth="130">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ComboBox Style="{StaticResource DataGridComboBoxStyle}"
-                                      SelectedItem="{Binding TrangThaiGiaoHang, UpdateSourceTrigger=PropertyChanged}"
-                                      SelectionChanged="CmbTrangThai_SelectionChanged">
-                                <ComboBoxItem Content="Chờ xác nhận"/>
-                                <ComboBoxItem Content="Đang chuẩn bị"/>
-                                <ComboBoxItem Content="Chờ giao"/>
-                                <ComboBoxItem Content="Đang giao"/>
-                                <ComboBoxItem Content="Hoàn thành"/>
-                                <ComboBoxItem Content="Hủy"/>
-                            </ComboBox>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Trạng thái Giao hàng" Binding="{Binding TrangThaiGiaoHang, FallbackValue='Chờ xác nhận'}" IsReadOnly="True"/>
 
                 <DataGridTemplateColumn Header="Người giao hàng" MinWidth="130">
                     <DataGridTemplateColumn.CellTemplate>
@@ -113,6 +113,42 @@
                                       DisplayMemberPath="TenNguoiGiaoHang"
                                       SelectedValuePath="IdNguoiGiaoHang"
                                       SelectionChanged="CmbNguoiGiaoHang_SelectionChanged"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Hành động" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="btnChuyenCheBien" 
+                                        Content="Chuyển Bếp"
+                                        Style="{StaticResource ActionButton_ChoXacNhan}"
+                                        Background="{StaticResource GreenBrush}"
+                                        Foreground="White"
+                                        Click="BtnChuyenCheBien_Click"
+                                        Tag="{Binding IdHoaDon}"/>
+
+                                <Button x:Name="btnHuyDon" 
+                                        Content="Hủy"
+                                        Style="{StaticResource ActionButton_ChoXacNhan}"
+                                        Background="{StaticResource RedBrush}"
+                                        Foreground="White"
+                                        Click="BtnHuyDon_Click"
+                                        Tag="{Binding IdHoaDon}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button x:Name="btnInPhieu" Content="In Phiếu" Padding="8,4" Margin="5"
+                                    Style="{StaticResource DataGridButton}"
+                                    Background="{StaticResource BlueBrush}"
+                                    Click="BtnInPhieu_Click"
+                                    Tag="{Binding IdHoaDon}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

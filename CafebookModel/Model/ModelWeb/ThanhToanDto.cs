@@ -39,7 +39,7 @@ namespace CafebookModel.Model.ModelWeb
     }
 
     /// <summary>
-    /// SỬA: Thêm 2 thuộc tính mới
+    /// SỬA: Thêm các trường kiểm tra thời gian
     /// </summary>
     public class KhuyenMaiThanhToanDto
     {
@@ -50,11 +50,15 @@ namespace CafebookModel.Model.ModelWeb
         public decimal GiaTriGiam { get; set; }
         public decimal? GiamToiDa { get; set; }
         public int? IdSanPhamApDung { get; set; }
-
-        // === THÊM 2 DÒNG NÀY ĐỂ SỬA LỖI CS1061 ===
         public string? DieuKienApDung { get; set; }
         public decimal? HoaDonToiThieu { get; set; }
-        // ========================================
+
+        // =======================================
+        // === THÊM MỚI 3 TRƯỜNG TẠI ĐÂY ===
+        // =======================================
+        public string? NgayTrongTuan { get; set; }
+        public TimeSpan? GioBatDau { get; set; }
+        public TimeSpan? GioKetThuc { get; set; }
     }
 
 

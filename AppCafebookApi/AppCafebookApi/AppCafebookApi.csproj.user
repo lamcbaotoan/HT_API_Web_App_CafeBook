@@ -26,6 +26,9 @@
     <Compile Update="View\Common\InputDialogWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Common\PhieuGiaoHangPreviewWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Common\PhieuGoiMonPreviewWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

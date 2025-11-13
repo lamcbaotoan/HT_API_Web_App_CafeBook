@@ -60,7 +60,9 @@
 
                 <div class="d-flex justify-content-center gap-2 mt-4">
                     <a asp-page="/TrangChuView" class="btn btn-outline-secondary">Tiếp tục mua sắm</a>
-                    <a asp-page="/Account/LichSuDatHangView" class="btn btn-primary">Xem lịch sử đơn hàng</a>
+                    <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@Model.HoaDon.IdHoaDonMoi" class="btn btn-primary">
+                        Xem chi tiết đơn hàng
+                    </a>
                 </div>
             }
         </div>

@@ -56,7 +56,14 @@ namespace CafebookApi.Controllers.Web
                     GiamToiDa = km.GiamToiDa,
                     IdSanPhamApDung = km.IdSanPhamApDung,
                     DieuKienApDung = km.DieuKienApDung,
-                    HoaDonToiThieu = km.HoaDonToiThieu
+                    HoaDonToiThieu = km.HoaDonToiThieu,
+
+                    // =======================================
+                    // === THÊM 3 TRƯỜNG MỚI TẠI ĐÂY ===
+                    // =======================================
+                    NgayTrongTuan = km.NgayTrongTuan,
+                    GioBatDau = km.GioBatDau,
+                    GioKetThuc = km.GioKetThuc
                 })
                 .ToListAsync();
 
@@ -78,6 +85,7 @@ namespace CafebookApi.Controllers.Web
             return Ok(dto);
         }
 
+        // ... (Hàm SubmitOrder, CalculateDiscount, GetOrderSummary giữ nguyên) ...
         [HttpPost("submit")]
         public async Task<IActionResult> SubmitOrder([FromBody] ThanhToanSubmitDto dto)
         {
@@ -87,12 +95,7 @@ namespace CafebookApi.Controllers.Web
             var khachHang = await _context.KhachHangs.FindAsync(idKhachHang);
             if (khachHang == null) return NotFound("Không tìm thấy khách hàng.");
 
-            // =======================================
-            // === SỬA LỖI CS1061 TẠI ĐÂY ===
-            // Xóa bộ lọc .Where(i => i.Loai == "SanPham")
-            var sanPhamCartItems = dto.ItemsToPurchase;
-            // =======================================
-
+            var sanPhamCartItems = dto.ItemsToPurchase; // Sửa: Đã xóa Loai
             if (!sanPhamCartItems.Any())
             {
                 return BadRequest(new ThanhToanResponseDto { Success = false, Message = "Không có sản phẩm nào trong giỏ hàng để thanh toán." });
@@ -115,13 +118,15 @@ namespace CafebookApi.Controllers.Web
                     IdKhachHang = idKhachHang,
                     IdNhanVien = null,
                     ThoiGianTao = DateTime.Now,
-                    TrangThai = "Chờ xác nhận",
+                    // SỬA: Logic thanh toán
+                    TrangThai = (dto.PhuongThucThanhToan == "COD") ? "Chưa thanh toán" : "Đã thanh toán",
                     LoaiHoaDon = "Giao hàng",
-                    TrangThaiGiaoHang = "Chờ xác nhận",
                     DiaChiGiaoHang = dto.DiaChiGiaoHang,
                     SoDienThoaiGiaoHang = dto.SoDienThoai,
                     GhiChu = dto.GhiChu,
                     PhuongThucThanhToan = dto.PhuongThucThanhToan,
+                    // SỬA: Gán trạng thái giao hàng
+                    TrangThaiGiaoHang = "Chờ xác nhận",
                     TongTienGoc = 0,
                     GiamGia = 0
                 };
@@ -174,15 +179,17 @@ namespace CafebookApi.Controllers.Web
                     }
                     giamGiaDiem = dto.DiemSuDung * tiLeDoiDiem;
                     decimal tongTruocDiem = hoaDon.TongTienGoc - giamGiaKM;
-                    if (giamGiaDiem > tongTruocDiem)
+
+                    // Logic 50%
+                    decimal maxAllowedPointDiscount = tongTruocDiem * 0.5m;
+                    if (giamGiaDiem > maxAllowedPointDiscount)
                     {
-                        giamGiaDiem = tongTruocDiem;
-                        khachHang.DiemTichLuy -= (int)Math.Ceiling(giamGiaDiem / tiLeDoiDiem);
+                        giamGiaDiem = maxAllowedPointDiscount;
                     }
-                    else
-                    {
-                        khachHang.DiemTichLuy -= dto.DiemSuDung;
-                    }
+                    int diemBiTru = (int)Math.Ceiling(giamGiaDiem / tiLeDoiDiem);
+                    if (diemBiTru > khachHang.DiemTichLuy) diemBiTru = khachHang.DiemTichLuy;
+
+                    khachHang.DiemTichLuy -= diemBiTru;
                 }
 
                 hoaDon.GiamGia = giamGiaKM + giamGiaDiem;
@@ -206,7 +213,7 @@ namespace CafebookApi.Controllers.Web
                     CongThanhToan = dto.PhuongThucThanhToan,
                     SoTien = hoaDon.ThanhTien,
                     ThoiGianGiaoDich = DateTime.Now,
-                    TrangThai = (dto.PhuongThucThanhToan == "COD") ? "Chờ thanh toán" : "Đã thanh toán"
+                    TrangThai = (dto.PhuongThucThanhToan == "COD") ? "Chờ thanh toán" : "Thành công"
                 };
                 _context.GiaoDichThanhToans.Add(giaoDich);
 
@@ -259,12 +266,6 @@ namespace CafebookApi.Controllers.Web
             return await Task.FromResult(giamGia);
         }
 
-        // =======================================
-        // === THÊM MỚI API TẠI ĐÂY ===
-        // =======================================
-        /// <summary>
-        /// API lấy tóm tắt đơn hàng cho trang "ThanhToanThanhCong"
-        /// </summary>
         [HttpGet("order-summary/{id}")]
         public async Task<IActionResult> GetOrderSummary(int id)
         {
@@ -278,7 +279,6 @@ namespace CafebookApi.Controllers.Web
 
             if (hoaDon == null)
             {
-                // Ngăn người dùng xem đơn hàng của người khác
                 return NotFound("Không tìm thấy đơn hàng hoặc bạn không có quyền xem.");
             }
 
