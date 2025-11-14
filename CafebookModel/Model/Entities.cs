@@ -152,6 +152,7 @@ namespace CafebookModel.Model.Entities
         public virtual ICollection<DinhLuong> DinhLuongs { get; set; } = new List<DinhLuong>();
         public virtual ICollection<DeXuatSanPham> DeXuatSanPhamGocs { get; set; } = new List<DeXuatSanPham>();
         public virtual ICollection<DeXuatSanPham> DeXuatSanPhamDeXuats { get; set; } = new List<DeXuatSanPham>();
+        public virtual ICollection<DanhGia> DanhGias { get; set; } = new List<DanhGia>();
     }
 
     [Table("ChiTietHoaDon")]
@@ -1120,5 +1121,78 @@ namespace CafebookModel.Model.Entities
 
         [ForeignKey("IdSanPham")]
         public virtual SanPham SanPham { get; set; } = null!;
+    }
+
+    [Table("DanhGia")]
+    public class DanhGia
+    {
+        [Key]
+        public int idDanhGia { get; set; }
+
+        [ForeignKey("KhachHang")]
+        public int idKhachHang { get; set; }
+        public virtual KhachHang? KhachHang { get; set; }
+
+        [ForeignKey("SanPham")]
+        public int? idSanPham { get; set; }
+        public virtual SanPham? SanPham { get; set; }
+
+        [ForeignKey("HoaDon")]
+        public int idHoaDon { get; set; }
+        public virtual HoaDon? HoaDon { get; set; }
+
+        [Range(1, 5)]
+        public int SoSao { get; set; }
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? BinhLuan { get; set; }
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? HinhAnhURL { get; set; }
+
+        [Required]
+        // CHỈ CÓ MỘT DÒNG NÀY
+        public DateTime NgayTao { get; set; } 
+
+        [Required]
+        [Column(TypeName = "nvarchar(50)")]
+        public string TrangThai { get; set; } = "Hiển thị";
+
+        public virtual ICollection<PhanHoiDanhGia> PhanHoiDanhGias { get; set; } = new List<PhanHoiDanhGia>();
+
+        public DanhGia()
+        {
+            // Constructor gán giá trị cho thuộc tính NgayTao ở trên
+            this.NgayTao = DateTime.Now;
+        }
+    }
+
+    [Table("PhanHoiDanhGia")]
+    public class PhanHoiDanhGia
+    {
+        [Key]
+        public int idPhanHoi { get; set; }
+
+        [ForeignKey("DanhGia")]
+        public int idDanhGia { get; set; }
+        public virtual DanhGia? DanhGia { get; set; }
+
+        [ForeignKey("NhanVien")]
+        public int idNhanVien { get; set; }
+        public virtual NhanVien? NhanVien { get; set; }
+
+        [Required]
+        [Column(TypeName = "nvarchar(max)")]
+        public string NoiDung { get; set; } = null!;
+
+        [Required]
+        // CHỈ CÓ MỘT DÒNG NÀY
+        public DateTime NgayTao { get; set; } 
+
+        public PhanHoiDanhGia()
+        {
+            // Constructor gán giá trị cho thuộc tính NgayTao ở trên
+            this.NgayTao = DateTime.Now;
+        }
     }
 }

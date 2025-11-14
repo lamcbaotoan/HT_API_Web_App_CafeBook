@@ -4376,7 +4376,8 @@ namespace CafebookModel.Model.ModelWeb
     // DTO cho trang Kết quả tìm kiếm (MỚI)
     public class SachKetQuaTimKiemDto
     {
-        public string TieuDeTrang { get; set; } = "Kết quả tìm kiếm";
+        public string TieuDeTrang { get; set; } = "Tất cả Sách của";
+        public string? MoTaTrang { get; set; }
         public List<SachCardDto> SachList { get; set; } = new List<SachCardDto>();
     }
 

@@ -12,7 +12,6 @@ namespace WebCafebookApi.Pages
 {
     public class ChiTietSanPhamViewModel : PageModel
     {
-        // ... (Constructor và OnGetAsync giữ nguyên) ...
         private readonly IHttpClientFactory _httpClientFactory;
         public ChiTietSanPhamViewModel(IHttpClientFactory httpClientFactory)
         {
@@ -28,6 +27,10 @@ namespace WebCafebookApi.Pages
         public SanPhamChiTietDto? SanPham { get; set; }
         public string? ErrorMessage { get; set; }
 
+        public List<DanhGiaWebDto> DanhSachDanhGia { get; set; } = new List<DanhGiaWebDto>();
+        public double SaoTrungBinh { get; set; } = 0;
+        public int TongSoDanhGia { get; set; } = 0;
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (Id <= 0)
@@ -40,6 +43,16 @@ namespace WebCafebookApi.Pages
             try
             {
                 SanPham = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{Id}");
+
+                // === SỬA LỖI CS0246: Đổi tên DTO cho đúng ===
+                DanhSachDanhGia = await httpClient.GetFromJsonAsync<List<DanhGiaWebDto>>($"api/danhgia/sanpham/{Id}");
+
+                // Tính toán thông tin tóm tắt đánh giá
+                if (DanhSachDanhGia.Any())
+                {
+                    TongSoDanhGia = DanhSachDanhGia.Count;
+                    SaoTrungBinh = DanhSachDanhGia.Average(d => d.SoSao);
+                }
             }
             catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {

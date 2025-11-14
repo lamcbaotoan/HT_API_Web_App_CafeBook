@@ -24,6 +24,7 @@ namespace WebCafebookApi.Pages
         public int? IdNXB { get; set; }
 
         public string PageTitle { get; set; } = "Thư Viện Sách";
+        public string? PageDescription { get; set; }
         public List<SachCardDto> SachList { get; set; } = new List<SachCardDto>();
         public string? ErrorMessage { get; set; }
 
@@ -35,8 +36,6 @@ namespace WebCafebookApi.Pages
         public async Task<IActionResult> OnGetAsync()
         {
             var httpClient = _httpClientFactory.CreateClient();
-
-            // SỬA: Gọi đúng API "filter-by-id"
             var sb = new StringBuilder("http://localhost:5166/api/web/thuvien/filter-by-id?");
 
             if (IdTacGia.HasValue) sb.Append($"idTacGia={IdTacGia.Value}");
@@ -53,6 +52,7 @@ namespace WebCafebookApi.Pages
                 if (result != null)
                 {
                     PageTitle = result.TieuDeTrang;
+                    PageDescription = result.MoTaTrang; // Dòng này sẽ hết lỗi sau khi bạn sửa file DTO
                     SachList = result.SachList;
                 }
             }

@@ -10881,60 +10881,101 @@ namespace CafebookApi.Controllers.Web
         }
 
         // --- (Hàm Register giữ nguyên) ---
+        // --- (Hàm Register đã được sửa đổi theo logic mới) ---
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] DangKyRequestModel model)
         {
-            // ... (Giữ nguyên logic của bạn) ...
+            // 1. Kiểm tra đầu vào cơ bản
             if (model == null || string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.SoDienThoai) || string.IsNullOrEmpty(model.Password))
             {
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Vui lòng điền đầy đủ Email, SĐT và Mật khẩu." });
             }
-            var existingFullAccount = await _context.KhachHangs
-                .FirstOrDefaultAsync(k => k.TaiKhoanTam == false && (k.Email == model.Email || k.SoDienThoai == model.SoDienThoai));
-            if (existingFullAccount != null)
+
+            // 2. KIỂM TRA XUNG ĐỘT VỚI TÀI KHOẢN CHÍNH THỨC (Rule 5)
+            // Kiểm tra không trùng Email với người khác (tài khoản chính thức)
+            var emailConflict = await _context.KhachHangs
+                .FirstOrDefaultAsync(k => k.TaiKhoanTam == false && k.Email == model.Email);
+
+            if (emailConflict != null)
             {
-                if (existingFullAccount.Email == model.Email)
-                {
-                    return Ok(new WebLoginResponseModel { Success = false, Message = "Email này đã được sử dụng bởi một tài khoản khác." });
-                }
-                if (existingFullAccount.SoDienThoai == model.SoDienThoai)
-                {
-                    return Ok(new WebLoginResponseModel { Success = false, Message = "SĐT này đã được sử dụng bởi một tài khoản khác." });
-                }
+                return Ok(new WebLoginResponseModel { Success = false, Message = "Email này đã được sử dụng bởi một tài khoản khác." });
             }
+
+            // Kiểm tra không trùng SĐT với người khác (tài khoản chính thức)
+            var phoneConflict = await _context.KhachHangs
+                .FirstOrDefaultAsync(k => k.TaiKhoanTam == false && k.SoDienThoai == model.SoDienThoai);
+
+            if (phoneConflict != null)
+            {
+                return Ok(new WebLoginResponseModel { Success = false, Message = "SĐT này đã được sử dụng bởi một tài khoản khác." });
+            }
+
+            // 3. TÌM VÀ XỬ LÝ TÀI KHOẢN TẠM
+            // Sau khi xác nhận Email và SĐT không xung đột với tài khoản chính,
+            // chúng ta tìm tài khoản tạm để hợp nhất.
             var existingTempAccount = await _context.KhachHangs
                 .FirstOrDefaultAsync(k => k.TaiKhoanTam == true && (k.Email == model.Email || k.SoDienThoai == model.SoDienThoai));
+
             KhachHang khachHang;
+
             if (existingTempAccount != null)
             {
+                // Đã tìm thấy tài khoản tạm -> Cập nhật và kích hoạt nó
                 khachHang = existingTempAccount;
-                khachHang.Email = model.Email;
-                khachHang.SoDienThoai = model.SoDienThoai;
+
+                // Áp dụng các quy tắc cập nhật/bổ sung
+                bool emailMatch = khachHang.Email == model.Email;
+                bool phoneMatch = khachHang.SoDienThoai == model.SoDienThoai;
+
+                if (emailMatch && !phoneMatch)
+                {
+                    // Rule 1 & 4: Email đúng, SĐT sai/trống -> Cập nhật SĐT
+                    khachHang.SoDienThoai = model.SoDienThoai;
+                }
+                else if (!emailMatch && phoneMatch)
+                {
+                    // Rule 2 & 4: SĐT đúng, Email sai/trống -> Cập nhật Email
+                    khachHang.Email = model.Email;
+                }
+                // Rule 3: Cả hai đều đúng -> Không làm gì
+
+                // Kích hoạt tài khoản
                 khachHang.MatKhau = model.Password;
-                khachHang.NgayTao = DateTime.Now;
+                khachHang.NgayTao = DateTime.Now; // Cập nhật ngày tạo là ngày đăng ký
                 khachHang.TaiKhoanTam = false;
                 khachHang.BiKhoa = false;
+
+                // Cập nhật HoTen nếu nó đang là email (trường hợp tài khoản tạm chỉ có email)
+                if (khachHang.HoTen == existingTempAccount.Email)
+                {
+                    khachHang.HoTen = model.Email; // Cập nhật HoTen thành email mới (nếu có)
+                }
+
                 _context.KhachHangs.Update(khachHang);
             }
             else
             {
+                // 4. TẠO MỚI (Không tìm thấy tài khoản tạm)
+                // Tạo tài khoản mới hoàn toàn
                 khachHang = new KhachHang
                 {
-                    HoTen = model.Email,
+                    HoTen = model.Email, // Mặc định HoTen là Email khi đăng ký
                     Email = model.Email,
                     SoDienThoai = model.SoDienThoai,
-                    TenDangNhap = null,
+                    TenDangNhap = model.Email,
                     MatKhau = model.Password,
                     NgayTao = DateTime.Now,
                     DiemTichLuy = 0,
                     BiKhoa = false,
-                    TaiKhoanTam = false
+                    TaiKhoanTam = false // Tài khoản chính thức
                 };
                 _context.KhachHangs.Add(khachHang);
             }
+
+            // 5. LƯU THAY ĐỔI VÀ TRẢ VỀ KẾT QUẢ
             await _context.SaveChangesAsync();
 
-            // SỬA: Tự động đăng nhập và tạo token sau khi đăng ký
+            // Tạo DTO và Token
             var dto = new KhachHangDto
             {
                 IdKhachHang = khachHang.IdKhachHang,
@@ -11934,7 +11975,7 @@ namespace CafebookApi.Controllers.Web
             return Ok(sach);
         }
 
-        // API TÌM KIẾM MỚI (cho trang TimKiemSachView)
+        // === API TÌM KIẾM ĐÃ CẬP NHẬT (thêm MoTaTrang) ===
         [HttpGet("filter-by-id")]
         public async Task<IActionResult> SearchSachById([FromQuery] int? idTacGia, [FromQuery] int? idTheLoai, [FromQuery] int? idNXB)
         {
@@ -11945,22 +11986,30 @@ namespace CafebookApi.Controllers.Web
             {
                 var tacGia = await _context.TacGias.FindAsync(idTacGia.Value);
                 if (tacGia == null) return NotFound("Không tìm thấy tác giả.");
+
                 resultDto.TieuDeTrang = $"Sách của tác giả: {tacGia.TenTacGia}";
+                resultDto.MoTaTrang = tacGia.GioiThieu; // <-- CẬP NHẬT MÔ TẢ
+
                 query = query.Where(s => s.SachTacGias.Any(stg => stg.IdTacGia == idTacGia.Value));
             }
             else if (idTheLoai.HasValue)
             {
                 var theLoai = await _context.TheLoais.FindAsync(idTheLoai.Value);
                 if (theLoai == null) return NotFound("Không tìm thấy thể loại.");
+
                 resultDto.TieuDeTrang = $"Sách thuộc thể loại: {theLoai.TenTheLoai}";
+                resultDto.MoTaTrang = theLoai.MoTa; // <-- CẬP NHẬT MÔ TẢ
+
                 query = query.Where(s => s.SachTheLoais.Any(stl => stl.IdTheLoai == idTheLoai.Value));
             }
             else if (idNXB.HasValue)
             {
-                // (Chưa dùng nhưng để sẵn)
                 var nxb = await _context.NhaXuatBans.FindAsync(idNXB.Value);
                 if (nxb == null) return NotFound("Không tìm thấy NXB.");
+
                 resultDto.TieuDeTrang = $"Sách của NXB: {nxb.TenNhaXuatBan}";
+                resultDto.MoTaTrang = nxb.MoTa; // <-- CẬP NHẬT MÔ TẢ
+
                 query = query.Where(s => s.SachNhaXuatBans.Any(snxb => snxb.IdNhaXuatBan == idNXB.Value));
             }
             else

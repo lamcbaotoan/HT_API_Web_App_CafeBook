@@ -173,7 +173,7 @@ namespace CafebookApi.Controllers.Web
             return Ok(sach);
         }
 
-        // API TÌM KIẾM MỚI (cho trang TimKiemSachView)
+        // === API TÌM KIẾM ĐÃ CẬP NHẬT (thêm MoTaTrang) ===
         [HttpGet("filter-by-id")]
         public async Task<IActionResult> SearchSachById([FromQuery] int? idTacGia, [FromQuery] int? idTheLoai, [FromQuery] int? idNXB)
         {
@@ -184,22 +184,30 @@ namespace CafebookApi.Controllers.Web
             {
                 var tacGia = await _context.TacGias.FindAsync(idTacGia.Value);
                 if (tacGia == null) return NotFound("Không tìm thấy tác giả.");
+
                 resultDto.TieuDeTrang = $"Sách của tác giả: {tacGia.TenTacGia}";
+                resultDto.MoTaTrang = tacGia.GioiThieu; // <-- CẬP NHẬT MÔ TẢ
+
                 query = query.Where(s => s.SachTacGias.Any(stg => stg.IdTacGia == idTacGia.Value));
             }
             else if (idTheLoai.HasValue)
             {
                 var theLoai = await _context.TheLoais.FindAsync(idTheLoai.Value);
                 if (theLoai == null) return NotFound("Không tìm thấy thể loại.");
+
                 resultDto.TieuDeTrang = $"Sách thuộc thể loại: {theLoai.TenTheLoai}";
+                resultDto.MoTaTrang = theLoai.MoTa; // <-- CẬP NHẬT MÔ TẢ
+
                 query = query.Where(s => s.SachTheLoais.Any(stl => stl.IdTheLoai == idTheLoai.Value));
             }
             else if (idNXB.HasValue)
             {
-                // (Chưa dùng nhưng để sẵn)
                 var nxb = await _context.NhaXuatBans.FindAsync(idNXB.Value);
                 if (nxb == null) return NotFound("Không tìm thấy NXB.");
+
                 resultDto.TieuDeTrang = $"Sách của NXB: {nxb.TenNhaXuatBan}";
+                resultDto.MoTaTrang = nxb.MoTa; // <-- CẬP NHẬT MÔ TẢ
+
                 query = query.Where(s => s.SachNhaXuatBans.Any(snxb => snxb.IdNhaXuatBan == idNXB.Value));
             }
             else

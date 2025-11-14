@@ -18,12 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\Shared\" />
+    <Folder Include="wwwroot\images\anhdanhgia\monan\" />
+    <Folder Include="wwwroot\images\anhdanhgia\sach\" />
     <Folder Include="wwwroot\images\avatars\avatarNV\" />
     <Folder Include="wwwroot\images\avatars\avatarKH\" />
     <Folder Include="wwwroot\images\books\" />
     <Folder Include="wwwroot\images\foods\" />
-    <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
   <ItemGroup>

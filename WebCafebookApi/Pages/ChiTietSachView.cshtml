@@ -1,236 +1,388 @@
 ﻿@page "{id:int}"
 @model WebCafebookApi.Pages.ChiTietSachViewModel
+
 @{
     ViewData["Title"] = Model.Sach?.TieuDe ?? "Chi Tiết Sách";
-    var imgSrc = string.IsNullOrEmpty(Model.Sach?.AnhBiaUrl) ?
-"/images/default-book-cover.png" : Model.Sach.AnhBiaUrl;
+    var imgSrc = string.IsNullOrEmpty(Model.Sach?.AnhBiaUrl)
+        ? "/images/default-book-cover.png"
+        : Model.Sach.AnhBiaUrl;
 }
 
 @section Styles {
     <style>
-        .description-truncated {
-            max-height: 100px;
-overflow: hidden;
-            transition: max-height 0.3s ease-out;
+        /* ==============================
+           CSS CHO TABS (ĐỒNG BỘ TỪ TRANG SẢN PHẨM)
+        ============================== */
+        /* Các biến màu (giả định) */
+        :root {
+            --cf-orange-light: #FF9800;
+            --cf-orange: #F57C00;
+            --cf-text: #333333;
+            --cf-white: #ffffff;
+            --cf-shadow: rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Card container */
+        .product-detail-card,
+        .tab-content {
+            background-color: var(--cf-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--cf-shadow);
         }
 
-        .description-expanded {
-            max-height: 1000px;
-transition: max-height 0.5s ease-in;
+        /* CSS cho các tab */
+        .product-tabs .nav-link {
+            color: var(--cf-text);
+            background-color: var(--cf-white);
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            font-weight: 500;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .product-tabs .nav-link.active {
+            color: var(--cf-orange);
+            border-bottom-color: var(--cf-orange);
+            background-color: var(--cf-white);
+        }
+
+        .product-tabs .nav-link:hover:not(.active) {
+            color: var(--cf-orange-light);
+            border-bottom-color: rgba(var(--cf-orange-light), 0.3);
+        }
+
+        .product-tabs {
+            background-color: var(--cf-white);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 1px 3px var(--cf-shadow);
+            margin-bottom: -1px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* Tăng khoảng cách các phần */
+        .product-section {
+            margin-bottom: 2.5rem;
+        }
+
+        /* ==============================
+           CSS CHO MÔ TẢ (GIỮ NGUYÊN)
+        ============================== */
+        #description-wrapper.description-truncated p {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: .5rem !important;
+        }
+
+        #description-wrapper.description-expanded p {
+            display: block;
+            white-space: pre-wrap !important;
+            overflow: visible;
+        }
+
+        /* ==============================
+           CSS CHO TRANG (GIỮ NGUYÊN)
+        ============================== */
+        .detail-img-container img {
+            max-height: 500px;
+            object-fit: cover;
+        }
+
+        .ingredient-list li {
+            margin-bottom: .5rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ==============================
+           CSS MỚI: HỘP THUÊ SÁCH
+        ============================== */
+        .rent-box-card {
+            background-color: #fdfaf6; /* Màu nền be nhạt */
+            border-radius: 8px;
+            border: 1px solid #eee;
+            padding: 1.25rem;
         }
     </style>
 }
 
 <div class="container mt-5">
-    <div class="main-content-card">
-        @if (Model.Sach != null)
-        {
-            <div class="row gy-4">
-                @* Cột Hình ảnh *@
-                <div class="col-lg-4">
-               
-     <div class="detail-img-container">
-                        <img src="@imgSrc" class="img-fluid rounded shadow-sm w-100" alt="@Model.Sach.TieuDe" style="max-height: 500px; object-fit: cover;">
-                    </div>
+
+    @if (Model.Sach != null)
+    {
+        <div class="row product-detail-card p-4 gy-4 product-section">
+
+            <div class="col-lg-4">
+                <div class="detail-img-container">
+                    <img src="@imgSrc" class="img-fluid rounded shadow-sm w-100" alt="@Model.Sach.TieuDe">
                 </div>
+            </div>
 
-                @* Cột Thông tin *@
-    
-            <div class="col-lg-5">
-                    <nav aria-label="breadcrumb" class="page-breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a asp-page="/TrangChuView"><span class="material-symbols-outlined">home</span> Trang Chủ</a></li>
-       
-                     <li class="breadcrumb-item"><a asp-page="/ThuVienSachView"><span class="material-symbols-outlined">import_contacts</span> Thư Viện Sách</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">@Model.Sach.TieuDe</li>
-                        </ol>
-                  
-  </nav>
+            <div class="col-lg-8 ps-lg-5">
 
-                    <h1 class="display-5 fw-bold">@Model.Sach.TieuDe</h1>
+                <nav aria-label="breadcrumb" class="page-breadcrumb mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a asp-page="/TrangChuView">
+                                <span class="material-symbols-outlined">home</span> Trang Chủ
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a asp-page="/ThuVienSachView">
+                                <span class="material-symbols-outlined">import_contacts</span> Thư Viện Sách
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">@Model.Sach.TieuDe</li>
+                    </ol>
+                </nav>
 
-                    <p class="lead fs-5">
-                        Tác giả:
-                        @if (Model.Sach.TacGias != null && 
-Model.Sach.TacGias.Any())
+                <h1 class="display-5 fw-bold">@Model.Sach.TieuDe</h1>
+
+                <p class="lead fs-5 mb-4">
+                    Tác giả:
+                    @if (Model.Sach.TacGias?.Any() == true)
+                    {
+                        foreach (var tg in Model.Sach.TacGias)
                         {
-                            foreach (var tacGia in Model.Sach.TacGias)
-                            {
-                
-                <a asp-page="/TimKiemSachView" asp-route-idTacGia="@tacGia.IdTacGia" class="text-muted text-decoration-none">@tacGia.TenTacGia</a>
-                                @if (tacGia != Model.Sach.TacGias.Last())
-                                {
-             
-                       <text>, </text>
-                                }
-                            }
-                
-        }
+                            <a asp-page="/TimKiemSachView"
+                               asp-route-idTacGia="@tg.IdTacGia"
+                               class="text-muted text-decoration-none">@tg.TenTacGia</a>
+                            @(tg != Model.Sach.TacGias.Last() ? ", " : "")
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">(Đang cập nhật)</span>
+                    }
+                </p>
+
+                <h3 class="text-danger fw-bolder mb-4">
+                    @Model.Sach.GiaBia.ToString("N0") đ
+                    <small class="text-muted fs-5">(Tiền cọc)</small>
+                </h3>
+
+                <hr class="my-4" />
+
+                <div class="rent-box-card">
+                    <h5 class="card-title mb-3">Thuê Sách</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-6" style="font-weight: 500;">Tình trạng:</span>
+                        @if (Model.Sach.SoLuongCoSan > 0)
+                        {
+                            <strong class="text-success ms-2">
+                                <span class="material-symbols-outlined" style="vertical-align: sub; font-size: 1.1rem;">check_circle</span>
+                                Còn @Model.Sach.SoLuongCoSan cuốn
+                            </strong>
+                        }
                         else
                         {
-                            <span class="text-muted">(Đang cập nhật)</span>
-             
-           }
-                    </p>
-
-                    <div class="fs-5 mb-3">
-                        <span style="vertical-align: top;">Thể loại:</span>
+                            <strong class="text-danger ms-2">
+                                <span class="material-symbols-outlined" style="vertical-align: sub; font-size: 1.1rem;">cancel</span>
+                                Đã thuê hết
+                            </strong>
+                        }
+                    </div>
                     
-    @if (Model.Sach.TheLoais != null && Model.Sach.TheLoais.Any())
+                    <div class="d-grid gap-3">
+                        <button type="button" class="btn btn-lg px-4 btn-primary-custom" disabled>
+                            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">auto_stories</span>
+                            Thuê sách (Sắp có)
+                        </button>
+                    </div>
+                     <small class="text-muted d-block text-center mt-3">Vui lòng liên hệ quầy để làm thủ tục thuê sách.</small>
+                </div>
+                </div>
+        </div>
+        <div class="mt-5 product-section">
+            <ul class="nav nav-tabs product-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#descriptionTab">Mô Tả Chi Tiết</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#stockTab">Thông Tin Kho</a>
+                </li>
+            </ul>
+
+            <div class="tab-content p-4">
+                <div class="tab-pane fade show active" id="descriptionTab">
+                    
+                    <h5 class="fw-bold">Thể loại</h5>
+                    <div class="mb-3">
+                        @if (Model.Sach.TheLoais?.Any() == true)
                         {
-                            foreach (var cat in Model.Sach.TheLoais)
+                            foreach (var tl in Model.Sach.TheLoais)
                             {
-       
-                         <a asp-page="/TimKiemSachView" asp-route-idTheLoai="@cat.IdTheLoai" class="badge bg-primary text-decoration-none me-1 mb-1">@cat.TenTheLoai</a>
+                                <a asp-page="/TimKiemSachView"
+                                   asp-route-idTheLoai="@tl.IdTheLoai"
+                                   class="badge bg-primary text-decoration-none me-1 mb-1">@tl.TenTheLoai</a>
                             }
                         }
-                
-        else
+                        else
                         {
-                            <span class="badge bg-secondary me-1 mb-1">(Đang cập nhật)</span>
+                            <span class="badge bg-secondary">(Đang cập nhật)</span>
                         }
-          
-          </div>
-
-                    <h3 class="text-danger fw-bolder">@Model.Sach.GiaBia.ToString("N0") đ <small class="text-muted fs-5">(Tiền cọc)</small></h3>
-
-                    @* Mô tả (Ẩn/Hiện) *@
-                    <div id="description-wrapper" class="description-truncated">
-                 
-       <p class="mt-4 fs-6" style="white-space: pre-wrap;">@Model.Sach.MoTa</p>
                     </div>
-                    <a href="javascript:void(0);"
-id="toggle-description" class="btn btn-link ps-0" style="display: none;">Đọc thêm...</a>
 
-                    <h5 class="mt-4">Thông tin kho:</h5>
-                    <ul class="ingredient-list">
-                        <li><span class="material-symbols-outlined">push_pin</span> Vị trí: <strong>@Model.Sach.ViTri</strong></li>
-                      
-  <li><span class="material-symbols-outlined">inventory</span> Tổng số lượng: <strong>@Model.Sach.TongSoLuong</strong></li>
-                        <li>
-                            <span class="material-symbols-outlined">check_circle</span>
-                            Hiện có sẵn:
-          
-                  @if (Model.Sach.SoLuongCoSan > 0)
+                    <h5 class="fw-bold mt-4">Nhà xuất bản</h5>
+                    <div class="mb-4">
+                        @if (Model.Sach.NhaXuatBans?.Any() == true)
+                        {
+                            foreach (var nxb in Model.Sach.NhaXuatBans)
+                            {
+                                <a asp-page="/TimKiemSachView"
+                                   asp-route-idNXB="@nxb.IdNhaXuatBan"
+                                   class="badge bg-success text-decoration-none me-1 mb-1">@nxb.TenNhaXuatBan</a>
+                            }
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">(Đang cập nhật)</span>
+                        }
+                    </div>
+
+                    <h5 class="fw-bold mt-4">Giới thiệu sách</h5>
+                    <div id="description-wrapper" class="description-truncated">
+                        <p class="mt-3 fs-6" style="white-space: pre-wrap;">
+                            @Model.Sach.MoTa
+                        </p>
+                    </div>
+                    <a id="toggle-description"
+                       href="javascript:void(0);"
+                       class="btn btn-link ps-0"
+                       style="display:none;">Đọc thêm...</a>
+                </div>
+
+                <div class="tab-pane fade" id="stockTab">
+                    <h5 class="fw-bold mb-3">Thông tin kho</h5>
+                    <ul class="ingredient-list list-unstyled fs-6">
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+                            <div>
+                                <span class="material-symbols-outlined text-muted me-2" style="vertical-align: bottom;">push_pin</span>
+                                Vị trí:
+                            </div>
+                            <strong class="ms-2">@Model.Sach.ViTri</strong>
+                        </li>
+                         <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-top">
+                            <div>
+                                <span class="material-symbols-outlined text-muted me-2" style="vertical-align: bottom;">inventory</span>
+                                Tổng số lượng:
+                            </div>
+                            <strong class="ms-2">@Model.Sach.TongSoLuong cuốn</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-top">
+                            <div>
+                                <span class="material-symbols-outlined text-muted me-2" style="vertical-align: bottom;">check_circle</span>
+                                Hiện có sẵn:
+                            </div>
+                            @if (Model.Sach.SoLuongCoSan > 0)
                             {
                                 <strong class="text-success ms-2">@Model.Sach.SoLuongCoSan cuốn</strong>
-                
-            }
+                            }
                             else
                             {
-                                
-<strong class="text-danger ms-2">Đã thuê hết</strong>
+                                <strong class="text-danger ms-2">Đã thuê hết</strong>
                             }
                         </li>
                     </ul>
                 </div>
+            </div>
+        </div>
+        <div class="row mt-5 product-section">
+            <div class="col-12">
 
-        
-        @* Cột Đặt Thuê (ĐÃ SỬA) *@
-                <div class="col-lg-3">
-                    <div class="card sticky-top" style="top: 20px;">
-                        <div class="card-body">
-                    
-        <h5 class="card-title">Thuê Sách</h5>
-                            <hr />
+                <h3 class="border-bottom pb-2 mb-3 section-header">
+                    <span class="material-symbols-outlined">recommend</span> Có thể bạn cũng thích
+                </h3>
 
-                            @* TOÀN BỘ LOGIC GIỎ HÀNG TỪ  ĐẾN  ĐÃ BỊ XÓA KHỎI ĐÂY
-                            *@
-                            
-                        </div>
+                @if (Model.Sach.GoiY?.Any() == true)
+                {
+                    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3"> @foreach (var item in Model.Sach.GoiY)
+                        {
+                            var imgUrl = string.IsNullOrEmpty(item.AnhBiaUrl)
+                                ? "/images/default-book-cover.png"
+                                : item.AnhBiaUrl;
+                            <div class="col">
+                                <a asp-page="/ChiTietSachView"
+                                   asp-route-id="@item.IdSach"
+                                   class="text-decoration-none">
+
+                                    <div class="card h-100 product-card">
+                                        <div class="card-img-container">
+                                            <img src="@imgUrl"
+                                                 class="card-img-top book-card-img"
+                                                 alt="@item.TieuDe" />
+                                        </div>
+
+                                        <div class="card-body d-flex flex-column">
+                                            <h6 class="book-card-title">@item.TieuDe</h6>
+                                            <p class="card-text text-danger fw-bold mt-auto mb-0">
+                                                @item.GiaBia.ToString("N0") đ
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                </a>
+                            </div>
+                        }
+
                     </div>
-             
-   </div>
-            </div>
+                }
+                else
+                {
+                    <p class="text-muted">(Chưa có gợi ý nào cho cuốn sách này.)</p>
+                }
 
-            @* ... (Phần Gợi ý và Đánh giá giữ nguyên) ... *@
-            <div class="row mt-5">
-                <div class="col-12">
-                    <h3 class="border-bottom pb-2 mb-3 section-header justify-content-start px-0">
-     
-                   <span class="material-symbols-outlined">recommend</span>
-                        Có thể bạn cũng thích
-                    </h3>
-                    @if (Model.Sach.GoiY != null && Model.Sach.GoiY.Any())
-       
-             {
-                        <div class="row row-cols-1 row-cols-md-4 g-4">
-                            @foreach (var item in Model.Sach.GoiY)
-                           
- {
-                                <div class="col">
-                                    <a asp-page="/ChiTietSachView" asp-route-id="@item.IdSach" class="text-decoration-none">
-                           
-             <div class="card h-100 product-card">
-                                            @{
-                                        
-        var imgUrl = string.IsNullOrEmpty(item.AnhBiaUrl) ?
-                                                "/images/default-book-cover.png" : item.AnhBiaUrl;
-}
-                                            <div class="card-img-container">
-                                                <img src="@imgUrl" class="card-img-top book-card-img"
-    
-                                                 alt="@item.TieuDe">
-                                            </div>
-       
-                                     <div class="card-body d-flex flex-column">
-                                                <h6 class="card-title text-decoration-none book-card-title">@item.TieuDe</h6>
-         
-                                       <p class="card-text text-danger fw-bold mt-auto mb-0">@item.GiaBia.ToString("N0") đ</p>
-                                            </div>
-           
-                             </div>
-                                    </a>
-                                </div>
-   
-                         }
-                        </div>
-                    }
-                    else
-           
-         {
-                        <p class="text-muted">(Chưa có gợi ý nào cho cuốn sách này.)</p>
-                    }
-                </div>
             </div>
-        }
-  
-      else
-        {
-            <div class="alert alert-danger">
-                <h4>Không tìm thấy sách</h4>
-                <p>@Model.ErrorMessage</p>
-            </div>
-            <a asp-page="/ThuVienSachView" class="btn btn-link">Quay lại thư viện</a>
-       
- }
-    </div>
+        </div>
+
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <h4>Không tìm thấy sách</h4>
+            <p>@Model.ErrorMessage</p>
+        </div>
+        <a asp-page="/ThuVienSachView" class="btn btn-link">Quay lại thư viện</a>
+    }
+
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
     <script>
-               $(document).ready(function() {
-                   var $wrapper = $('#description-wrapper');
-if ($wrapper.length === 0) return;
-                   var $content = $wrapper.find('p');
-                   var $btn = $('#toggle-description');
-if ($content.length > 0 && $content.get(0).scrollHeight > $wrapper.height()) {
-                       $btn.show();
-} else {
-                        $wrapper.removeClass('description-truncated');
-}
-                   $btn.click(function() {
-                       if ($wrapper.hasClass('description-truncated')) {
-                           $wrapper.removeClass('description-truncated').addClass('description-expanded');
-                           $btn.text('Thu 
-gọn');
-                       } else {
-                           $wrapper.removeClass('description-expanded').addClass('description-truncated');
-                           $btn.text('Đọc thêm...');
-                    
-   }
-                   });
-});
+        $(function () {
+            // Logic "Đọc thêm"
+            const $wrapper = $('#description-wrapper');
+            const $content = $wrapper.find('p');
+            const $btn = $('#toggle-description');
+
+            const lineHeight = parseFloat($content.css("line-height"));
+            const maxHeight = lineHeight * 3;
+
+            if ($content[0].scrollHeight > (maxHeight + 5)) { // Thêm 5px dự phòng
+                $btn.show();
+            }
+
+            $btn.on("click", function () {
+                const expanded = $wrapper.hasClass('description-expanded');
+                $wrapper.toggleClass('description-expanded description-truncated');
+                $btn.text(expanded ? "Đọc thêm..." : "Thu gọn");
+            });
+        });
     </script>
 }

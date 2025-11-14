@@ -64,6 +64,8 @@ namespace CafebookApi.Data
         public DbSet<PhieuTraSach> PhieuTraSachs { get; set; }
         public DbSet<ChiTietPhieuTra> ChiTietPhieuTras { get; set; }
         public DbSet<TrangThaiCheBien> TrangThaiCheBiens { get; set; }
+        public virtual DbSet<DanhGia> DanhGias { get; set; }
+        public virtual DbSet<PhanHoiDanhGia> PhanHoiDanhGias { get; set; }
 
         // --- Cấu hình Khóa (Fluent API) ---
         protected override void OnModelCreating(ModelBuilder modelBuilder)

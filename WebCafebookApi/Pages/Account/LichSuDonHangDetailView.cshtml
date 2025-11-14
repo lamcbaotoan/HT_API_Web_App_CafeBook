@@ -326,6 +326,27 @@ else if (Model.OrderDetails != null)
                             <div class="order-item-info">
                                 <h6>@item.TenSanPham</h6>
                                 <div class="qty">x @item.SoLuong</div>
+
+                                @if (order.TrangThaiGiaoHang == "Hoàn thành")
+                                {
+                                    bool daDanhGiaSP = await Model.KiemTraDaDanhGia(order.IdHoaDon, item.IdSanPham, null);
+                                    if (daDanhGiaSP)
+                                    {
+                                        <span class="text-success mt-2 d-block" style="font-size: 0.9rem;">
+                                            <span class="material-symbols-outlined" style="vertical-align: bottom; font-size: 1.1rem;">check_circle</span>
+                                            Đã đánh giá
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="./DanhGiaView"
+                                           asp-route-idHoaDon="@order.IdHoaDon"
+                                           asp-route-idSanPham="@item.IdSanPham"
+                                           class="btn btn-sm btn-outline-primary mt-2">
+                                            Viết đánh giá
+                                        </a>
+                                    }
+                                }
                             </div>
                             <div class="order-item-price">
                                 @item.DonGia.ToString("N0") đ

@@ -1,4 +1,4 @@
-﻿// TẠO TỆP MỚI: WebCafebookApi/Pages/Account/LichSuDonHangDetailView.cshtml.cs
+﻿// TỆP: WebCafebookApi/Pages/Account/LichSuDonHangDetailView.cshtml.cs
 using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +7,9 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+// Thêm 2 using này để xử lý AuthenticationHeaderValue
+using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Http;
 
 namespace WebCafebookApi.Pages.Account
 {
@@ -50,6 +53,42 @@ namespace WebCafebookApi.Pages.Account
             }
 
             return Page();
+        }
+
+        // ==================================================
+        // ===== VÙNG CODE ĐÃ SỬA LỖI _apiClient =====
+        // ==================================================
+        public async Task<bool> KiemTraDaDanhGia(int idHoaDon, int? idSanPham, int? idSach)
+        {
+            // 1. Lấy HttpClient từ Factory (giống như OnGetAsync)
+            var httpClient = _httpClientFactory.CreateClient("ApiClient");
+
+            // 2. Lấy token từ Session
+            var accessToken = HttpContext.Session.GetString("JWToken");
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return true; // Không có token, không thể kiểm tra, tạm ẩn nút
+            }
+
+            // 3. Gắn token vào header của request này
+            httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            try
+            {
+                // 4. Gọi API kiểm tra bằng httpClient
+                // (Giả định API controller của bạn là 'DanhGiaWebController' và route là 'api/danhgia/kiemtra')
+                var daDanhGia = await httpClient.GetFromJsonAsync<bool>($"api/danhgia/kiemtra?idHoaDon={idHoaDon}&idSanPham={idSanPham}&idSach={idSach}");
+
+                // 5. Xóa header sau khi dùng xong
+                httpClient.DefaultRequestHeaders.Authorization = null;
+                return daDanhGia;
+            }
+            catch (Exception)
+            {
+                httpClient.DefaultRequestHeaders.Authorization = null;
+                return true; // Giả định là ĐÃ đánh giá nếu có lỗi, để tránh cho người dùng đánh giá lại
+            }
         }
     }
 }

@@ -244,9 +244,19 @@
                     @if (order.TrangThaiGiaoHang == "Hoàn thành")
                     {
                         <button class="btn btn-outline-secondary btn-sm" disabled>Mua Lại (Sắp có)</button>
-                        <button class="btn btn-primary btn-sm" disabled>Đánh Giá (Sắp có)</button>
-                    }
 
+                        <!--
+                            SỬA LOGIC:
+                            Xóa bỏ 'var firstItemForButton' và 'if (firstItem...)'
+                            Nút ĐÁNH GIÁ chỉ cần truyền idHoaDon.
+                            Trang DanhGiaView (đã sửa) sẽ tự động tải TẤT CẢ sản phẩm trong hóa đơn đó.
+                        -->
+                        <a asp-page="./DanhGiaView"
+                           asp-route-idHoaDon="@order.IdHoaDon"
+                           class="btn btn-primary btn-sm mx-1">
+                            ĐÁNH GIÁ
+                        </a>
+                    }
                     <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="btn btn-outline-primary btn-sm ms-auto">Xem Chi Tiết</a>
                 </div>
             </div>

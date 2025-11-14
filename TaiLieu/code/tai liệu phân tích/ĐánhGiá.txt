@@ -255,3 +255,9 @@ KhachHang ───< DanhGia >─── HoaDon
 ---
 
 👉 Nếu bạn muốn, tôi có thể **viết luôn đoạn SQL tạo bảng `DanhGia` + truy vấn báo cáo tổng hợp (gộp Sách và Món)** để bạn copy chạy trực tiếp vào SQL Server — bạn có muốn tôi tạo phần đó luôn không?
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\wwwroot\images\anhdanhgia\sach\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\wwwroot\images\anhdanhgia\monan\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelApp\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\App\
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\
