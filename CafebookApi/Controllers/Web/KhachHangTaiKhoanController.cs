@@ -129,7 +129,7 @@ namespace CafebookApi.Controllers.Web
                     HoTen = model.Email, // Mặc định HoTen là Email khi đăng ký
                     Email = model.Email,
                     SoDienThoai = model.SoDienThoai,
-                    TenDangNhap = null, // Không dùng TenDangNhap
+                    TenDangNhap = model.Email,
                     MatKhau = model.Password,
                     NgayTao = DateTime.Now,
                     DiemTichLuy = 0,
