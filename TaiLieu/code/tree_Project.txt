@@ -35,6 +35,8 @@ Solution 'Project'/
 │   │   │   │   ├── HoaDonPreviewWindow.xaml.cs
 │   │   │   │   ├── InputDialogWindow.xaml
 │   │   │   │   ├── InputDialogWindow.xaml.cs
+│   │   │   │   ├── PhieuGiaoHangPreviewWindow.xaml
+│   │   │   │   ├── PhieuGiaoHangPreviewWindow.xaml.cs
 │   │   │   │   ├── PhieuGoiMonPreviewWindow.xaml
 │   │   │   │   ├── PhieuGoiMonPreviewWindow.xaml.cs
 │   │   │   │   ├── PhieuLuongPreviewWindow.xaml
@@ -190,6 +192,7 @@ Solution 'Project'/
 │   │       ├── LienHeController.cs
 │   │       ├── NhanVienTaiKhoanController.cs
 │   │       ├── PasswordResetController.cs
+│   │       ├── ThanhToanControllers.cs
 │   │       ├── ThuVienSachController.cs
 │   │       ├── ThucDonController.cs
 │   │       ├── TrangChuController.cs
@@ -211,6 +214,7 @@ Solution 'Project'/
 │   │       │   │   ├── 8_nguyen-hoang-bi-khoa.jpg
 │   │       │   │   └── 9_lam-chu-bao-toan.jpg
 │   │       │   └── avatarNV/
+│   │       │       ├── 12_lam-chu-bao-toan.jpg
 │   │       │       ├── 1_lam-chu-bao-toan.jpg
 │   │       │       ├── 2_nguyen-van-quan-ly.jpg
 │   │       │       ├── 3_20251107134032.jpg
@@ -296,6 +300,7 @@ Solution 'Project'/
 │   │   │   ├── LichSuPhieuThueDto.cs
 │   │   │   ├── LienHeDto.cs
 │   │   │   ├── PasswordResetDto.cs
+│   │   │   ├── ThanhToanDto.cs
 │   │   │   ├── ThuVienSachDto.cs
 │   │   │   ├── ThucDonDto.cs
 │   │   │   ├── TrangChuDto.cs
@@ -322,12 +327,20 @@ Solution 'Project'/
     │   │   ├── DoiMatKhauView.cshtml.cs
     │   │   ├── LichSuDatBanView.cshtml
     │   │   ├── LichSuDatBanView.cshtml.cs
+    │   │   ├── LichSuDonHangDetailView.cshtml
+    │   │   ├── LichSuDonHangDetailView.cshtml.cs
+    │   │   ├── LichSuDonHangView.cshtml
+    │   │   ├── LichSuDonHangView.cshtml.cs
     │   │   ├── LichSuThueSachView.cshtml
     │   │   ├── LichSuThueSachView.cshtml.cs
     │   │   ├── QuenMatKhauView.cshtml
     │   │   ├── QuenMatKhauView.cshtml.cs
     │   │   ├── TaiKhoanTongQuanView.cshtml
     │   │   ├── TaiKhoanTongQuanView.cshtml.cs
+    │   │   ├── ThanhToanThanhCongView.cshtml
+    │   │   ├── ThanhToanThanhCongView.cshtml.cs
+    │   │   ├── ThanhToanView.cshtml
+    │   │   ├── ThanhToanView.cshtml.cs
     │   │   ├── ThongTinCaNhanView.cshtml
     │   │   ├── ThongTinCaNhanView.cshtml.cs
     │   │   ├── XacNhanMaView.cshtml

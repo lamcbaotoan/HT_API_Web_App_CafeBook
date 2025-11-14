@@ -717,6 +717,7 @@ namespace CafebookModel.Model.Entities
         public virtual PhieuThueSach PhieuThueSach { get; set; } = null!;
         [ForeignKey("IdSach")]
         public virtual Sach Sach { get; set; } = null!;
+
     }
 
     [Table("VaiTro")]
@@ -3115,6 +3116,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public DateTime NgayTao { get; set; }
         public string TenNhanVien { get; set; } = string.Empty;
         public string SoBan { get; set; } = string.Empty;
+        public string? GhiChu { get; set; }
         public List<ChiTietDto> ChiTiet { get; set; } = new List<ChiTietDto>();
         public decimal TongTienGoc { get; set; }
         public decimal GiamGia { get; set; }
@@ -3845,33 +3847,29 @@ namespace CafebookModel.Model.ModelWeb
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\GioHangDto.cs
 ================================================================================
-﻿using System.Collections.Generic;
+﻿// Tập tin: CafebookModel/Model/ModelWeb/GioHangDto.cs
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CafebookModel.Model.ModelWeb
 {
     /// <summary>
     /// DTO cơ bản đại diện cho một món hàng trong giỏ.
-    /// Đây là đối tượng SẼ ĐƯỢC LƯU trong Session.
+    /// SỬA: Đã xóa "Loai". Giờ đây Id mặc định là IdSanPham.
     /// </summary>
     public class CartItemDto
     {
-        public int Id { get; set; } // Có thể là IdSach hoặc IdSanPham
-
-        // Phân biệt 2 loại: "Sach" hoặc "SanPham"
-        public string Loai { get; set; } = string.Empty;
-
+        public int Id { get; set; } // IdSanPham
         public int SoLuong { get; set; }
     }
 
     /// <summary>
     /// Model đầy đủ thông tin của một món hàng ĐỂ HIỂN THỊ ra View.
-    /// Model này được xây dựng lúc tải trang giỏ hàng.
+    /// SỬA: Đã xóa "Loai".
     /// </summary>
     public class GioHangItemViewModel
     {
         public int Id { get; set; }
-        public string Loai { get; set; } = string.Empty;
         public string TenHienThi { get; set; } = string.Empty;
         public string? HinhAnhUrl { get; set; }
         public decimal DonGia { get; set; }
@@ -3880,8 +3878,7 @@ namespace CafebookModel.Model.ModelWeb
     }
 
     /// <summary>
-    /// ViewModel chính cho trang GioHangView, chứa danh sách các món
-    /// và tổng tiền.
+    /// ViewModel chính cho trang GioHangView (Không đổi).
     /// </summary>
     public class GioHangViewModel
     {
@@ -3909,10 +3906,15 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\KhachHangDto.
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\KhachHangProfileDto.cs
 ================================================================================
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Tập tin: CafebookModel/Model/ModelWeb/KhachHangProfileDto.cs
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System;
 
 namespace CafebookModel.Model.ModelWeb
 {
+    // ... (Các DTO KhachHangTongQuanDto, KhachHangProfileDto, ProfileUpdateModel, PasswordChangeModel giữ nguyên) ...
+
     /// <summary>
     /// DTO cho trang TỔNG QUAN
     /// </summary>
@@ -3953,6 +3955,10 @@ namespace CafebookModel.Model.ModelWeb
         public string? Email { get; set; }
 
         public string? DiaChi { get; set; }
+
+        [Required(ErrorMessage = "Tên đăng nhập không được để trống")]
+        [StringLength(100, ErrorMessage = "Tên đăng nhập phải dài từ 6 đến 100 ký tự.", MinimumLength = 6)]
+        public string TenDangNhap { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -3972,6 +3978,77 @@ namespace CafebookModel.Model.ModelWeb
         [DataType(DataType.Password)]
         [Compare("MatKhauMoi", ErrorMessage = "Mật khẩu mới và mật khẩu xác nhận không khớp.")]
         public string XacNhanMatKhauMoi { get; set; } = string.Empty;
+    }
+
+    // ==========================================================
+    // === DTO CHO LỊCH SỬ ĐƠN HÀNG (Đã di chuyển vào đây) ===
+    // ==========================================================
+
+    /// <summary>
+    /// DTO cho một món hàng trong thẻ lịch sử (Trang List & Trang Detail)
+    /// </summary>
+    public class DonHangItemWebDto
+    {
+        public int IdSanPham { get; set; }
+        public string TenSanPham { get; set; } = string.Empty;
+        public string? HinhAnhUrl { get; set; }
+        public int SoLuong { get; set; }
+        public decimal DonGia { get; set; }
+        public decimal ThanhTien => DonGia * SoLuong;
+    }
+
+    /// <summary>
+    /// DTO cho một thẻ (card) trên trang LỊCH SỬ (List)
+    /// </summary>
+    public class LichSuDonHangWebDto
+    {
+        public int IdHoaDon { get; set; }
+        public DateTime ThoiGianTao { get; set; }
+        public string TrangThaiThanhToan { get; set; } = string.Empty;
+        public string? TrangThaiGiaoHang { get; set; }
+        public decimal ThanhTien { get; set; }
+        public List<DonHangItemWebDto> Items { get; set; } = new();
+    }
+
+    /// <summary>
+    /// DTO MỚI: Cho một sự kiện trong timeline vận chuyển
+    /// </summary>
+    public class TrackingEventDto
+    {
+        public DateTime Timestamp { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsCurrent { get; set; } = false;
+    }
+
+    /// <summary>
+    /// DTO MỚI: DTO chính cho trang CHI TIẾT ĐƠN HÀNG
+    /// </summary>
+    public class DonHangChiTietWebDto
+    {
+        // Thông tin cơ bản
+        public int IdHoaDon { get; set; }
+        public string MaDonHang { get; set; } = string.Empty; // "HD00097"
+        public string TrangThaiGiaoHang { get; set; } = string.Empty;
+        public string TrangThaiThanhToan { get; set; } = string.Empty;
+        public DateTime ThoiGianTao { get; set; }
+
+        // Địa chỉ
+        public string HoTen { get; set; } = string.Empty;
+        public string SoDienThoai { get; set; } = string.Empty;
+        public string DiaChiGiaoHang { get; set; } = string.Empty;
+
+        // Timeline
+        public List<TrackingEventDto> TrackingEvents { get; set; } = new();
+
+        // Món hàng
+        public List<DonHangItemWebDto> Items { get; set; } = new();
+
+        // Thanh toán
+        public decimal TongTienHang { get; set; } // (Tổng tiền gốc)
+        public decimal GiamGia { get; set; } // (GiamGia + Diem)
+        public decimal ThanhTien { get; set; }
+        public string PhuongThucThanhToan { get; set; } = string.Empty;
     }
 }
 ================================================================================
@@ -4060,6 +4137,125 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\PasswordReset
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\ThanhToanDto.cs
+================================================================================
+﻿// Tập tin: CafebookModel/Model/ModelWeb/ThanhToanDto.cs
+// (*** KHÔNG CẦN THAY ĐỔI - MÃ NGUỒN ĐÃ CHÍNH XÁC ***)
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace CafebookModel.Model.ModelWeb
+{
+    // --- DTO 1: DÙNG ĐỂ TẢI DỮ LIỆU LÊN TRANG (API -> RAZOR) ---
+
+    public class ThanhToanLoadDto
+    {
+        public KhachHangThanhToanDto KhachHang { get; set; } = new();
+        public List<KhuyenMaiThanhToanDto> KhuyenMaisHopLe { get; set; } = new();
+        public decimal TiLeDoiDiemVND { get; set; } = 1000;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public List<GioHangItemViewModel> SanPhamItems { get; set; } = new();
+        [System.Text.Json.Serialization.JsonIgnore]
+        public List<GioHangItemViewModel> SachItems { get; set; } = new();
+        [System.Text.Json.Serialization.JsonIgnore]
+        public decimal TongTienHang { get; set; }
+    }
+
+    public class KhachHangThanhToanDto
+    {
+        public int IdKhachHang { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập họ tên")]
+        public string HoTen { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng nhập SĐT")]
+        public string SoDienThoai { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng nhập Email")]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng nhập địa chỉ giao hàng")]
+        public string DiaChi { get; set; } = string.Empty;
+        public int DiemTichLuy { get; set; }
+    }
+
+    /// <summary>
+    /// SỬA: Thêm các trường kiểm tra thời gian
+    /// </summary>
+    public class KhuyenMaiThanhToanDto
+    {
+        public int IdKhuyenMai { get; set; }
+        public string TenChuongTrinh { get; set; } = string.Empty;
+        public string MaKhuyenMai { get; set; } = string.Empty;
+        public string LoaiGiamGia { get; set; } = string.Empty;
+        public decimal GiaTriGiam { get; set; }
+        public decimal? GiamToiDa { get; set; }
+        public int? IdSanPhamApDung { get; set; }
+        public string? DieuKienApDung { get; set; }
+        public decimal? HoaDonToiThieu { get; set; }
+
+        // =======================================
+        // === THÊM MỚI 3 TRƯỜNG TẠI ĐÂY ===
+        // =======================================
+        public string? NgayTrongTuan { get; set; }
+        public TimeSpan? GioBatDau { get; set; }
+        public TimeSpan? GioKetThuc { get; set; }
+    }
+
+
+    // --- DTO 2: DÙNG ĐỂ GỬI ĐƠN HÀNG (RAZOR -> API) ---
+
+    public class ThanhToanSubmitDto
+    {
+        [Required(ErrorMessage = "Vui lòng nhập họ tên")]
+        public string HoTen { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng nhập SĐT")]
+        public string SoDienThoai { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng nhập địa chỉ giao hàng")]
+        public string DiaChiGiaoHang { get; set; } = string.Empty;
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng chọn phương thức thanh toán")]
+        public string PhuongThucThanhToan { get; set; } = "COD";
+        public int? IdKhuyenMai { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "Điểm sử dụng không hợp lệ")]
+        public int DiemSuDung { get; set; } = 0;
+        public string? GhiChu { get; set; }
+        public List<CartItemDto> ItemsToPurchase { get; set; } = new();
+    }
+
+
+    // --- DTO 3: PHẢN HỒI SAU KHI TẠO ĐƠN (API -> RAZOR) ---
+
+    public class ThanhToanResponseDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int? IdHoaDonMoi { get; set; }
+        public int? IdPhieuThueMoi { get; set; }
+    }
+
+    /// <summary>
+    /// DTO tóm tắt đơn hàng cho trang ThanhToanThanhCongView
+    /// </summary>
+    public class ThanhToanThanhCongDto
+    {
+        public int IdHoaDonMoi { get; set; }
+        public DateTime ThoiGianTao { get; set; }
+        public string TrangThai { get; set; } = string.Empty;
+        public string PhuongThucThanhToan { get; set; } = string.Empty;
+        public string DiaChiGiaoHang { get; set; } = string.Empty;
+        public string SoDienThoai { get; set; } = string.Empty;
+
+        public List<GioHangItemViewModel> Items { get; set; } = new();
+
+        public decimal TongTienHang { get; set; }
+        public decimal GiamGia { get; set; }
+        public decimal ThanhTien { get; set; }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\ThucDonDto.cs
 ================================================================================
 ﻿// Tập tin: CafebookModel/Model/ModelWeb/ThucDonDto.cs
@@ -4113,36 +4309,6 @@ namespace CafebookModel.Model.ModelWeb
     public class CongThucDto
     {
         public string TenNguyenLieu { get; set; } = string.Empty;
-    }
-}
-================================================================================
-
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\ThueSachWebDto.cs
-================================================================================
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-
-namespace CafebookModel.Model.ModelWeb
-{
-    /// <summary>
-    /// DTO gửi từ web client (trang ThueSachView) lên API
-    /// </summary>
-    public class ThueSachRequestDto
-    {
-        [Required]
-        public int IdSach { get; set; }
-    }
-
-    /// <summary>
-    /// DTO API trả về sau khi khách hàng thuê thành công
-    /// </summary>
-    public class ThueSachResponseDto
-    {
-        public int IdPhieuThueSach { get; set; }
-        public string TenSach { get; set; } = string.Empty;
-        public DateTime NgayThue { get; set; }
-        public DateTime NgayHenTra { get; set; }
-        public decimal TongTienCoc { get; set; }
     }
 }
 ================================================================================
@@ -4303,7 +4469,10 @@ namespace CafebookModel.Model.ModelApi
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-
+        /// <summary>
+        /// THÊM DÒNG NÀY:
+        /// </summary>
+        public string? Token { get; set; } // Thêm thuộc tính để chứa JWT
         // Dùng một trong hai
         public KhachHangDto? KhachHangData { get; set; }
         public NhanVienDto? NhanVienData { get; set; } // Tận dụng NhanVienDto từ WPF

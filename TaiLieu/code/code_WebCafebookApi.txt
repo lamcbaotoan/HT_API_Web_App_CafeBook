@@ -26,47 +26,41 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\appsettings.json
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Program.cs
 ================================================================================
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿// Tập tin: WebCafebookApi/Program.cs
+// (Nội dung đầy đủ của file Program.cs dựa trên context bạn cung cấp)
+
+using Microsoft.AspNetCore.Authentication.Cookies;
 using WebCafebookApi.Services;
-using System.Net.Http.Headers; // <-- THÊM USING NÀY
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === 1. SỬA LỖI 401: CẤU HÌNH HTTPCLIENT ===
-
-// Thêm dịch vụ để đọc HttpContext (cần thiết để lấy cookie)
 builder.Services.AddHttpContextAccessor();
 
-// Cấu hình "ApiClient" để TỰ ĐỘNG GỬI TOKEN
+// SỬA CẤU HÌNH HTTPCLIENT
 builder.Services.AddHttpClient("ApiClient", (serviceProvider, client) =>
 {
-    // 1. Thiết lập địa chỉ API backend
-    client.BaseAddress = new Uri("http://localhost:5166"); // Địa chỉ API
+    client.BaseAddress = new Uri("http://localhost:5166");
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-    // 2. Lấy HttpContext để đọc cookie
     var httpContextAccessor = serviceProvider.GetService<IHttpContextAccessor>();
     if (httpContextAccessor != null)
     {
-        // 3. Lấy token từ cookie (tên "AuthToken" phải khớp với tên cookie lúc đăng nhập)
-        var token = httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+        // SỬA: Đọc JWT Token từ Session (do DangNhapView.cshtml.cs lưu vào)
+        var token = httpContextAccessor.HttpContext?.Session.GetString("JwtToken");
 
-        // 4. Gắn token vào header của mọi request
         if (!string.IsNullOrEmpty(token))
         {
-            // Gắn token vào header (Giả định token là JWT/Bearer)
+            // Gắn JWT Token thật vào Header
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
         }
     }
 });
+// (Kết thúc sửa)
 
-// Thêm một HttpClient mặc định (cho các cuộc gọi không cần auth)
 builder.Services.AddHttpClient();
 
-// ===========================================
-
-// 2. SESSION (Giữ nguyên)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -75,26 +69,18 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// 3. AUTHENTICATION (Giữ nguyên)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        // TODO: Đảm bảo tên cookie khớp với tên lúc đăng nhập
-        options.Cookie.Name = "AuthToken";
-        // Bỏ comment các dòng này để tự động chuyển hướng
+        options.Cookie.Name = "AuthToken"; // Cookie này chỉ dùng cho Frontend
         options.LoginPath = "/account/DangNhapView";
         options.AccessDeniedPath = "/AccessDenied";
         options.LogoutPath = "/Account/DangXuat";
     });
 
-// 4. RAZOR PAGES (Giữ nguyên)
 builder.Services.AddRazorPages();
-
-// 5. ĐĂNG KÝ EMAIL SERVICE (Giữ nguyên)
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddTransient<EmailService>();
-
-// 6. ĐĂNG KÝ BỘ NHỚ CACHE (Giữ nguyên)
 builder.Services.AddMemoryCache();
 
 var app = builder.Build();
@@ -105,9 +91,9 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // Đảm bảo đúng thứ tự
-app.UseSession();
-app.UseAuthentication(); // Bật xác thực
-app.UseAuthorization(); // Bật phân quyền
+app.UseSession(); // Session phải được gọi trước
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorPages();
 app.Run();
@@ -281,20 +267,20 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
 @{
     ViewData["Title"] = Model.Sach?.TieuDe ?? "Chi Tiết Sách";
     var imgSrc = string.IsNullOrEmpty(Model.Sach?.AnhBiaUrl) ?
- "/images/default-book-cover.png" : Model.Sach.AnhBiaUrl;
+"/images/default-book-cover.png" : Model.Sach.AnhBiaUrl;
 }
 
 @section Styles {
     <style>
         .description-truncated {
             max-height: 100px;
-            overflow: hidden;
+overflow: hidden;
             transition: max-height 0.3s ease-out;
         }
 
         .description-expanded {
             max-height: 1000px;
-            transition: max-height 0.5s ease-in;
+transition: max-height 0.5s ease-in;
         }
     </style>
 }
@@ -306,177 +292,182 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
             <div class="row gy-4">
                 @* Cột Hình ảnh *@
                 <div class="col-lg-4">
-                    <div class="detail-img-container">
+               
+     <div class="detail-img-container">
                         <img src="@imgSrc" class="img-fluid rounded shadow-sm w-100" alt="@Model.Sach.TieuDe" style="max-height: 500px; object-fit: cover;">
                     </div>
                 </div>
 
                 @* Cột Thông tin *@
-                <div class="col-lg-5">
+    
+            <div class="col-lg-5">
                     <nav aria-label="breadcrumb" class="page-breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a asp-page="/TrangChuView"><span class="material-symbols-outlined">home</span> Trang Chủ</a></li>
-                            <li class="breadcrumb-item"><a asp-page="/ThuVienSachView"><span class="material-symbols-outlined">import_contacts</span> Thư Viện Sách</a></li>
+       
+                     <li class="breadcrumb-item"><a asp-page="/ThuVienSachView"><span class="material-symbols-outlined">import_contacts</span> Thư Viện Sách</a></li>
                             <li class="breadcrumb-item active" aria-current="page">@Model.Sach.TieuDe</li>
                         </ol>
-                    </nav>
+                  
+  </nav>
 
                     <h1 class="display-5 fw-bold">@Model.Sach.TieuDe</h1>
 
                     <p class="lead fs-5">
                         Tác giả:
-                        @if (Model.Sach.TacGias != null && Model.Sach.TacGias.Any())
+                        @if (Model.Sach.TacGias != null && 
+Model.Sach.TacGias.Any())
                         {
                             foreach (var tacGia in Model.Sach.TacGias)
                             {
-                                <a asp-page="/TimKiemSachView" asp-route-idTacGia="@tacGia.IdTacGia" class="text-muted text-decoration-none">@tacGia.TenTacGia</a>
+                
+                <a asp-page="/TimKiemSachView" asp-route-idTacGia="@tacGia.IdTacGia" class="text-muted text-decoration-none">@tacGia.TenTacGia</a>
                                 @if (tacGia != Model.Sach.TacGias.Last())
                                 {
-                                    <text>, </text>
+             
+                       <text>, </text>
                                 }
                             }
-                        }
+                
+        }
                         else
                         {
                             <span class="text-muted">(Đang cập nhật)</span>
-                        }
+             
+           }
                     </p>
 
                     <div class="fs-5 mb-3">
                         <span style="vertical-align: top;">Thể loại:</span>
-                        @if (Model.Sach.TheLoais != null && Model.Sach.TheLoais.Any())
+                    
+    @if (Model.Sach.TheLoais != null && Model.Sach.TheLoais.Any())
                         {
                             foreach (var cat in Model.Sach.TheLoais)
                             {
-                                <a asp-page="/TimKiemSachView" asp-route-idTheLoai="@cat.IdTheLoai" class="badge bg-primary text-decoration-none me-1 mb-1">@cat.TenTheLoai</a>
+       
+                         <a asp-page="/TimKiemSachView" asp-route-idTheLoai="@cat.IdTheLoai" class="badge bg-primary text-decoration-none me-1 mb-1">@cat.TenTheLoai</a>
                             }
                         }
-                        else
+                
+        else
                         {
                             <span class="badge bg-secondary me-1 mb-1">(Đang cập nhật)</span>
                         }
-                    </div>
+          
+          </div>
 
                     <h3 class="text-danger fw-bolder">@Model.Sach.GiaBia.ToString("N0") đ <small class="text-muted fs-5">(Tiền cọc)</small></h3>
 
                     @* Mô tả (Ẩn/Hiện) *@
                     <div id="description-wrapper" class="description-truncated">
-                        <p class="mt-4 fs-6" style="white-space: pre-wrap;">@Model.Sach.MoTa</p>
+                 
+       <p class="mt-4 fs-6" style="white-space: pre-wrap;">@Model.Sach.MoTa</p>
                     </div>
-                    <a href="javascript:void(0);" id="toggle-description" class="btn btn-link ps-0" style="display: none;">Đọc thêm...</a>
+                    <a href="javascript:void(0);"
+id="toggle-description" class="btn btn-link ps-0" style="display: none;">Đọc thêm...</a>
 
                     <h5 class="mt-4">Thông tin kho:</h5>
                     <ul class="ingredient-list">
                         <li><span class="material-symbols-outlined">push_pin</span> Vị trí: <strong>@Model.Sach.ViTri</strong></li>
-                        <li><span class="material-symbols-outlined">inventory</span> Tổng số lượng: <strong>@Model.Sach.TongSoLuong</strong></li>
+                      
+  <li><span class="material-symbols-outlined">inventory</span> Tổng số lượng: <strong>@Model.Sach.TongSoLuong</strong></li>
                         <li>
                             <span class="material-symbols-outlined">check_circle</span>
                             Hiện có sẵn:
-                            @if (Model.Sach.SoLuongCoSan > 0)
+          
+                  @if (Model.Sach.SoLuongCoSan > 0)
                             {
                                 <strong class="text-success ms-2">@Model.Sach.SoLuongCoSan cuốn</strong>
-                            }
+                
+            }
                             else
                             {
-                                <strong class="text-danger ms-2">Đã thuê hết</strong>
+                                
+<strong class="text-danger ms-2">Đã thuê hết</strong>
                             }
                         </li>
                     </ul>
                 </div>
 
-                @* Cột Đặt Thuê (ĐÃ SỬA) *@
+        
+        @* Cột Đặt Thuê (ĐÃ SỬA) *@
                 <div class="col-lg-3">
                     <div class="card sticky-top" style="top: 20px;">
                         <div class="card-body">
-                            <h5 class="card-title">Thuê Sách</h5>
+                    
+        <h5 class="card-title">Thuê Sách</h5>
                             <hr />
 
-                            @if (TempData["CartMessage"] != null)
-                            {
-                                <div class="alert alert-success small">@TempData["CartMessage"]</div>
-                            }
-
-                            @if (User.Identity?.IsAuthenticated == true)
-                            {
-                                @if (Model.Sach.SoLuongCoSan > 0)
-                                {
-                                    @* === SỬA: ĐỔI THÀNH FORM "THÊM VÀO GIỎ" === *@
-                                    <form method="post" asp-page-handler="AddToCart">
-                                        <input type="hidden" name="idSach" value="@Model.Sach.IdSach" />
-                                        <button type="submit" class="btn btn-primary w-100">
-                                            <i class="bi bi-cart-plus"></i> Thêm vào giỏ
-                                        </button>
-                                    </form>
-                                    <a asp-page="/GioHangView" class="btn btn-outline-success w-100 mt-2">
-                                        <i class="bi bi-box-arrow-right"></i> Tới giỏ thuê
-                                    </a>
-                                }
-                                else
-                                {
-
-                                    <div class="alert alert-warning">Sách này đã được thuê hết.</div>
-                                }
-                            }
-                            else
-                            {
-                                <p>Bạn cần đăng nhập để có thể thuê sách.</p>
-                                <a asp-page="/account/DangNhapView" asp-route-returnUrl="@Url.Page("/ChiTietSachView", new { id = Model.Sach.IdSach })" class="btn btn-success w-100">
-                                    Đăng nhập để thuê
-                                </a>
-                            }
+                            @* TOÀN BỘ LOGIC GIỎ HÀNG TỪ  ĐẾN  ĐÃ BỊ XÓA KHỎI ĐÂY
+                            *@
+                            
                         </div>
                     </div>
-                </div>
+             
+   </div>
             </div>
 
             @* ... (Phần Gợi ý và Đánh giá giữ nguyên) ... *@
             <div class="row mt-5">
                 <div class="col-12">
                     <h3 class="border-bottom pb-2 mb-3 section-header justify-content-start px-0">
-                        <span class="material-symbols-outlined">recommend</span>
+     
+                   <span class="material-symbols-outlined">recommend</span>
                         Có thể bạn cũng thích
                     </h3>
                     @if (Model.Sach.GoiY != null && Model.Sach.GoiY.Any())
-                    {
+       
+             {
                         <div class="row row-cols-1 row-cols-md-4 g-4">
                             @foreach (var item in Model.Sach.GoiY)
-                            {
+                           
+ {
                                 <div class="col">
                                     <a asp-page="/ChiTietSachView" asp-route-id="@item.IdSach" class="text-decoration-none">
-                                        <div class="card h-100 product-card">
+                           
+             <div class="card h-100 product-card">
                                             @{
-                                                var imgUrl = string.IsNullOrEmpty(item.AnhBiaUrl) ?
+                                        
+        var imgUrl = string.IsNullOrEmpty(item.AnhBiaUrl) ?
                                                 "/images/default-book-cover.png" : item.AnhBiaUrl;
-                                            }
+}
                                             <div class="card-img-container">
                                                 <img src="@imgUrl" class="card-img-top book-card-img"
-                                                     alt="@item.TieuDe">
+    
+                                                 alt="@item.TieuDe">
                                             </div>
-                                            <div class="card-body d-flex flex-column">
+       
+                                     <div class="card-body d-flex flex-column">
                                                 <h6 class="card-title text-decoration-none book-card-title">@item.TieuDe</h6>
-                                                <p class="card-text text-danger fw-bold mt-auto mb-0">@item.GiaBia.ToString("N0") đ</p>
+         
+                                       <p class="card-text text-danger fw-bold mt-auto mb-0">@item.GiaBia.ToString("N0") đ</p>
                                             </div>
-                                        </div>
+           
+                             </div>
                                     </a>
                                 </div>
-                            }
+   
+                         }
                         </div>
                     }
                     else
-                    {
+           
+         {
                         <p class="text-muted">(Chưa có gợi ý nào cho cuốn sách này.)</p>
                     }
                 </div>
             </div>
         }
-        else
+  
+      else
         {
             <div class="alert alert-danger">
                 <h4>Không tìm thấy sách</h4>
                 <p>@Model.ErrorMessage</p>
             </div>
             <a asp-page="/ThuVienSachView" class="btn btn-link">Quay lại thư viện</a>
-        }
+       
+ }
     </div>
 </div>
 
@@ -485,24 +476,26 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
     <script>
                $(document).ready(function() {
                    var $wrapper = $('#description-wrapper');
-                   if ($wrapper.length === 0) return;
+if ($wrapper.length === 0) return;
                    var $content = $wrapper.find('p');
                    var $btn = $('#toggle-description');
-        if ($content.length > 0 && $content.get(0).scrollHeight > $wrapper.height()) {
+if ($content.length > 0 && $content.get(0).scrollHeight > $wrapper.height()) {
                        $btn.show();
-        } else {
+} else {
                         $wrapper.removeClass('description-truncated');
-        }
+}
                    $btn.click(function() {
                        if ($wrapper.hasClass('description-truncated')) {
                            $wrapper.removeClass('description-truncated').addClass('description-expanded');
-                           $btn.text('Thu gọn');
+                           $btn.text('Thu 
+gọn');
                        } else {
                            $wrapper.removeClass('description-expanded').addClass('description-truncated');
                            $btn.text('Đọc thêm...');
-                       }
+                    
+   }
                    });
-        });
+});
     </script>
 }
 ================================================================================
@@ -513,13 +506,13 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
 using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using WebCafebookApi.Services; // Thêm using này
-using System.Linq;
-using Microsoft.AspNetCore.Http;
+// using WebCafebookApi.Services; // ĐÃ XÓA
+// using System.Linq; // ĐÃ XÓA
+// using Microsoft.AspNetCore.Http; // ĐÃ XÓA
+// using System.Collections.Generic; // ĐÃ XÓA
 
 namespace WebCafebookApi.Pages
 {
@@ -565,27 +558,9 @@ namespace WebCafebookApi.Pages
 
 
         // === CẬP NHẬT HÀM XỬ LÝ GIỎ HÀNG ===
-        public IActionResult OnPostAddToCart(int idSach)
-        {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
-            var cart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey) ?? new List<CartItemDto>();
-
-            var existingItem = cart.FirstOrDefault(i => i.Id == idSach && i.Loai == "Sach");
-
-            if (existingItem == null)
-            {
-                cart.Add(new CartItemDto { Id = idSach, Loai = "Sach", SoLuong = 1 });
-                // SỬA LỖI CS0104: Chỉ định rõ namespace
-                HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, cart);
-                TempData["CartMessage"] = "Đã thêm sách vào giỏ thuê!";
-            }
-            else
-            {
-                TempData["CartMessage"] = "Sách này đã có trong giỏ.";
-            }
-
-            return RedirectToPage(new { id = idSach });
-        }
+        // 
+        //  ĐÃ XÓA TOÀN BỘ PHƯƠNG THỨC OnPostAddToCart TỪ ĐÂY
+        //
     }
 }
 ================================================================================
@@ -762,13 +737,13 @@ namespace WebCafebookApi.Pages
         }
 
 
-        // === THÊM HÀM XỬ LÝ GIỎ HÀNG CHO SẢN PHẨM ===
+        // === SỬA HÀM XỬ LÝ GIỎ HÀNG (XÓA 'Loai') ===
         public IActionResult OnPostAddToCart(int idSanPham)
         {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var cart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey) ?? new List<CartItemDto>();
 
-            var existingItem = cart.FirstOrDefault(i => i.Id == idSanPham && i.Loai == "SanPham");
+            // SỬA LỖI CS1061: Xóa 'Loai' khỏi logic tìm kiếm
+            var existingItem = cart.FirstOrDefault(i => i.Id == idSanPham);
 
             if (existingItem != null)
             {
@@ -777,11 +752,11 @@ namespace WebCafebookApi.Pages
             }
             else
             {
-                cart.Add(new CartItemDto { Id = idSanPham, Loai = "SanPham", SoLuong = this.SoLuong });
+                // SỬA LỖI CS0117: Xóa 'Loai' khỏi đối tượng
+                cart.Add(new CartItemDto { Id = idSanPham, SoLuong = this.SoLuong });
                 TempData["CartMessage"] = "Đã thêm sản phẩm vào giỏ!";
             }
 
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, cart);
             return RedirectToPage(new { id = idSanPham });
         }
@@ -1564,7 +1539,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml
 ================================================================================
 ﻿@page
 @model WebCafebookApi.Pages.GioHangViewPageModel
-@* SỬA LỖI: Comment phải nằm ở dòng riêng *@
 @{
     ViewData["Title"] = "Giỏ Hàng";
 }
@@ -1574,20 +1548,18 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml
         <h1 class="display-5 fw-bold">Giỏ Hàng Của Bạn</h1>
         <hr />
 
-        @* LỖI CS1061 SẼ TỰ ĐỘNG BIẾN MẤT KHI SỬA LỖI @model Ở TRÊN *@
         @if (Model.Cart.Items == null || !Model.Cart.Items.Any())
         {
             <div class="alert alert-info text-center" style="padding: 50px;">
                 <span class="material-symbols-outlined" style="font-size: 48px;">shopping_cart</span>
                 <h4 class="mt-3">Giỏ hàng của bạn đang trống</h4>
                 <p>Hãy khám phá thêm sách và thực đơn của Cafebook nhé!</p>
-                <a asp-page="/ThuVienSachView" class="btn btn-primary me-2">Xem Thư Viện Sách</a>
+                @* SỬA: Xóa link xem thư viện sách *@
                 <a asp-page="/ThucDonView" class="btn btn-success">Xem Thực Đơn</a>
             </div>
         }
         else
         {
-            @* ... (Phần còn lại của file HTML đã đúng) ... *@
             <div class="row">
                 <div class="col-lg-8">
                     @foreach (var item in Model.Cart.Items)
@@ -1595,7 +1567,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml
                         <div class="card mb-3 shadow-sm">
                             <div class="row g-0">
                                 <div class="col-md-2 d-flex align-items-center justify-content-center p-2">
-                                    <img src="@(item.HinhAnhUrl ?? "/images/default-book-cover.png")"
+                                    <img src="@(item.HinhAnhUrl ?? "/images/default-food-icon.png")"
                                          class="img-fluid rounded" alt="@item.TenHienThi" style="max-height: 120px; object-fit: cover;">
                                 </div>
                                 <div class="col-md-10">
@@ -1603,34 +1575,20 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml
                                         <div class="d-flex justify-content-between">
                                             <div>
                                                 <h5 class="card-title mb-1">@item.TenHienThi</h5>
-                                                @if (item.Loai == "Sach")
-                                                {
-                                                    <span class="badge bg-primary">Sách (Tiền cọc)</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-success">Thức uống/Món</span>
-                                                }
+
+                                                <span class="badge bg-success">Thức uống/Món</span>
+
                                                 <p class="card-text text-muted mb-1">Đơn giá: @item.DonGia.ToString("N0") đ</p>
                                             </div>
                                             <div class="text-end">
                                                 <h5 class="text-danger fw-bold">@item.ThanhTien.ToString("N0") đ</h5>
                                                 <form method="post" class="mt-2">
                                                     <input type="hidden" name="id" value="@item.Id" />
-                                                    <input type="hidden" name="loai" value="@item.Loai" />
 
-                                                    @if (item.Loai == "SanPham")
-                                                    {
-                                                        <input type="number" name="soLuong" value="@item.SoLuong" min="1" class="form-control-sm" style="width: 60px;" />
-                                                        <button type="submit" asp-page-handler="UpdateQuantity" class="btn btn-sm btn-outline-secondary" title="Cập nhật">
-                                                            <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
-                                                        </button>
-                                                    }
-                                                    else
-                                                    {
-                                                        <input type="hidden" name="soLuong" value="1" />
-                                                        <span class="me-2">Số lượng: 1</span>
-                                                    }
+                                                    <input type="number" name="soLuong" value="@item.SoLuong" min="1" class="form-control-sm" style="width: 60px;" />
+                                                    <button type="submit" asp-page-handler="UpdateQuantity" class="btn btn-sm btn-outline-secondary" title="Cập nhật">
+                                                        <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
+                                                    </button>
 
                                                     <button type="submit" asp-page-handler="Remove" class="btn btn-sm btn-outline-danger" title="Xóa">
                                                         <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
@@ -1658,8 +1616,8 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml
                                 Tiến hành thanh toán
                                 <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_forward</span>
                             </a>
-                            <a asp-page="/ThuVienSachView" class="btn btn-outline-secondary w-100 mt-2">
-                                + Thêm sản phẩm khác
+                            <a asp-page="/ThucDonView" class="btn btn-outline-secondary w-100 mt-2">
+                                + Thêm món khác
                             </a>
                         </div>
                     </div>
@@ -1672,7 +1630,8 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\GioHangView.cshtml.cs
 ================================================================================
-﻿using CafebookModel.Model.ModelWeb;
+﻿// Tập tin: WebCafebookApi/Pages/GioHangView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Collections.Generic;
@@ -1697,14 +1656,12 @@ namespace WebCafebookApi.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey);
             if (sessionCart == null || !sessionCart.Any())
             {
                 return Page();
             }
 
-            // ... (Phần còn lại của OnGetAsync giữ nguyên) ...
             var httpClient = _httpClientFactory.CreateClient("ApiClient");
             var populatedItems = new List<GioHangItemViewModel>();
 
@@ -1712,37 +1669,20 @@ namespace WebCafebookApi.Pages
             {
                 try
                 {
-                    if (item.Loai == "Sach")
+                    // SỬA: Xóa bỏ logic kiểm tra "Sach"
+                    // Giờ chỉ tải "SanPham"
+                    var sp = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{item.Id}");
+                    if (sp != null)
                     {
-                        var sach = await httpClient.GetFromJsonAsync<SachChiTietDto>($"api/web/thuvien/{item.Id}");
-                        if (sach != null)
+                        populatedItems.Add(new GioHangItemViewModel
                         {
-                            populatedItems.Add(new GioHangItemViewModel
-                            {
-                                Id = item.Id,
-                                Loai = item.Loai,
-                                TenHienThi = sach.TieuDe,
-                                HinhAnhUrl = sach.AnhBiaUrl,
-                                DonGia = sach.GiaBia,
-                                SoLuong = 1
-                            });
-                        }
-                    }
-                    else if (item.Loai == "SanPham")
-                    {
-                        var sp = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{item.Id}");
-                        if (sp != null)
-                        {
-                            populatedItems.Add(new GioHangItemViewModel
-                            {
-                                Id = item.Id,
-                                Loai = item.Loai,
-                                TenHienThi = sp.TenSanPham,
-                                HinhAnhUrl = sp.HinhAnhUrl,
-                                DonGia = sp.DonGia,
-                                SoLuong = item.SoLuong
-                            });
-                        }
+                            Id = item.Id,
+                            // Xóa "Loai"
+                            TenHienThi = sp.TenSanPham,
+                            HinhAnhUrl = sp.HinhAnhUrl,
+                            DonGia = sp.DonGia,
+                            SoLuong = item.SoLuong
+                        });
                     }
                 }
                 catch (System.Exception ex)
@@ -1754,39 +1694,41 @@ namespace WebCafebookApi.Pages
             return Page();
         }
 
-        public IActionResult OnPostRemove(int id, string loai)
+        // SỬA: Xóa tham số "loai"
+        public IActionResult OnPostRemove(int id)
         {
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey);
             if (sessionCart != null)
             {
-                var itemToRemove = sessionCart.FirstOrDefault(i => i.Id == id && i.Loai == loai);
+                // SỬA: Tìm chỉ bằng Id
+                var itemToRemove = sessionCart.FirstOrDefault(i => i.Id == id);
                 if (itemToRemove != null)
                 {
                     sessionCart.Remove(itemToRemove);
-                    // SỬA LỖI CS0104: Chỉ định rõ namespace
                     HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, sessionCart);
                 }
             }
             return RedirectToPage();
         }
 
-        public IActionResult OnPostUpdateQuantity(int id, string loai, int soLuong)
+        // SỬA: Xóa tham số "loai"
+        public IActionResult OnPostUpdateQuantity(int id, int soLuong)
         {
-            if (loai == "Sach" || soLuong <= 0)
+            // SỬA: Xóa kiểm tra "Sach"
+            if (soLuong <= 0)
             {
-                return RedirectToPage();
+                // Nếu cập nhật số lượng về 0, hãy xóa nó
+                return OnPostRemove(id);
             }
 
-            // SỬA LỖI CS0104: Chỉ định rõ namespace
             var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey);
             if (sessionCart != null)
             {
-                var itemToUpdate = sessionCart.FirstOrDefault(i => i.Id == id && i.Loai == loai);
+                // SỬA: Tìm chỉ bằng Id
+                var itemToUpdate = sessionCart.FirstOrDefault(i => i.Id == id);
                 if (itemToUpdate != null)
                 {
                     itemToUpdate.SoLuong = soLuong;
-                    // SỬA LỖI CS0104: Chỉ định rõ namespace
                     HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, sessionCart);
                 }
             }
@@ -3057,7 +2999,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangNhapView.
 @model WebCafebookApi.Pages.Account.DangNhapViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
-    // Chúng ta sẽ không dùng Layout chính cho trang đăng nhập
     Layout = null;
 }
 
@@ -3109,13 +3050,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DangNhapView.
                         <span asp-validation-for="Input.Password" class="text-danger small"></span>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" asp-for="Input.RememberMe" />
-                            <label asp-for="Input.RememberMe" class="form-check-label small">
-                                @Html.DisplayNameFor(m => m.Input.RememberMe)
-                            </label>
-                        </div>
+                    <div class="text-end mb-3">
                         <a asp-page="/account/QuenMatKhauView" class="small">Quên mật khẩu?</a>
                     </div>
 
@@ -3182,8 +3117,7 @@ namespace WebCafebookApi.Pages.Account
             [Display(Name = "Mật khẩu")]
             public string Password { get; set; } = string.Empty;
 
-            [Display(Name = "Ghi nhớ đăng nhập")]
-            public bool RememberMe { get; set; }
+            // ĐÃ XÓA: Thuộc tính RememberMe
         }
 
         public async Task OnGetAsync(string? returnUrl = null)
@@ -3216,7 +3150,7 @@ namespace WebCafebookApi.Pages.Account
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<WebLoginResponseModel>();
-                if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null)
+                if (apiResponse != null && apiResponse.Success && apiResponse.KhachHangData != null && apiResponse.Token != null)
                 {
                     var user = apiResponse.KhachHangData;
                     var claims = new List<Claim>
@@ -3230,16 +3164,20 @@ namespace WebCafebookApi.Pages.Account
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    var authProperties = new AuthenticationProperties { IsPersistent = Input.RememberMe };
 
+                    // SỬA: Không còn IsPersistent = Input.RememberMe
+                    var authProperties = new AuthenticationProperties();
+
+                    // 1. Đăng nhập Cookie cho Frontend
                     await HttpContext.SignInAsync(
                         CookieAuthenticationDefaults.AuthenticationScheme,
                         new ClaimsPrincipal(claimsIdentity),
                         authProperties);
 
-                    // SỬA: Lưu URL (nếu có) thay vì Base64 và đổi tên Key
-                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
+                    // 2. Lưu JWT Token vào Session để ApiClient sử dụng
+                    HttpContext.Session.SetString("JwtToken", apiResponse.Token);
 
+                    HttpContext.Session.SetString("AvatarUrl", user.AnhDaiDienUrl ?? "");
                     return LocalRedirect(returnUrl);
                 }
                 else
@@ -3789,6 +3727,791 @@ namespace WebCafebookApi.Pages.Account
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHangDetailView.cshtml
+================================================================================
+﻿@page "/Account/LichSuDonHangDetailView/{id:int}"
+@model WebCafebookApi.Pages.Account.LichSuDonHangDetailViewModel
+@{
+    ViewData["Title"] = "Chi Tiết Đơn Hàng";
+    Layout = "_Layout_Account";
+}
+
+@section Styles {
+    <style>
+        /* CSS cho thanh tiến trình (Progress Tracker) */
+        .progress-tracker {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+            .progress-step .icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: #e0e0e0;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                border: 4px solid #fff;
+                z-index: 2;
+                position: relative;
+            }
+
+            .progress-step .text {
+                display: block;
+                margin-top: 5px;
+                font-size: 0.9rem;
+                color: #757575;
+            }
+
+            .progress-step:not(:first-child)::before {
+                content: '';
+                position: absolute;
+                width: 100%;
+                height: 4px;
+                background-color: #e0e0e0;
+                top: 20px; /* (40px + 4px*2) / 2 - 4px/2 */
+                right: 50%;
+                z-index: 1;
+            }
+            /* Trạng thái Active/Completed */
+            .progress-step.completed .icon,
+            .progress-step.active .icon {
+                background-color: var(--bs-success);
+            }
+
+            .progress-step.completed .text {
+                color: var(--bs-success);
+                font-weight: 500;
+            }
+
+            .progress-step.active .text {
+                color: var(--cf-dark-brown);
+                font-weight: 700;
+            }
+
+            .progress-step.completed:not(:first-child)::before {
+                background-color: var(--bs-success);
+            }
+
+        /* CSS cho Timeline Vận Chuyển */
+        .timeline {
+            list-style: none;
+            padding: 0;
+            position: relative;
+        }
+
+            .timeline::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 20px;
+                width: 4px;
+                background-color: #eee;
+            }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 25px;
+        }
+
+        .timeline-icon {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 4px solid #f9f9f9;
+            z-index: 2;
+        }
+
+        .timeline-item.active .timeline-icon {
+            background-color: var(--bs-success);
+        }
+
+        .timeline-content {
+            padding-top: 5px;
+        }
+
+            .timeline-content .status {
+                font-weight: 600;
+                color: var(--cf-dark-brown);
+            }
+
+            .timeline-content .description {
+                color: #6c757d;
+                font-size: 0.9rem;
+            }
+
+            .timeline-content .timestamp {
+                font-size: 0.85rem;
+                color: #9e9e9e;
+            }
+
+        .timeline-item.active .timeline-content .status {
+            color: var(--bs-success);
+        }
+
+        /* CSS cho thẻ đơn hàng (Copy từ LichSuDonHangView) */
+        .order-card {
+            background-color: var(--cf-white);
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .order-card-header {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .order-item {
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .order-item-img img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+            .order-item-info h6 {
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+            }
+
+            .order-item-info .qty {
+                font-size: 0.9rem;
+                color: #666;
+            }
+
+        .order-item-price {
+            font-weight: 500;
+            color: var(--cf-text);
+            font-size: 0.9rem;
+        }
+
+        .order-total-summary {
+            list-style: none;
+            padding: 0;
+            font-size: 1.1rem;
+        }
+
+            .order-total-summary li {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.5rem;
+            }
+
+                .order-total-summary li span:first-child {
+                    color: #6c757d;
+                }
+
+                .order-total-summary li.total {
+                    font-size: 1.3rem;
+                    font-weight: 700;
+                    color: var(--bs-danger);
+                    border-top: 1px dashed #eee;
+                    padding-top: 1rem;
+                    margin-top: 0.5rem;
+                }
+    </style>
+}
+
+<h3 class="page-title-account">@ViewData["Title"]</h3>
+<p class="page-lead-account">Theo dõi chi tiết đơn hàng giao tận nơi của bạn.</p>
+
+<hr class="my-4" />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else if (Model.OrderDetails != null)
+{
+    var order = Model.OrderDetails;
+
+    <div class="card order-card">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Mã đơn hàng: <strong>@order.MaDonHang</strong></h5>
+                    <span class="text-muted">Ngày đặt: @order.ThoiGianTao.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="text-end">
+                    <h5 class="mb-0 text-uppercase" style="color: var(--cf-orange);">@order.TrangThaiGiaoHang</h5>
+                </div>
+            </div>
+
+            <hr />
+
+            <ul class="progress-tracker">
+                @{
+                    bool cxn = order.TrangThaiGiaoHang == "Chờ xác nhận";
+                    bool clh = order.TrangThaiGiaoHang == "Chờ lấy hàng";
+                    bool dg = order.TrangThaiGiaoHang == "Đang giao";
+                    bool ht = order.TrangThaiGiaoHang == "Hoàn thành";
+                    bool dh = order.TrangThaiGiaoHang == "Đã Hủy";
+                }
+                <li class="progress-step @(cxn || clh || dg || ht ? "completed" : "") @(cxn ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">receipt_long</span></span>
+                    <span class="text">Đã Đặt</span>
+                </li>
+                <li class="progress-step @(clh || dg || ht ? "completed" : "") @(clh ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">inventory_2</span></span>
+                    <span class="text">Chờ Lấy Hàng</span>
+                </li>
+                <li class="progress-step @(dg || ht ? "completed" : "") @(dg ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">local_shipping</span></span>
+                    <span class="text">Đang Giao</span>
+                </li>
+                <li class="progress-step @(ht ? "completed" : "") @(ht ? "active" : "")">
+                    <span class="icon"><span class="material-symbols-outlined">task_alt</span></span>
+                    <span class="text">Hoàn Thành</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card order-card h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Địa Chỉ Nhận Hàng</h5>
+                    <h6 class="fw-bold">@order.HoTen</h6>
+                    <p class="mb-1 text-muted">@order.SoDienThoai</p>
+                    <p class="mb-0 text-muted">@order.DiaChiGiaoHang</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card order-card h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-4">Lịch sử vận chuyển</h5>
+                    <ul class="timeline">
+                        @foreach (var tracking in order.TrackingEvents)
+                        {
+                            <li class="timeline-item @(tracking.IsCurrent ? "active" : "")">
+                                <div class="timeline-icon">
+                                    <span class="material-symbols-outlined">@(tracking.Status == "Đơn hàng đã đặt" ? "receipt_long" : (tracking.Status == "Giao hàng thành công" ? "task_alt" : "local_shipping"))</span>
+                                </div>
+                                <div class="timeline-content">
+                                    <span class="status">@tracking.Status</span>
+                                    <p class="description mb-0">@tracking.Description</p>
+                                    <span class="timestamp">@tracking.Timestamp.ToString("HH:mm dd/MM/yyyy")</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card order-card">
+                <div class="order-card-header">
+                    <span class="shop-name">
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">storefront</span>
+                        Cafebook
+                    </span>
+                </div>
+                <div class="order-items-container">
+                    @foreach (var item in order.Items)
+                    {
+                        var imgUrl = item.HinhAnhUrl ?? "/images/default-food-icon.png";
+                        <div class="order-item">
+                            <div class="order-item-img">
+                                <img src="@imgUrl" alt="@item.TenSanPham" />
+                            </div>
+                            <div class="order-item-info">
+                                <h6>@item.TenSanPham</h6>
+                                <div class="qty">x @item.SoLuong</div>
+                            </div>
+                            <div class="order-item-price">
+                                @item.DonGia.ToString("N0") đ
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card order-card">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Tổng cộng</h5>
+                    <ul class="order-total-summary">
+                        <li>
+                            <span>Tổng tiền hàng</span>
+                            <span>@order.TongTienHang.ToString("N0") đ</span>
+                        </li>
+                        <li>
+                            <span>Giảm giá</span>
+                            <span class="text-danger">-@order.GiamGia.ToString("N0") đ</span>
+                        </li>
+                        <li class="total">
+                            <span>Thành tiền</span>
+                            <span>@order.ThanhTien.ToString("N0") đ</span>
+                        </li>
+                    </ul>
+                    <hr />
+                    <p class="mb-0">
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem; color: #6c757d;">payments</span>
+                        <span class="text-muted">Đã thanh toán bằng @order.PhuongThucThanhToan</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">Đang tải chi tiết đơn hàng...</div>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHangDetailView.cshtml.cs
+================================================================================
+﻿// TẠO TỆP MỚI: WebCafebookApi/Pages/Account/LichSuDonHangDetailView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+
+namespace WebCafebookApi.Pages.Account
+{
+    [Authorize(Roles = "KhachHang")]
+    public class LichSuDonHangDetailViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public LichSuDonHangDetailViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        [BindProperty(SupportsGet = true)]
+        public int Id { get; set; } // IdHoaDon
+
+        public DonHangChiTietWebDto? OrderDetails { get; set; }
+        public string? ErrorMessage { get; set; }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            if (Id == 0)
+            {
+                ErrorMessage = "Mã đơn hàng không hợp lệ.";
+                return Page();
+            }
+
+            var httpClient = _httpClientFactory.CreateClient("ApiClient");
+            try
+            {
+                // Gọi API mới trong KhachHangProfileController
+                OrderDetails = await httpClient.GetFromJsonAsync<DonHangChiTietWebDto>($"/api/web/profile/order-detail/{Id}");
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                ErrorMessage = "Không tìm thấy đơn hàng hoặc bạn không có quyền xem đơn hàng này.";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi tải chi tiết đơn hàng: {ex.Message}";
+            }
+
+            return Page();
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHangView.cshtml
+================================================================================
+﻿@page "/Account/LichSuDonHangView"
+@model WebCafebookApi.Pages.Account.LichSuDonHangViewModel
+@{
+    ViewData["Title"] = "Lịch sử mua hàng";
+    Layout = "_Layout_Account";
+}
+
+@section Styles {
+    <style>
+        /* CSS cho các tab (giống Shopee) */
+        .order-tabs .nav-link {
+            color: var(--cf-text);
+            background-color: var(--cf-white);
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            font-weight: 500;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+            .order-tabs .nav-link.active {
+                color: var(--cf-orange);
+                border-bottom-color: var(--cf-orange);
+                background-color: var(--cf-white);
+            }
+
+            .order-tabs .nav-link:hover {
+                color: var(--cf-orange);
+            }
+
+        .order-tabs {
+            background-color: var(--cf-white);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 1px 3px var(--cf-shadow);
+        }
+
+        /* CSS cho thẻ đơn hàng (Order Card) */
+        .order-card {
+            background-color: var(--cf-white);
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px var(--cf-shadow);
+        }
+
+        .order-card-header {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .order-card-header .shop-name {
+                font-weight: 600;
+                color: var(--cf-dark-brown);
+            }
+
+            .order-card-header .status-delivery {
+                font-weight: 500;
+                color: var(--cf-orange);
+                text-transform: uppercase;
+                font-size: 0.9rem;
+            }
+
+            .order-card-header .status-cancelled {
+                color: var(--bs-danger);
+            }
+
+            .order-card-header .status-completed {
+                color: var(--bs-success);
+            }
+
+        /* SỬA: Thêm CSS cho vùng item có thể nhấp */
+        a.order-items-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+            a.order-items-link:hover {
+                background-color: #fcfcfc;
+            }
+
+        .order-item {
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px dashed #eee;
+        }
+
+            .order-item:last-child {
+                border-bottom: none;
+            }
+
+        .order-item-img img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+            .order-item-info h6 {
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+            }
+
+            .order-item-info .qty {
+                font-size: 0.9rem;
+                color: #666;
+            }
+
+        .order-item-price {
+            font-weight: 500;
+            color: var(--cf-text);
+            font-size: 0.9rem;
+        }
+
+        .order-card-footer {
+            padding: 1rem 1.25rem;
+            background-color: #fcfcfc;
+            border-top: 1px solid #f0f0f0;
+            text-align: right;
+        }
+
+        .order-total-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--bs-danger);
+        }
+
+        .order-card-actions {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            flex-wrap: wrap; /* Đảm bảo các nút xuống dòng nếu không đủ chỗ */
+        }
+    </style>
+}
+
+<h3 class="page-title-account">@ViewData["Title"]</h3>
+<p class="page-lead-account">Theo dõi các đơn hàng giao tận nơi của bạn.</p>
+
+<hr class="my-4" />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<ul class="nav nav-tabs order-tabs">
+    @foreach (var tabName in Model.StatusTabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.StatusFilter == tabName ? "active" : "")"
+               asp-page="/Account/LichSuDonHangView"
+               asp-route-StatusFilter="@tabName">@tabName</a>
+        </li>
+    }
+</ul>
+
+<div class="mt-4">
+    @if (!Model.FilteredOrders.Any())
+    {
+        <div class="alert alert-info text-center" style="padding: 50px;">
+            <span class="material-symbols-outlined" style="font-size: 48px;">receipt_long</span>
+            <h4 class="mt-3">Không có đơn hàng</h4>
+            <p>Không tìm thấy đơn hàng nào trong mục này.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var order in Model.FilteredOrders)
+        {
+            var statusText = order.TrangThaiGiaoHang;
+            var statusClass = "status-delivery";
+
+            if (order.TrangThaiThanhToan == "Đã hủy")
+            {
+                statusText = "Đã Hủy";
+                statusClass = "status-cancelled";
+            }
+            else if (order.TrangThaiGiaoHang == "Hoàn thành")
+            {
+                statusText = "Giao hàng thành công";
+                statusClass = "status-completed";
+            }
+
+            <div class="order-card">
+                <div class="order-card-header">
+                    <span class="shop-name">
+                        <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">storefront</span>
+                        Cafebook
+                    </span>
+                    <span class="status-delivery @statusClass">
+                        @statusText
+                    </span>
+                </div>
+
+                <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="order-items-link">
+                    <div class="order-items-container">
+                        @foreach (var item in order.Items)
+                        {
+                            var imgUrl = item.HinhAnhUrl ?? "/images/default-food-icon.png";
+                            <div class="order-item">
+                                <div class="order-item-img">
+                                    <img src="@imgUrl" alt="@item.TenSanPham" />
+                                </div>
+                                <div class="order-item-info">
+                                    <h6>@item.TenSanPham</h6>
+                                    <div class="qty">x @item.SoLuong</div>
+                                </div>
+                                <div class="order-item-price">
+                                    @item.DonGia.ToString("N0") đ
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </a>
+
+                <div class="order-card-footer">
+                    <span class="me-2">Thành tiền:</span>
+                    <span class="order-total-amount">@order.ThanhTien.ToString("N0") đ</span>
+                </div>
+
+                <div class="order-card-actions">
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Liên Hệ Shop (Sắp có)</button>
+
+                    @if (order.TrangThaiGiaoHang == "Chờ xác nhận" && order.TrangThaiThanhToan != "Đã hủy")
+                    {
+                        <button class="btn btn-outline-danger btn-sm" disabled>Hủy Đơn (Sắp có)</button>
+                    }
+
+                    @if (order.TrangThaiGiaoHang == "Hoàn thành")
+                    {
+                        <button class="btn btn-outline-secondary btn-sm" disabled>Mua Lại (Sắp có)</button>
+                        <button class="btn btn-primary btn-sm" disabled>Đánh Giá (Sắp có)</button>
+                    }
+
+                    <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="btn btn-outline-primary btn-sm ms-auto">Xem Chi Tiết</a>
+                </div>
+            </div>
+        }
+    }
+</div>
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHangView.cshtml.cs
+================================================================================
+﻿// TẠO TỆP MỚI: WebCafebookApi/Pages/Account/LichSuDonHangView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+namespace WebCafebookApi.Pages.Account
+{
+    [Authorize(Roles = "KhachHang")]
+    public class LichSuDonHangViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public List<LichSuDonHangWebDto> AllOrders { get; set; } = new List<LichSuDonHangWebDto>();
+        public List<LichSuDonHangWebDto> FilteredOrders { get; set; } = new List<LichSuDonHangWebDto>();
+
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string StatusFilter { get; set; } = "Tất cả";
+
+        // Mảng này để render các tab
+        public string[] StatusTabs { get; set; } = {
+            "Tất cả", "Chờ xác nhận", "Chờ lấy hàng",
+            "Đang giao", "Hoàn thành", "Đã Hủy" 
+            // "Trả Hàng" sẽ được thêm khi có nghiệp vụ
+        };
+
+        public LichSuDonHangViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Challenge();
+
+            var httpClient = _httpClientFactory.CreateClient("ApiClient");
+            try
+            {
+                var response = await httpClient.GetFromJsonAsync<List<LichSuDonHangWebDto>>($"/api/web/profile/order-history/{userId}");
+                if (response != null)
+                {
+                    AllOrders = response;
+                }
+
+                // Lọc danh sách đơn hàng dựa trên tab
+                FilterOrders();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi tải lịch sử đơn hàng: {ex.Message}";
+            }
+            return Page();
+        }
+
+        private void FilterOrders()
+        {
+            if (StatusFilter == "Tất cả")
+            {
+                FilteredOrders = AllOrders;
+                return;
+            }
+
+            if (StatusFilter == "Đã Hủy")
+            {
+                // Đã hủy là trạng thái thanh toán
+                FilteredOrders = AllOrders.Where(o => o.TrangThaiThanhToan == "Đã hủy").ToList();
+            }
+            else
+            {
+                // Các trạng thái còn lại là TrangThaiGiaoHang
+                // (Và phải đảm bảo đơn đó chưa bị hủy)
+                FilteredOrders = AllOrders.Where(o =>
+                    o.TrangThaiGiaoHang == StatusFilter &&
+                    o.TrangThaiThanhToan != "Đã hủy")
+                    .ToList();
+            }
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuThueSachView.cshtml
 ================================================================================
 ﻿@page "/Account/LichSuThueSachView"
@@ -4155,6 +4878,807 @@ namespace WebCafebookApi.Pages.Account
             {
                 return Page();
             }
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\ThanhToanThanhCongView.cshtml
+================================================================================
+﻿@page "/Account/ThanhToanThanhCong/{id:int}"
+@model WebCafebookApi.Pages.Account.ThanhToanThanhCongViewModel
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+    Layout = "_Layout"; // Dùng layout chính
+}
+
+<div class="container mt-5">
+    <div class="main-content-card">
+        <div class="text-center" style="padding: 40px 20px;">
+
+            @if (Model.ErrorMessage != null)
+            {
+                <span class="material-symbols-outlined text-danger" style="font-size: 60px;">error</span>
+                <h1 class="display-5 fw-bold mt-3">Đã có lỗi xảy ra</h1>
+                <p class="lead">@Model.ErrorMessage</p>
+                <a asp-page="/GioHangView" class="btn btn-outline-primary mt-3">Quay lại giỏ hàng</a>
+            }
+            else if (Model.HoaDon != null)
+            {
+                <span class="material-symbols-outlined text-success" style="font-size: 60px;">task_alt</span>
+                <h1 class="display-5 fw-bold mt-3">Đặt hàng thành công!</h1>
+                <p class="lead text-muted">
+                    Cảm ơn bạn đã đặt hàng.
+                    Đơn hàng của bạn <strong>#@Model.HoaDon.IdHoaDonMoi</strong> đã được ghi nhận.
+                </p>
+                <p>Nhân viên của chúng tôi sẽ gọi điện xác nhận đơn hàng đến SĐT <strong>@Model.HoaDon.SoDienThoai</strong> trong thời gian sớm nhất.</p>
+
+                <hr class="my-4" />
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 text-start">
+                        <h5 class="mb-3">Tóm tắt đơn hàng</h5>
+                        <ul class="list-group mb-3">
+                            @foreach (var item in Model.HoaDon.Items)
+                            {
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">@item.TenHienThi</h6>
+                                        <small class="text-muted">Số lượng: @item.SoLuong</small>
+                                    </div>
+                                    <span class="text-muted">@item.ThanhTien.ToString("N0") đ</span>
+                                </li>
+                            }
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Tiền hàng</span>
+                                <strong>@Model.HoaDon.TongTienHang.ToString("N0") đ</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between text-danger">
+                                <span>Giảm giá (KM + Điểm)</span>
+                                <span>-@Model.HoaDon.GiamGia.ToString("N0") đ</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between fs-5">
+                                <strong>Tổng cộng</strong>
+                                <strong>@Model.HoaDon.ThanhTien.ToString("N0") đ</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <a asp-page="/TrangChuView" class="btn btn-outline-secondary">Tiếp tục mua sắm</a>
+                    <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@Model.HoaDon.IdHoaDonMoi" class="btn btn-primary">
+                        Xem chi tiết đơn hàng
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .page-title-account {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--cf-dark-brown);
+        }
+
+        .page-lead-account {
+            font-size: 1.1rem;
+            color: var(--cf-text);
+            margin-bottom: 0;
+        }
+    </style>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\ThanhToanThanhCongView.cshtml.cs
+================================================================================
+﻿// Tập tin: WebCafebookApi/Pages/Account/ThanhToanThanhCongView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+
+namespace WebCafebookApi.Pages.Account
+{
+    [Authorize(Roles = "KhachHang")]
+    public class ThanhToanThanhCongViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public ThanhToanThanhCongViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        [BindProperty(SupportsGet = true)]
+        public int Id { get; set; } // Đây là IdHoaDon
+
+        public ThanhToanThanhCongDto? HoaDon { get; set; }
+        public string? ErrorMessage { get; set; }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            if (Id == 0)
+            {
+                ErrorMessage = "Không tìm thấy mã đơn hàng.";
+                return Page();
+            }
+
+            var httpClient = _httpClientFactory.CreateClient("ApiClient");
+            try
+            {
+                // Gọi API mới để lấy tóm tắt đơn hàng
+                HoaDon = await httpClient.GetFromJsonAsync<ThanhToanThanhCongDto>($"api/web/thanhtoan/order-summary/{Id}");
+                if (HoaDon == null)
+                {
+                    ErrorMessage = "Không thể tải thông tin đơn hàng.";
+                }
+            }
+            catch (System.Exception ex)
+            {
+                // Lỗi 401 (Unauthorized) hoặc 404 (NotFound) cũng sẽ bị bắt ở đây
+                ErrorMessage = $"Bạn không có quyền xem đơn hàng này hoặc đơn hàng không tồn tại. ({ex.Message})";
+            }
+
+            return Page();
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\ThanhToanView.cshtml
+================================================================================
+﻿@page "/Account/ThanhToanView"
+@model WebCafebookApi.Pages.Account.ThanhToanViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Thanh Toán";
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="main-content-card">
+
+        <h3 class="page-title-account">@ViewData["Title"]</h3>
+        <p class="page-lead-account">Hoàn tất thông tin để đặt hàng (Chỉ áp dụng cho Thức uống/Món).</p>
+
+        <hr class="my-4" />
+        
+        @* (Phần Form Input và Hóa đơn giữ nguyên) *@
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success">@Model.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        
+        <form method="post">
+            <div class="row g-5">
+                
+                <div class="col-lg-7">
+                    <h4 class="mb-3">Thông tin giao hàng</h4>
+                    
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="material-input-group">
+                                <label asp-for="Input.HoTen" class="form-label fw-bold"></label>
+                                <input asp-for="Input.HoTen" class="material-input" />
+                                <span asp-validation-for="Input.HoTen" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="material-input-group">
+                                <label asp-for="Input.SoDienThoai" class="form-label fw-bold"></label>
+                                <input asp-for="Input.SoDienThoai" class="material-input" />
+                                <span asp-validation-for="Input.SoDienThoai" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="material-input-group">
+                                <label asp-for="Input.Email" class="form-label fw-bold"></label>
+                                <input asp-for="Input.Email" class="material-input" />
+                                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="material-input-group">
+                                <label asp-for="Input.DiaChiGiaoHang" class="form-label fw-bold">Địa chỉ giao hàng</label>
+                                <input asp-for="Input.DiaChiGiaoHang" class="material-input" placeholder="Số nhà, đường, phường/xã, quận/huyện..." />
+                                <span asp-validation-for="Input.DiaChiGiaoHang" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="material-input-group">
+                                <label asp-for="Input.GhiChu" class="form-label fw-bold">Ghi chú (Không bắt buộc)</label>
+                                <textarea asp-for="Input.GhiChu" class="material-input" rows="3" placeholder="Yêu cầu thêm (ít đường, nhiều đá...)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h4 class="mb-3">Phương thức thanh toán</h4>
+                    <div class="my-3">
+                        <div class="form-check">
+                            <input asp-for="Input.PhuongThucThanhToan" type="radio" value="COD" class="form-check-input" checked />
+                            <label class="form-check-label" for="Input_PhuongThucThanhToan_COD">
+                                Thanh toán khi nhận hàng (COD)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="Input.PhuongThucThanhToan" type="radio" value="ChuyenKhoan" class="form-check-input" />
+                            <label class="form-check-label" for="Input_PhuongThucThanhToan_ChuyenKhoan">
+                                Chuyển khoản (Chúng tôi sẽ gọi xác nhận)
+                            </label>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Input.PhuongThucThanhToan" class="text-danger small"></span>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="card sticky-top" style="top: 20px;">
+                        <div class="card-body">
+                            <h4 class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-primary">Đơn hàng của bạn</span>
+                                <span class="badge bg-primary rounded-pill">@Model.PageData.SanPhamItems.Count</span>
+                            </h4>
+
+                            <ul class="list-group mb-3">
+                                @foreach (var item in Model.PageData.SanPhamItems)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between lh-sm">
+                                        <div>
+                                            <h6 class="my-0">@item.TenHienThi</h6>
+                                            <small class="text-muted">Số lượng: @item.SoLuong</small>
+                                        </div>
+                                        <span class="text-muted">@item.ThanhTien.ToString("N0") đ</span>
+                                    </li>
+                                }
+                                
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <h6 class="my-0">Tiền hàng</h6>
+                                    <strong>@Model.PageData.TongTienHang.ToString("N0") đ</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">Khuyến mãi</h6>
+                                        <small class="text-muted" id="selected-promo-name">-- Chưa áp dụng --</small>
+                                        <input type="hidden" asp-for="Input.IdKhuyenMai" id="selected-promo-id" value="" />
+                                    </div>
+                                    <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#promoModal" id="btn-chon-km">
+                                        Chọn mã
+                                    </button>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between text-success">
+                                    <span>Giảm giá (KM)</span>
+                                    <span id="discount-amount">- 0 đ</span>
+                                </li>
+                                
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">Dùng điểm tích lũy</h6>
+                                        <small class="text-muted">Bạn có: @Model.PageData.KhachHang.DiemTichLuy điểm</small>
+                                        <div class="input-group input-group-sm mt-1" style="max-width: 150px;">
+                                            <input asp-for="Input.DiemSuDung" type="number" class="form-control" value="0" min="0" max="@Model.PageData.KhachHang.DiemTichLuy" id="Input_DiemSuDung" />
+                                            <span class="input-group-text">điểm</span>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between text-info">
+                                    <span>Giảm giá (Điểm)</span>
+                                    <span id="point-discount-amount">- 0 đ</span>
+                                </li>
+
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Tổng (VND)</span>
+                                    <strong id="total-amount" class="fs-5">@Model.PageData.TongTienHang.ToString("N0") đ</strong>
+                                </li>
+                            </ul>
+
+                            <button type="submit" class="w-100 btn btn-primary btn-lg">
+                                Xác nhận Đặt Hàng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="promoModal" tabindex="-1" aria-labelledby="promoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promoModalLabel">Chọn Khuyến Mãi Áp Dụng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group-item list-group-item-action promo-item-modal active" data-id="0">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">-- Không áp dụng --</h6>
+                        <span class="badge bg-success">Có thể áp dụng</span>
+                    </div>
+                    <p class="mb-1 small text-muted">Chọn mục này để gỡ bỏ khuyến mãi hiện tại.</p>
+                </div>
+                
+                @foreach (var promo in Model.PageData.KhuyenMaisHopLe)
+                {
+                    <div class="list-group-item list-group-item-action promo-item-modal" 
+                         data-id="@promo.IdKhuyenMai"
+                         data-loai="@promo.LoaiGiamGia"
+                         data-giatri="@promo.GiaTriGiam.ToString(CultureInfo.InvariantCulture)"
+                         data-giamtoida="@((promo.GiamToiDa ?? 0).ToString(CultureInfo.InvariantCulture))"
+                         data-idspapdung="@(promo.IdSanPhamApDung ?? 0)"
+                         data-hdttoithieu="@((promo.HoaDonToiThieu ?? 0).ToString(CultureInfo.InvariantCulture))"
+                         
+                         data-ngaytrongtuan="@(promo.NgayTrongTuan ?? "")"
+                         data-giobatdau="@(promo.GioBatDau?.ToString(@"hh\:mm") ?? "")"
+                         data-gioketthuc="@(promo.GioKetThuc?.ToString(@"hh\:mm") ?? "")">
+
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 promo-title">@promo.TenChuongTrinh (@promo.MaKhuyenMai)</h6>
+                            <span class="badge promo-status"></span>
+                        </div>
+                        <p class="mb-1 small text-muted promo-description">@promo.DieuKienApDung</p>
+                        <small class="text-danger promo-reason"></small>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="btnApplyPromo">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // 1. Dữ liệu từ Backend
+        const subtotal = @Model.PageData.TongTienHang.ToString(CultureInfo.InvariantCulture);
+        const tiLeDoiDiem = @Model.PageData.TiLeDoiDiemVND.ToString(CultureInfo.InvariantCulture);
+        const maxPoints = @Model.PageData.KhachHang.DiemTichLuy;
+        
+        const cartItems = {
+        @foreach (var item in Model.PageData.SanPhamItems)
+        {
+            @Html.Raw($"'{item.Id}': {item.ThanhTien.ToString(CultureInfo.InvariantCulture)},")
+        }
+        };
+
+        // Biến toàn cục lưu trữ KM đã chọn
+        let selectedPromo = {
+            id: 0,
+            name: "-- Chưa áp dụng --",
+            discount: 0
+        };
+
+        // 2. DOM Elements
+        const $diemInput = $('#Input_DiemSuDung');
+        const $promoModal = $('#promoModal');
+        const $promoAmountText = $('#discount-amount');
+        const $diemAmountText = $('#point-discount-amount');
+        const $totalAmountText = $('#total-amount');
+        const $selectedPromoIdInput = $('#selected-promo-id');
+        const $selectedPromoNameText = $('#selected-promo-name');
+        const $btnChonKmTrigger = $('#btn-chon-km'); 
+
+        // =======================================
+        // === THÊM MỚI: HÀM HELPER THỜI GIAN ===
+        // =======================================
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        function getCurrentDayOfWeek() {
+            const days = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+            const now = new Date();
+            return days[now.getDay()];
+        }
+
+        // 3. Hàm kiểm tra điều kiện KM (ĐÃ NÂNG CẤP)
+        function checkEligibility(promoData) {
+            const minSpend = parseFloat(promoData.hdttoithieu); 
+            const idSpApDung = parseInt(promoData.idspapdung);
+
+            // === YÊU CẦU MỚI: KIỂM TRA THỜI GIAN ===
+            const ngayTrongTuan = promoData.ngaytrongtuan; // "Thứ 2, Thứ 3"
+            const gioBatDau = promoData.giobatdau;       // "14:00"
+            const gioKetThuc = promoData.gioketthuc;     // "16:00"
+
+            if (gioBatDau && gioKetThuc) {
+                const currentTime = getCurrentTime();
+                if (currentTime < gioBatDau || currentTime > gioKetThuc) {
+                    return { eligible: false, reason: `Chỉ áp dụng trong khung giờ ${gioBatDau} - ${gioKetThuc}.` };
+                }
+            }
+            if (ngayTrongTuan) {
+                const currentDay = getCurrentDayOfWeek(); // "Thứ 5"
+                if (!ngayTrongTuan.includes(currentDay)) {
+                    return { eligible: false, reason: `Chỉ áp dụng vào các ngày: ${ngayTrongTuan}.` };
+                }
+            }
+            // === KẾT THÚC LOGIC MỚI ===
+
+            if (minSpend > 0 && subtotal < minSpend) {
+                return { eligible: false, reason: `Cần hóa đơn tối thiểu ${minSpend.toLocaleString('vi-VN')} đ.` };
+            }
+
+            if (idSpApDung > 0 && !cartItems.hasOwnProperty(idSpApDung)) {
+                return { eligible: false, reason: "Khuyến mãi này chỉ áp dụng cho một số sản phẩm nhất định (hiện không có trong giỏ)." };
+            }
+
+            // Nếu qua hết, tính toán giảm giá
+            let subtotalForPromo = subtotal;
+            if (idSpApDung > 0) {
+                subtotalForPromo = cartItems[idSpApDung] || 0;
+            }
+
+            let discount = 0;
+            const loai = promoData.loai;
+            const giaTri = parseFloat(promoData.giatri);
+            const giamToiDa = parseFloat(promoData.giamtoida);
+
+            if (loai.toLowerCase() === 'phantram') {
+                discount = subtotalForPromo * (giaTri / 100);
+                if (giamToiDa > 0 && discount > giamToiDa) {
+                    discount = giamToiDa;
+                }
+            } else { // SoTien
+                discount = giaTri;
+            }
+            
+            discount = Math.min(discount, subtotalForPromo);
+            return { eligible: true, reason: null, discount: discount };
+        }
+
+        // 4. Hàm cập nhật tổng tiền (ĐÃ SỬA LỖI 50%)
+        function updateTotal() {
+            // 4.1. Lấy giá trị khuyến mãi (KM)
+            const promoDiscount = selectedPromo.discount;
+            $promoAmountText.text('- ' + promoDiscount.toLocaleString('vi-VN') + ' đ');
+            $selectedPromoNameText.text(selectedPromo.name);
+            $btnChonKmTrigger.text(selectedPromo.name); 
+            $selectedPromoIdInput.val(selectedPromo.id);
+
+            // 4.2. Lấy giá trị điểm và validate
+            let points = parseInt($diemInput.val()) || 0;
+            if (points < 0) { points = 0; }
+            if (points > maxPoints) { points = maxPoints; $diemInput.val(maxPoints); }
+            
+            let pointDiscount = points * tiLeDoiDiem;
+            const totalAfterPromo = subtotal - promoDiscount; 
+
+            // Logic 50%
+            const maxAllowedPointDiscount = totalAfterPromo * 0.5; 
+            
+            if (pointDiscount > maxAllowedPointDiscount) {
+                pointDiscount = maxAllowedPointDiscount;
+                let pointsUsed = Math.ceil(pointDiscount / tiLeDoiDiem); 
+                if (pointsUsed > maxPoints) { pointsUsed = maxPoints; } 
+                
+                if (parseInt($diemInput.val()) !== pointsUsed) {
+                    $diemInput.val(pointsUsed);
+                }
+                points = pointsUsed;
+            }
+
+            $diemAmountText.text('- ' + pointDiscount.toLocaleString('vi-VN') + ' đ');
+
+            // 4.3. Tính tổng cuối cùng
+            let total = subtotal - promoDiscount - pointDiscount; 
+            if (total < 0) total = 0;
+
+            $totalAmountText.text(total.toLocaleString('vi-VN') + ' đ');
+        }
+
+        // 5. Sự kiện khi mở Modal (Đã sửa)
+        $promoModal.on('show.bs.modal', function () {
+            const currentPromoId = selectedPromo.id; 
+
+            $('.promo-item-modal').each(function() {
+                const $item = $(this);
+                const id = parseInt($item.data('id'));
+                
+                $item.removeClass('active');
+                if (id === currentPromoId) {
+                    $item.addClass('active'); 
+                }
+
+                if (id === 0) return; 
+
+                const promoData = $item.data();
+                const result = checkEligibility(promoData);
+
+                const $status = $item.find('.promo-status');
+                const $reason = $item.find('.promo-reason');
+
+                if (result.eligible) {
+                    $item.removeClass('disabled-promo');
+                    $status.text('Có thể áp dụng').removeClass('bg-danger').addClass('bg-success');
+                    $reason.text('');
+                } else {
+                    $item.addClass('disabled-promo');
+                    $status.text('Không hợp lệ').removeClass('bg-success').addClass('bg-danger');
+                    $reason.text(result.reason);
+                }
+            });
+        });
+
+        // 6. Sự kiện khi click CHỌN 1 KM (Chỉ highlight)
+        $('.promo-item-modal').on('click', function() {
+            const $item = $(this);
+            if ($item.hasClass('disabled-promo')) {
+                return; 
+            }
+            $('.promo-item-modal').removeClass('active');
+            $item.addClass('active');
+        });
+
+        // 7. SỰ KIỆN MỚI: Khi nhấn nút "Áp dụng"
+        $('#btnApplyPromo').on('click', function() {
+            const $item = $('.promo-item-modal.active');
+            
+            if ($item.length === 0) {
+                selectedPromo = { id: 0, name: "Chọn mã", discount: 0 };
+            } else {
+                const id = parseInt($item.data('id'));
+                
+                if (id === 0) {
+                    selectedPromo = { id: 0, name: "Chọn mã", discount: 0 };
+                } else {
+                    const promoData = $item.data();
+                    const result = checkEligibility(promoData); 
+                    selectedPromo = {
+                        id: id,
+                        name: $item.find('.promo-title').text(),
+                        discount: result.discount
+                    };
+                }
+            }
+            
+            updateTotal(); 
+            $promoModal.modal('hide'); 
+        });
+
+        // 8. Sự kiện khi nhập điểm (Giữ nguyên)
+        $diemInput.on('input', updateTotal);
+        
+        // Chạy lần đầu khi tải trang
+        updateTotal();
+    </script>
+}
+
+@section Styles {
+    <style>
+        .page-title-account {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--cf-dark-brown);
+        }
+        .page-lead-account {
+            font-size: 1.1rem;
+            color: var(--cf-text);
+            margin-bottom: 0;
+        }
+        .material-input-group {
+            margin-bottom: 1.5rem !important;
+        }
+        .promo-item-modal {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .promo-item-modal:hover {
+            background-color: #f8f9fa;
+        }
+        .promo-item-modal.disabled-promo {
+            cursor: not-allowed;
+            background-color: #f8f8f8;
+            opacity: 0.7;
+        }
+        .promo-item-modal.disabled-promo .promo-title {
+            color: #6c757d;
+        }
+        .promo-item-modal.active {
+            background-color: var(--cf-cream, #FFF8E1);
+            border-left: 4px solid var(--cf-orange, #D27D2D);
+            font-weight: 500;
+        }
+        #btn-chon-km {
+            text-decoration: none;
+            font-weight: 500;
+        }
+    </style>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\ThanhToanView.cshtml.cs
+================================================================================
+﻿// Tập tin: WebCafebookApi/Pages/Account/ThanhToanView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using WebCafebookApi.Services;
+using System.Linq;
+using System.Collections.Generic;
+
+namespace WebCafebookApi.Pages.Account
+{
+    [Authorize(Roles = "KhachHang")]
+    public class ThanhToanViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public ThanhToanViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public ThanhToanLoadDto PageData { get; set; } = new();
+
+        [BindProperty]
+        public ThanhToanSubmitDto Input { get; set; } = new();
+
+        [TempData]
+        public string? SuccessMessage { get; set; }
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        private HttpClient GetApiClient()
+        {
+            // ApiClient (từ Program.cs) đã tự động đính kèm JWT Token
+            return _httpClientFactory.CreateClient("ApiClient");
+        }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var httpClient = GetApiClient();
+            try
+            {
+                // 1. Tải dữ liệu API (Khách hàng, Khuyến mãi, Tỷ lệ điểm)
+                var loadedData = await httpClient.GetFromJsonAsync<ThanhToanLoadDto>("api/web/thanhtoan/load");
+
+                if (loadedData == null)
+                {
+                    ErrorMessage = "Không thể tải dữ liệu thanh toán.";
+                    return Page();
+                }
+                PageData = loadedData;
+
+                // 2. Tải giỏ hàng từ SESSION (của Frontend)
+                var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey)
+                                  ?? new List<CartItemDto>();
+
+                // 3. Lấy thông tin chi tiết cho giỏ hàng
+                var sanPhamItems = new List<GioHangItemViewModel>();
+                // SỬA: Xóa List<GioHangItemViewModel> sachItems
+
+                var publicClient = _httpClientFactory.CreateClient(); // Client không auth
+
+                foreach (var item in sessionCart)
+                {
+                    // =======================================
+                    // === SỬA LỖI CS1061 TẠI ĐÂY ===
+                    // Xóa toàn bộ logic if/else (item.Loai), vì giỏ hàng chỉ còn IdSanPham
+                    try
+                    {
+                        var sp = await publicClient.GetFromJsonAsync<SanPhamChiTietDto>($"http://localhost:5166/api/web/thucdon/{item.Id}");
+                        if (sp != null)
+                        {
+                            sanPhamItems.Add(new GioHangItemViewModel
+                            {
+                                Id = item.Id,
+                                // SỬA: Xóa 'Loai'
+                                TenHienThi = sp.TenSanPham,
+                                HinhAnhUrl = sp.HinhAnhUrl,
+                                DonGia = sp.DonGia,
+                                SoLuong = item.SoLuong
+                            });
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        ErrorMessage = "Lỗi khi tải thông tin giỏ hàng: " + ex.Message;
+                    }
+                    // =======================================
+                }
+
+                // 4. Gán giỏ hàng đã xử lý vào PageData
+                PageData.SanPhamItems = sanPhamItems;
+                PageData.SachItems = new List<GioHangItemViewModel>(); // SỬA: Khởi tạo rỗng
+                PageData.TongTienHang = sanPhamItems.Sum(i => i.ThanhTien);
+
+
+                // 5. Xử lý chuyển hướng nếu giỏ hàng không hợp lệ
+                // SỬA: Xóa logic kiểm tra sách
+                if (PageData.SanPhamItems.Count == 0)
+                {
+                    return RedirectToPage("/GioHangView");
+                }
+
+                // 6. Điền thông tin mặc định cho form Input
+                Input.HoTen = PageData.KhachHang.HoTen;
+                Input.SoDienThoai = PageData.KhachHang.SoDienThoai;
+                Input.Email = PageData.KhachHang.Email;
+                Input.DiaChiGiaoHang = PageData.KhachHang.DiaChi;
+                Input.PhuongThucThanhToan = "COD";
+            }
+            catch (System.Exception ex)
+            {
+                ErrorMessage = $"Lỗi tải trang: {ex.Message}";
+            }
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostAsync()
+        {
+            var loadTask = OnGetAsync(); // Tải lại dữ liệu nền
+
+            if (!ModelState.IsValid)
+            {
+                await loadTask;
+                return Page();
+            }
+
+            var httpClient = GetApiClient();
+            try
+            {
+                var sessionCart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey)
+                                  ?? new List<CartItemDto>();
+                Input.ItemsToPurchase = sessionCart; // Gán giỏ hàng vào DTO
+
+                var response = await httpClient.PostAsJsonAsync("api/web/thanhtoan/submit", Input);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<ThanhToanResponseDto>();
+                    SuccessMessage = result?.Message ?? "Đặt hàng thành công!";
+
+                    // =======================================
+                    // === SỬA LỖI CS1061 TẠI ĐÂY ===
+                    // Xóa giỏ hàng hoàn toàn (thay vì lọc sách)
+                    HttpContext.Session.Remove(WebCafebookApi.Services.SessionExtensions.CartKey);
+                    // =======================================
+
+                    // =======================================
+                    // === YÊU CẦU MỚI: Chuyển hướng ===
+                    // =======================================
+                    return RedirectToPage("/Account/ThanhToanThanhCongView", new { id = result.IdHoaDonMoi });
+                }
+                else
+                {
+                    var errorResult = await response.Content.ReadFromJsonAsync<ThanhToanResponseDto>();
+                    ErrorMessage = errorResult?.Message ?? "Đã xảy ra lỗi khi đặt hàng.";
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ErrorMessage = $"Lỗi hệ thống: {ex.Message}";
+            }
+
+            await loadTask;
+            return Page();
         }
     }
 }
@@ -4646,12 +6170,10 @@ namespace WebCafebookApi.Pages.Account // SỬA: Namespace
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\_Layout_Account.cshtml
 ================================================================================
-﻿@{
-    Layout = "_Layout"; // Kế thừa từ Layout chính (có header, footer)
-
-    // Helper để kiểm tra trang
-    string?
-    CurrentPage()
+﻿@* Tập tin: WebCafebookApi/Pages/Account/_Layout_Account.cshtml *@
+@{
+    Layout = "_Layout";
+    string? CurrentPage()
     {
         return ViewContext.RouteData.Values["page"]?.ToString();
     }
@@ -4669,35 +6191,33 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\_Layout_Accou
                         <span class="material-symbols-outlined">person</span>
                         Tài khoản của tôi
                     </a>
-
                     <a class="nav-link @(CurrentPage() == "/Account/ThongTinCaNhanView" ? "active" : "")"
                        asp-page="/Account/ThongTinCaNhanView">
                         <span class="material-symbols-outlined">badge</span>
                         Hồ sơ
                     </a>
-
                     <a class="nav-link @(CurrentPage() == "/Account/DoiMatKhauView" ? "active" : "")"
                        asp-page="/Account/DoiMatKhauView">
                         <span class="material-symbols-outlined">lock</span>
                         Đổi mật khẩu
                     </a>
-
                     <a class="nav-link @(CurrentPage() == "/Account/LichSuDatBanView" ? "active" : "")"
                        asp-page="/Account/LichSuDatBanView">
                         <span class="material-symbols-outlined">event_list</span>
                         Lịch sử đặt bàn
                     </a>
-
                     <a class="nav-link @(CurrentPage() == "/Account/LichSuThueSachView" ? "active" : "")"
                        asp-page="/Account/LichSuThueSachView">
                         <span class="material-symbols-outlined">menu_book</span>
                         Lịch sử thuê sách
                     </a>
 
-                    <a class="nav-link disabled" href="#">
-                        <span class="material-symbols-outlined">settings</span>
-                        Cài đặt (Sắp có)
+                    <a class="nav-link @(CurrentPage() == "/Account/LichSuDonHangView" ? "active" : "")"
+                       asp-page="/Account/LichSuDonHangView">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                        Lịch sử mua hàng
                     </a>
+
                 </nav>
             </div>
 
@@ -4711,6 +6231,10 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\_Layout_Accou
 
 @section Scripts {
     @await RenderSectionAsync("Scripts", required: false)
+}
+
+@section Styles {
+    @await RenderSectionAsync("Styles", required: false)
 }
 ================================================================================
 
