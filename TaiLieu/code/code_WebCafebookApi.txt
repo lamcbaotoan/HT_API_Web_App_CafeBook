@@ -274,27 +274,86 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
 
 @section Styles {
     <style>
+        /* ==============================
+           CSS CHO TABS (ĐỒNG BỘ TỪ TRANG SẢN PHẨM)
+        ============================== */
+        /* Các biến màu (giả định) */
+        :root {
+            --cf-orange-light: #FF9800;
+            --cf-orange: #F57C00;
+            --cf-text: #333333;
+            --cf-white: #ffffff;
+            --cf-shadow: rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Card container */
+        .product-detail-card,
+        .tab-content {
+            background-color: var(--cf-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--cf-shadow);
+        }
+
+        /* CSS cho các tab */
+        .product-tabs .nav-link {
+            color: var(--cf-text);
+            background-color: var(--cf-white);
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            font-weight: 500;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .product-tabs .nav-link.active {
+            color: var(--cf-orange);
+            border-bottom-color: var(--cf-orange);
+            background-color: var(--cf-white);
+        }
+
+        .product-tabs .nav-link:hover:not(.active) {
+            color: var(--cf-orange-light);
+            border-bottom-color: rgba(var(--cf-orange-light), 0.3);
+        }
+
+        .product-tabs {
+            background-color: var(--cf-white);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 1px 3px var(--cf-shadow);
+            margin-bottom: -1px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* Tăng khoảng cách các phần */
+        .product-section {
+            margin-bottom: 2.5rem;
+        }
 
         /* ==============================
-           MÔ TẢ: RÚT GỌN 3 DÒNG
+           CSS CHO MÔ TẢ (GIỮ NGUYÊN)
         ============================== */
         #description-wrapper.description-truncated p {
             display: -webkit-box;
-            -webkit-line-clamp: 3;          /* CHỈ 3 DÒNG */
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: .5rem !important;   /* ĐẨY SÁT LÊN */
+            margin-top: .5rem !important;
         }
 
-        /* MỞ RỘNG */
         #description-wrapper.description-expanded p {
             display: block;
             white-space: pre-wrap !important;
             overflow: visible;
         }
 
-        /* Image */
+        /* ==============================
+           CSS CHO TRANG (GIỮ NGUYÊN)
+        ============================== */
         .detail-img-container img {
             max-height: 500px;
             object-fit: cover;
@@ -312,68 +371,121 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
             align-items: center;
             gap: 6px;
         }
+
+        /* ==============================
+           CSS MỚI: HỘP THUÊ SÁCH
+        ============================== */
+        .rent-box-card {
+            background-color: #fdfaf6; /* Màu nền be nhạt */
+            border-radius: 8px;
+            border: 1px solid #eee;
+            padding: 1.25rem;
+        }
     </style>
 }
 
 <div class="container mt-5">
-    <div class="main-content-card">
 
-        @if (Model.Sach != null)
-        {
-            <div class="row gy-4">
+    @if (Model.Sach != null)
+    {
+        <div class="row product-detail-card p-4 gy-4 product-section">
 
-                <!-- Cột ảnh -->
-                <div class="col-lg-4">
-                    <div class="detail-img-container">
-                        <img src="@imgSrc" class="img-fluid rounded shadow-sm w-100" alt="@Model.Sach.TieuDe">
-                    </div>
+            <div class="col-lg-4">
+                <div class="detail-img-container">
+                    <img src="@imgSrc" class="img-fluid rounded shadow-sm w-100" alt="@Model.Sach.TieuDe">
                 </div>
+            </div>
 
-                <!-- Cột thông tin -->
-                <div class="col-lg-5">
+            <div class="col-lg-8 ps-lg-5">
 
-                    <!-- Breadcrumb -->
-                    <nav aria-label="breadcrumb" class="page-breadcrumb mb-3">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item">
-                                <a asp-page="/TrangChuView">
-                                    <span class="material-symbols-outlined">home</span> Trang Chủ
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a asp-page="/ThuVienSachView">
-                                    <span class="material-symbols-outlined">import_contacts</span> Thư Viện Sách
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active">@Model.Sach.TieuDe</li>
-                        </ol>
-                    </nav>
+                <nav aria-label="breadcrumb" class="page-breadcrumb mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a asp-page="/TrangChuView">
+                                <span class="material-symbols-outlined">home</span> Trang Chủ
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a asp-page="/ThuVienSachView">
+                                <span class="material-symbols-outlined">import_contacts</span> Thư Viện Sách
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">@Model.Sach.TieuDe</li>
+                    </ol>
+                </nav>
 
-                    <h1 class="display-5 fw-bold">@Model.Sach.TieuDe</h1>
+                <h1 class="display-5 fw-bold">@Model.Sach.TieuDe</h1>
 
-                    <!-- Tác giả -->
-                    <p class="lead fs-5">
-                        Tác giả:
-                        @if (Model.Sach.TacGias?.Any() == true)
+                <p class="lead fs-5 mb-4">
+                    Tác giả:
+                    @if (Model.Sach.TacGias?.Any() == true)
+                    {
+                        foreach (var tg in Model.Sach.TacGias)
                         {
-                            foreach (var tg in Model.Sach.TacGias)
-                            {
-                                <a asp-page="/TimKiemSachView"
-                                   asp-route-idTacGia="@tg.IdTacGia"
-                                   class="text-muted text-decoration-none">@tg.TenTacGia</a>
+                            <a asp-page="/TimKiemSachView"
+                               asp-route-idTacGia="@tg.IdTacGia"
+                               class="text-muted text-decoration-none">@tg.TenTacGia</a>
+                            @(tg != Model.Sach.TacGias.Last() ? ", " : "")
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">(Đang cập nhật)</span>
+                    }
+                </p>
 
-                                @(tg != Model.Sach.TacGias.Last() ? ", " : "")
-                            }
+                <h3 class="text-danger fw-bolder mb-4">
+                    @Model.Sach.GiaBia.ToString("N0") đ
+                    <small class="text-muted fs-5">(Tiền cọc)</small>
+                </h3>
+
+                <hr class="my-4" />
+
+                <div class="rent-box-card">
+                    <h5 class="card-title mb-3">Thuê Sách</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-6" style="font-weight: 500;">Tình trạng:</span>
+                        @if (Model.Sach.SoLuongCoSan > 0)
+                        {
+                            <strong class="text-success ms-2">
+                                <span class="material-symbols-outlined" style="vertical-align: sub; font-size: 1.1rem;">check_circle</span>
+                                Còn @Model.Sach.SoLuongCoSan cuốn
+                            </strong>
                         }
                         else
                         {
-                            <span class="text-muted">(Đang cập nhật)</span>
+                            <strong class="text-danger ms-2">
+                                <span class="material-symbols-outlined" style="vertical-align: sub; font-size: 1.1rem;">cancel</span>
+                                Đã thuê hết
+                            </strong>
                         }
-                    </p>
+                    </div>
+                    
+                    <div class="d-grid gap-3">
+                        <button type="button" class="btn btn-lg px-4 btn-primary-custom" disabled>
+                            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">auto_stories</span>
+                            Thuê sách (Sắp có)
+                        </button>
+                    </div>
+                     <small class="text-muted d-block text-center mt-3">Vui lòng liên hệ quầy để làm thủ tục thuê sách.</small>
+                </div>
+                </div>
+        </div>
+        <div class="mt-5 product-section">
+            <ul class="nav nav-tabs product-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#descriptionTab">Mô Tả Chi Tiết</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#stockTab">Thông Tin Kho</a>
+                </li>
+            </ul>
 
-                    <!-- Thể loại -->
-                    <div class="fs-5 mb-3">
-                        <span>Thể loại:</span>
+            <div class="tab-content p-4">
+                <div class="tab-pane fade show active" id="descriptionTab">
+                    
+                    <h5 class="fw-bold">Thể loại</h5>
+                    <div class="mb-3">
                         @if (Model.Sach.TheLoais?.Any() == true)
                         {
                             foreach (var tl in Model.Sach.TheLoais)
@@ -389,9 +501,8 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
                         }
                     </div>
 
-                    <!-- NXB -->
-                    <div class="fs-5 mb-3">
-                        <span>Nhà xuất bản:</span>
+                    <h5 class="fw-bold mt-4">Nhà xuất bản</h5>
+                    <div class="mb-4">
                         @if (Model.Sach.NhaXuatBans?.Any() == true)
                         {
                             foreach (var nxb in Model.Sach.NhaXuatBans)
@@ -407,32 +518,40 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
                         }
                     </div>
 
-                    <!-- Giá -->
-                    <h3 class="text-danger fw-bolder">
-                        @Model.Sach.GiaBia.ToString("N0") đ
-                        <small class="text-muted fs-5">(Tiền cọc)</small>
-                    </h3>
-
-                    <!-- Mô tả sách -->
+                    <h5 class="fw-bold mt-4">Giới thiệu sách</h5>
                     <div id="description-wrapper" class="description-truncated">
-                        <p class="mt-4 fs-6" style="white-space: pre-wrap;">
+                        <p class="mt-3 fs-6" style="white-space: pre-wrap;">
                             @Model.Sach.MoTa
                         </p>
                     </div>
-
                     <a id="toggle-description"
                        href="javascript:void(0);"
                        class="btn btn-link ps-0"
                        style="display:none;">Đọc thêm...</a>
+                </div>
 
-                    <!-- Thông tin kho -->
-                    <h5 class="mt-4">Thông tin kho:</h5>
-                    <ul class="ingredient-list">
-                        <li><span class="material-symbols-outlined">push_pin</span> Vị trí: <strong>@Model.Sach.ViTri</strong></li>
-                        <li><span class="material-symbols-outlined">inventory</span> Tổng số lượng: <strong>@Model.Sach.TongSoLuong</strong></li>
-                        <li>
-                            <span class="material-symbols-outlined">check_circle</span>
-                            Hiện có sẵn:
+                <div class="tab-pane fade" id="stockTab">
+                    <h5 class="fw-bold mb-3">Thông tin kho</h5>
+                    <ul class="ingredient-list list-unstyled fs-6">
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+                            <div>
+                                <span class="material-symbols-outlined text-muted me-2" style="vertical-align: bottom;">push_pin</span>
+                                Vị trí:
+                            </div>
+                            <strong class="ms-2">@Model.Sach.ViTri</strong>
+                        </li>
+                         <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-top">
+                            <div>
+                                <span class="material-symbols-outlined text-muted me-2" style="vertical-align: bottom;">inventory</span>
+                                Tổng số lượng:
+                            </div>
+                            <strong class="ms-2">@Model.Sach.TongSoLuong cuốn</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 border-top">
+                            <div>
+                                <span class="material-symbols-outlined text-muted me-2" style="vertical-align: bottom;">check_circle</span>
+                                Hiện có sẵn:
+                            </div>
                             @if (Model.Sach.SoLuongCoSan > 0)
                             {
                                 <strong class="text-success ms-2">@Model.Sach.SoLuongCoSan cuốn</strong>
@@ -443,84 +562,67 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
                             }
                         </li>
                     </ul>
-
                 </div>
-
-                <!-- Cột thuê sách -->
-                <div class="col-lg-3">
-                    <div class="card sticky-top" style="top: 20px;">
-                        <div class="card-body">
-                            <h5 class="card-title">Thuê Sách</h5>
-                            <hr />
-                        </div>
-                    </div>
-                </div>
-
             </div>
+        </div>
+        <div class="row mt-5 product-section">
+            <div class="col-12">
 
-            <!-- Gợi ý -->
-            <div class="row mt-5">
-                <div class="col-12">
+                <h3 class="border-bottom pb-2 mb-3 section-header">
+                    <span class="material-symbols-outlined">recommend</span> Có thể bạn cũng thích
+                </h3>
 
-                    <h3 class="border-bottom pb-2 mb-3 section-header">
-                        <span class="material-symbols-outlined">recommend</span> Có thể bạn cũng thích
-                    </h3>
+                @if (Model.Sach.GoiY?.Any() == true)
+                {
+                    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3"> @foreach (var item in Model.Sach.GoiY)
+                        {
+                            var imgUrl = string.IsNullOrEmpty(item.AnhBiaUrl)
+                                ? "/images/default-book-cover.png"
+                                : item.AnhBiaUrl;
+                            <div class="col">
+                                <a asp-page="/ChiTietSachView"
+                                   asp-route-id="@item.IdSach"
+                                   class="text-decoration-none">
 
-                    @if (Model.Sach.GoiY?.Any() == true)
-                    {
-                        <div class="row row-cols-1 row-cols-md-4 g-4">
-
-                            @foreach (var item in Model.Sach.GoiY)
-                            {
-                                var imgUrl = string.IsNullOrEmpty(item.AnhBiaUrl)
-                                    ? "/images/default-book-cover.png"
-                                    : item.AnhBiaUrl;
-
-                                <div class="col">
-                                    <a asp-page="/ChiTietSachView"
-                                       asp-route-id="@item.IdSach"
-                                       class="text-decoration-none">
-
-                                        <div class="card h-100 product-card">
-                                            <div class="card-img-container">
-                                                <img src="@imgUrl"
-                                                     class="card-img-top book-card-img"
-                                                     alt="@item.TieuDe" />
-                                            </div>
-
-                                            <div class="card-body d-flex flex-column">
-                                                <h6 class="book-card-title">@item.TieuDe</h6>
-                                                <p class="card-text text-danger fw-bold mt-auto mb-0">
-                                                    @item.GiaBia.ToString("N0") đ
-                                                </p>
-                                            </div>
+                                    <div class="card h-100 product-card">
+                                        <div class="card-img-container">
+                                            <img src="@imgUrl"
+                                                 class="card-img-top book-card-img"
+                                                 alt="@item.TieuDe" />
                                         </div>
 
-                                    </a>
-                                </div>
-                            }
+                                        <div class="card-body d-flex flex-column">
+                                            <h6 class="book-card-title">@item.TieuDe</h6>
+                                            <p class="card-text text-danger fw-bold mt-auto mb-0">
+                                                @item.GiaBia.ToString("N0") đ
+                                            </p>
+                                        </div>
+                                    </div>
 
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted">(Chưa có gợi ý nào cho cuốn sách này.)</p>
-                    }
+                                </a>
+                            </div>
+                        }
 
-                </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">(Chưa có gợi ý nào cho cuốn sách này.)</p>
+                }
+
             </div>
+        </div>
 
-        }
-        else
-        {
-            <div class="alert alert-danger">
-                <h4>Không tìm thấy sách</h4>
-                <p>@Model.ErrorMessage</p>
-            </div>
-            <a asp-page="/ThuVienSachView" class="btn btn-link">Quay lại thư viện</a>
-        }
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <h4>Không tìm thấy sách</h4>
+            <p>@Model.ErrorMessage</p>
+        </div>
+        <a asp-page="/ThuVienSachView" class="btn btn-link">Quay lại thư viện</a>
+    }
 
-    </div>
 </div>
 
 @section Scripts {
@@ -528,31 +630,26 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtm
 
     <script>
         $(function () {
-
+            // Logic "Đọc thêm"
             const $wrapper = $('#description-wrapper');
             const $content = $wrapper.find('p');
             const $btn = $('#toggle-description');
 
-            // Lấy chiều cao dòng để tính 3 dòng
             const lineHeight = parseFloat($content.css("line-height"));
             const maxHeight = lineHeight * 3;
 
-            // Nếu nội dung cao hơn 3 dòng => hiện nút
-            if ($content[0].scrollHeight > maxHeight) {
+            if ($content[0].scrollHeight > (maxHeight + 5)) { // Thêm 5px dự phòng
                 $btn.show();
             }
 
-            // Toggle
             $btn.on("click", function () {
                 const expanded = $wrapper.hasClass('description-expanded');
-
                 $wrapper.toggleClass('description-expanded description-truncated');
                 $btn.text(expanded ? "Đọc thêm..." : "Thu gọn");
             });
         });
     </script>
 }
-
 ================================================================================
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSachView.cshtml.cs
@@ -622,116 +719,450 @@ namespace WebCafebookApi.Pages
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSanPhamView.cshtml
 ================================================================================
-﻿@page "{id:int}"
+﻿@page "/san-pham/{id:int}"
 @model WebCafebookApi.Pages.ChiTietSanPhamViewModel
 @{
-    ViewData["Title"] = Model.SanPham?.TenSanPham ?? "Chi Tiết Sản Phẩm";
-    var imgSrc = string.IsNullOrEmpty(Model.SanPham?.HinhAnhUrl) ? "/images/default-food-icon.png" : Model.SanPham.HinhAnhUrl;
+    ViewData["Title"] = Model.SanPham?.TenSanPham ?? "Chi tiết sản phẩm";
 }
 
-<div class="container mt-5">
-    <div class="main-content-card">
+@section Styles {
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Material+Symbols+Outlined" rel="stylesheet" />
 
-        @if (Model.SanPham != null)
-        {
-            <div class="row gy-4">
-                @* Cột Hình ảnh *@
+    <style>
+        :root {
+            --coffee-dark: #4E342E;
+            --coffee: #6D4C41;
+            --coffee-light: #A1887F;
+            --cream: #FFF8E1;
+            --beige: #F5E6D3;
+            --earth-orange: #E57A3B;
+            --earth-orange-dark: #cf6b2f;
+            --white: #ffffff;
+            --radius: 14px;
+            --shadow: 0px 8px 24px rgba(0,0,0,0.08);
+            --shadow-hover: 0px 14px 34px rgba(0,0,0,0.14);
+            --transition: all 0.28s ease;
+        }
+
+        body {
+            background: var(--cream);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* PRODUCT MAIN CARD */
+        .product-wrapper {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .product-wrapper:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .product-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--coffee-dark);
+        }
+
+        .product-image {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .product-image:hover {
+            transform: scale(1.03);
+        }
+
+        /* STAR */
+        .star-rating .material-symbols-outlined {
+            color: #FFC107;
+            font-size: 22px;
+        }
+
+        .star-rating .empty {
+            color: #D7CCC8;
+        }
+
+        /* PRICE */
+        .price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--earth-orange);
+        }
+
+        /* QUANTITY INPUT */
+        .qty-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .qty-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid #BCAAA4;
+            background: var(--white);
+            font-size: 20px;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .qty-btn:hover {
+            background: var(--beige);
+            transform: translateY(-2px);
+        }
+
+        .qty-btn:active {
+            transform: translateY(1px) scale(0.95);
+            background: var(--beige);
+            box-shadow: none;
+        }
+
+        .qty-input {
+            width: 70px;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #BCAAA4;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .qty-input:focus {
+            border-color: var(--earth-orange);
+            box-shadow: 0 0 0 3px rgba(229, 122, 59, .25);
+        }
+
+        /* BUTTONS */
+        .btn-cafe {
+            background: var(--earth-orange);
+            color: white;
+            padding: 14px 26px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-cafe:hover {
+            background: var(--earth-orange-dark);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-gray {
+            background: var(--coffee-light);
+            color: white;
+            padding: 14px 26px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            opacity: .8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* TABS */
+        .tabs-cafe .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 1rem 1.4rem;
+            font-weight: 600;
+            color: var(--coffee-dark);
+            transition: var(--transition);
+        }
+
+        .tabs-cafe .nav-link.active {
+            color: var(--earth-orange);
+            border-color: var(--earth-orange);
+        }
+
+        .tabs-cafe .nav-link:hover {
+            color: var(--earth-orange);
+            background: rgba(229, 122, 59, 0.07);
+        }
+
+        .tab-pane {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        /* REVIEW */
+        .review-item {
+            padding: 1.2rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .review-avatar {
+            width: 52px;
+            height: 52px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--beige);
+        }
+
+        /* RECOMMENDED PRODUCTS */
+        .recommend-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            position: relative; /* FIX LỖI CHE TOÀN MÀN HÌNH */
+        }
+
+        .recommend-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .recommend-card img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+        }
+    </style>
+}
+
+
+@if (Model.SanPham != null)
+{
+    <div class="container py-5">
+
+        <!-- PRODUCT MAIN SECTION -->
+        <div class="product-wrapper mb-5">
+            <div class="row g-4">
+
+                <!-- IMAGE -->
                 <div class="col-lg-5">
-                    <div class="detail-img-container">
-                        <img src="@imgSrc" class="img-fluid rounded shadow-sm w-100" alt="@Model.SanPham.TenSanPham" style="max-height: 500px; object-fit: cover;">
-                    </div>
+                    <img src="@Model.SanPham.HinhAnhUrl" class="product-image" />
                 </div>
 
-                @* Cột Thông tin *@
-                <div class="col-lg-4">
-                    <nav aria-label="breadcrumb" class="page-breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a asp-page="/TrangChuView"><span class="material-symbols-outlined">home</span> Trang Chủ</a></li>
-                            <li class="breadcrumb-item"><a asp-page="/ThucDonView"><span class="material-symbols-outlined">restaurant_menu</span> Thực Đơn</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">@Model.SanPham.TenSanPham</li>
-                        </ol>
-                    </nav>
+                <!-- DETAILS -->
+                <div class="col-lg-7">
+                    <h1 class="product-title">@Model.SanPham.TenSanPham</h1>
 
-                    <h1 class="display-5 fw-bold">@Model.SanPham.TenSanPham</h1>
-                    <p class="lead text-muted fs-5">@Model.SanPham.TenLoaiSP</p>
-                    <h2 class="text-danger fw-bolder">@Model.SanPham.DonGia.ToString("N0") đ</h2>
-                    <p class="mt-4 fs-5">@Model.SanPham.MoTa</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="fs-5 fw-bold text-danger me-2">@Model.SaoTrungBinh.ToString("0.0")</span>
 
-                    @if (Model.SanPham.CongThucs != null && Model.SanPham.CongThucs.Any())
-                    {
-                        <h5 class="mt-4">Thành phần chính:</h5>
-                        <ul class="ingredient-list">
-                            @foreach (var ingredient in Model.SanPham.CongThucs)
+                        <div class="star-rating me-2">
+                            @for (int i = 1; i <= 5; i++)
                             {
-                                <li><span class="material-symbols-outlined">check_circle</span> @ingredient.TenNguyenLieu</li>
-                            }
-                        </ul>
-                    }
-                </div>
-
-                @* Cột Đặt Hàng *@
-                <div class="col-lg-3">
-                    <div class="card sticky-top" style="top: 20px;">
-                        <div class="card-body">
-                            <h5 class="card-title">Đặt Món</h5>
-                            <hr />
-
-                            @if (TempData["CartMessage"] != null)
-                            {
-                                <div class="alert alert-success small">@TempData["CartMessage"]</div>
-                            }
-
-                            @if (User.Identity?.IsAuthenticated == true)
-                            {
-                                <form method="post" asp-page-handler="AddToCart">
-                                    <input type="hidden" name="idSanPham" value="@Model.SanPham.IdSanPham" />
-
-                                    <div class="mb-3">
-                                        <label asp-for="SoLuong" class="form-label">Số lượng:</label>
-                                        <input asp-for="SoLuong" type="number" class="form-control" value="1" min="1" />
-                                    </div>
-
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-cart-plus"></i> Thêm vào giỏ
-                                    </button>
-                                </form>
-                                <a asp-page="/GioHangView" class="btn btn-outline-success w-100 mt-2">
-                                    <i class="bi bi-box-arrow-right"></i> Tới giỏ hàng
-                                </a>
-                            }
-                            else
-                            {
-                                <p>Bạn cần đăng nhập để đặt món.</p>
-                                <a asp-page="/account/DangNhapView" asp-route-returnUrl="@Url.Page("/ChiTietSanPhamView", new { id = Model.SanPham.IdSanPham })" class="btn btn-success w-100">
-                                    Đăng nhập
-                                </a>
+                                <span class="material-symbols-outlined @(i <= Model.SaoTrungBinh ? "" : "empty")">star</span>
                             }
                         </div>
-                    </div>
-                </div>
-            </div> @* SỬA LỖI RZ1026: Thẻ div.row gy-4 được đóng ở đây *@
 
-            @* Phần Gợi ý và Đánh giá (Giữ nguyên bên ngoài) *@
-            <div class="row mt-5">
-                <div class="col-12">
-                    <h3 class="border-bottom pb-2 mb-3 section-header justify-content-start px-0">
-                        <span class="material-symbols-outlined">reviews</span>
-                        Đánh giá sản phẩm
-                    </h3>
-                    <p class="text-muted">(Tính năng xem và gửi đánh giá sẽ được cập nhật sau.)</p>
+                        <span class="text-muted">(@Model.TongSoDanhGia đánh giá)</span>
+                    </div>
+
+                    <div class="price my-3">@Model.SanPham.DonGia.ToString("N0") đ</div>
+
+                    <p class="text-muted">@Model.SanPham.MoTa</p>
+
+                    <hr />
+
+                    <form method="post" asp-page-handler="AddToCart">
+                        <input type="hidden" name="idSanPham" value="@Model.SanPham.IdSanPham" />
+
+                        <label class="fw-semibold mb-1">Số lượng</label>
+                        <div class="qty-box mb-4">
+                            <button type="button" class="qty-btn btn-minus">-</button>
+                            <input asp-for="SoLuong" name="SoLuong" type="number" value="1" min="1" max="99" class="qty-input" />
+                            <button type="button" class="qty-btn btn-plus">+</button>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn-cafe">
+                                <span class="material-symbols-outlined">add_shopping_cart</span> Thêm vào giỏ
+                            </button>
+
+                            <button type="button" class="btn-gray" disabled>
+                                <span class="material-symbols-outlined">bolt</span> Mua ngay (Sắp có)
+                            </button>
+                        </div>
+                    </form>
+
                 </div>
             </div>
-        }
-        else
-        {
-            <div class="alert alert-danger">
-                <h4>Không tìm thấy sản phẩm</h4>
-                <p>@Model.ErrorMessage</p>
+        </div>
+
+        <!-- TABS -->
+        <ul class="nav nav-tabs tabs-cafe">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#reviewsTab">Đánh giá (@Model.TongSoDanhGia)</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#descTab">Mô tả chi tiết</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+            <!-- REVIEWS TAB -->
+            <div class="tab-pane fade show active" id="reviewsTab">
+                @if (!Model.DanhSachDanhGia.Any())
+                {
+                    <div class="alert alert-warning text-center mt-3">
+                        Chưa có đánh giá nào cho sản phẩm này.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var rv in Model.DanhSachDanhGia)
+                    {
+                        <div class="review-item d-flex gap-3">
+                            <img src="@(rv.AvatarKhachHang ?? "/images/default-avatar.png")" class="review-avatar" />
+
+                            <div>
+                                <strong>@rv.TenKhachHang</strong>
+
+                                <div class="star-rating my-1">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <span class="material-symbols-outlined @(i <= rv.SoSao ? "" : "empty")">star</span>
+                                    }
+                                </div>
+
+                                <small class="text-muted">@rv.NgayTao.ToString("dd/MM/yyyy HH:mm")</small>
+
+                                @if (!string.IsNullOrEmpty(rv.BinhLuan))
+                                {
+                                    <p class="mt-2">@rv.BinhLuan</p>
+                                }
+
+                                @if (!string.IsNullOrEmpty(rv.HinhAnhUrl))
+                                {
+                                    <img src="@rv.HinhAnhUrl" style="width:90px;height:90px;border-radius:12px;object-fit:cover;box-shadow:var(--shadow);" />
+                                }
+                            </div>
+                        </div>
+                    }
+                }
             </div>
-            <a asp-page="/ThucDonView" class="btn btn-link">Quay lại thực đơn</a>
+
+            <!-- DESCRIPTION TAB -->
+            <div class="tab-pane fade" id="descTab">
+                <h5 class="fw-bold mb-3">Mô tả sản phẩm</h5>
+                <p>@Model.SanPham.MoTa</p>
+
+                <h5 class="fw-bold mt-4">Thông tin chi tiết</h5>
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <strong>Danh mục:</strong> <span>@Model.SanPham.TenLoaiSP</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0">
+                        <strong>Giá:</strong> <span class="text-danger fw-bold">@Model.SanPham.DonGia.ToString("N0") đ</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- RECOMMENDED PRODUCTS -->
+        @if (Model.SanPham.GoiY.Any())
+        {
+            <h3 class="fw-bold mt-5 mb-3">Có thể bạn thích</h3>
+
+            <div class="row g-4">
+                @foreach (var item in Model.SanPham.GoiY)
+                {
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="recommend-card">
+                            <img src="@item.AnhSanPhamUrl" alt="@item.TenSanPham" />
+                            <div class="p-3">
+                                <h6 class="fw-semibold">@item.TenSanPham</h6>
+                                <div class="text-danger fw-bold">@item.DonGia.ToString("N0") đ</div>
+                                <a href="/san-pham/@item.IdSanPham" class="stretched-link"></a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         }
     </div>
-</div>
+}
+else
+{
+    <div class="container py-5">
+        <div class="alert alert-danger shadow p-4 rounded">
+            @Model.ErrorMessage
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    $(function () {
+
+        // --- NÚT TĂNG ---
+        $('.btn-plus').on("click", function (event) {
+            
+            // *** SỬA LỖI "NHẢY TRANG" ***
+            // Ngăn trình duyệt thực hiện hành động mặc định của thẻ <a>
+            event.preventDefault();
+            // Ngăn sự kiện click "nổi bọt" lên thẻ <a> cha
+            event.stopPropagation();
+
+            // Tìm input "anh em" gần nhất
+            let input = $(this).closest('.qty-box').find('.qty-input');
+            let v = parseInt(input.val());
+            if (v < 99) {
+                input.val(v + 1);
+            }
+        });
+
+        // --- NÚT GIẢM ---
+        $('.btn-minus').on("click", function (event) {
+
+            // *** SỬA LỖI "NHẢY TRANG" ***
+            event.preventDefault();
+            event.stopPropagation();
+            
+            let input = $(this).closest('.qty-box').find('.qty-input');
+            let v = parseInt(input.val());
+            if (v > 1) {
+                input.val(v - 1);
+            }
+        });
+        
+        // --- Ô NHẬP SỐ LƯỢNG ---
+        // Ngăn việc "nhấn" vào ô input cũng bị nhảy trang
+        $('.qty-input').on("click", function (event) {
+            // *** SỬA LỖI "NHẢY TRANG" ***
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        // Xử lý khi người dùng tự gõ số
+        $('.qty-input').on("change", function () {
+            let v = parseInt($(this).val());
+            if (isNaN(v) || v < 1) {
+                $(this).val(1); // Nếu nhập số 0 hoặc chữ, tự động đặt lại là 1
+            } else if (v > 99) {
+                $(this).val(99); // Giới hạn tối đa 99
+            }
+        });
+
+    });
+</script>
+}
 ================================================================================
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChiTietSanPhamView.cshtml.cs
@@ -750,7 +1181,6 @@ namespace WebCafebookApi.Pages
 {
     public class ChiTietSanPhamViewModel : PageModel
     {
-        // ... (Constructor và OnGetAsync giữ nguyên) ...
         private readonly IHttpClientFactory _httpClientFactory;
         public ChiTietSanPhamViewModel(IHttpClientFactory httpClientFactory)
         {
@@ -766,6 +1196,10 @@ namespace WebCafebookApi.Pages
         public SanPhamChiTietDto? SanPham { get; set; }
         public string? ErrorMessage { get; set; }
 
+        public List<DanhGiaWebDto> DanhSachDanhGia { get; set; } = new List<DanhGiaWebDto>();
+        public double SaoTrungBinh { get; set; } = 0;
+        public int TongSoDanhGia { get; set; } = 0;
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (Id <= 0)
@@ -778,6 +1212,16 @@ namespace WebCafebookApi.Pages
             try
             {
                 SanPham = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{Id}");
+
+                // === SỬA LỖI CS0246: Đổi tên DTO cho đúng ===
+                DanhSachDanhGia = await httpClient.GetFromJsonAsync<List<DanhGiaWebDto>>($"api/danhgia/sanpham/{Id}");
+
+                // Tính toán thông tin tóm tắt đánh giá
+                if (DanhSachDanhGia.Any())
+                {
+                    TongSoDanhGia = DanhSachDanhGia.Count;
+                    SaoTrungBinh = DanhSachDanhGia.Average(d => d.SoSao);
+                }
             }
             catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -3399,6 +3843,285 @@ namespace WebCafebookApi.Pages.Account
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DanhGiaView.cshtml
+================================================================================
+﻿@page "/tai-khoan/danh-gia"
+@model WebCafebookApi.Pages.Account.DanhGiaViewModel
+@{
+    ViewData["Title"] = "Gửi Đánh Giá";
+    Layout = "_Layout_Account";
+}
+
+<style>
+    /* CSS cho ngôi sao */
+    .rating {
+        display: inline-block;
+        direction: rtl; /* Đảo ngược thứ tự để sao từ phải qua trái */
+    }
+
+        .rating > input {
+            display: none;
+        }
+
+        .rating > label {
+            font-size: 2.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+            /* Khi input được check (chọn), tất cả các label "sau" nó (thực tế là trước nó vì đã đảo) sẽ đổi màu */
+            .rating > input:checked ~ label,
+            /* Khi hover vào một label, nó và tất cả các label "sau" nó sẽ đổi màu */
+            .rating > label:hover,
+            .rating > label:hover ~ label {
+                color: #f5b301; /* Màu vàng cam */
+            }
+
+        /* Đảm bảo khi không hover nữa, màu sắc trở về đúng trạng thái checked */
+        .rating > input:checked:not(:hover) ~ label {
+            color: #f5b301;
+        }
+</style>
+
+<div class="col-lg-9">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-md-5">
+            <h4 class="mb-4">Đánh giá sản phẩm cho Đơn hàng #@Model.IdHoaDonHienTai</h4>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+            }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
+
+            @if (!Model.SanPhamsDeDanhGia.Any())
+            {
+                <div class="alert alert-warning">Không tìm thấy sản phẩm nào trong đơn hàng này, đơn hàng chưa hoàn thành, hoặc tất cả đã được đánh giá.</div>
+            }
+            else
+            {
+                @foreach (var sanPham in Model.SanPhamsDeDanhGia)
+                {
+                    <div class="row mb-4 p-3 border rounded" style="background-color: #fcfcfc;">
+                        <div class="col-12 d-flex align-items-center mb-3">
+                            <img src="@(sanPham.HinhAnhUrl ?? "/images/default-food-icon.png")" alt="@sanPham.TenSanPham" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                            <h5>@sanPham.TenSanPham</h5>
+                        </div>
+
+                        <div class="col-12">
+                            @if (sanPham.DaDanhGia)
+                            {
+                                <div class="alert alert-success text-center">
+                                    <span class="material-symbols-outlined" style="vertical-align: middle;">check_circle</span>
+                                    Bạn đã đánh giá sản phẩm này.
+                                </div>
+                            }
+                            else
+                            {
+                                <form method="post" enctype="multipart/form-data">
+                                    <input type="hidden" asp-for="DanhGiaInput.idHoaDon" value="@Model.IdHoaDonHienTai" />
+                                    <input type="hidden" asp-for="DanhGiaInput.idSanPham" value="@sanPham.IdSanPham" />
+
+                                    <div class="mb-3 text-center">
+                                        <label class="form-label d-block">Trải nghiệm của bạn thế nào?</label>
+                                        <div class="rating">
+                                            <input type="radio" id="star5-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="5" required /><label for="star5-@sanPham.IdSanPham" title="5 sao">★</label>
+                                            <input type="radio" id="star4-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="4" /><label for="star4-@sanPham.IdSanPham" title="4 sao">★</label>
+                                            <input type="radio" id="star3-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="3" /><label for="star3-@sanPham.IdSanPham" title="3 sao">★</label>
+                                            <input type="radio" id="star2-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="2" /><label for="star2-@sanPham.IdSanPham" title="2 sao">★</label>
+                                            <input type="radio" id="star1-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="1" /><label for="star1-@sanPham.IdSanPham" title="1 sao">★</label>
+                                        </div>
+                                        <span asp-validation-for="DanhGiaInput.SoSao" class="text-danger d-block"></span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label asp-for="DanhGiaInput.BinhLuan" class="form-label">Viết bình luận (không bắt buộc)</label>
+                                        <textarea asp-for="DanhGiaInput.BinhLuan" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label asp-for="HinhAnhFile" class="form-label">Thêm hình ảnh (không bắt buộc)</label>
+                                        <input asp-for="HinhAnhFile" class="form-control" type="file" accept="image/*">
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                        <button type="submit" class="btn btn-primary">Gửi Đánh Giá</button>
+                                    </div>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                    <hr class="my-3" />
+                }
+            }
+
+            <div class="mt-4">
+                <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@Model.IdHoaDonHienTai" class="btn btn-secondary me-md-2">
+                    Quay lại Đơn hàng
+                </a>
+                <a asp-page="/Account/LichSuDonHangView" class="btn btn-outline-secondary">
+                    Về Lịch sử mua hàng
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DanhGiaView.cshtml.cs
+================================================================================
+﻿using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Headers;
+using System.Text.Json;
+
+namespace WebCafebookApi.Pages.Account
+{
+    [Authorize]
+    public class DanhGiaViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public DanhGiaViewModel(IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor)
+        {
+            _httpClientFactory = httpClientFactory;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        // Dùng để nhận dữ liệu từ form
+        [BindProperty]
+        public TaoDanhGiaDto DanhGiaInput { get; set; } = new TaoDanhGiaDto();
+
+        // Dùng để nhận file ảnh upload
+        [BindProperty]
+        public IFormFile? HinhAnhFile { get; set; }
+
+        // --- CẢI TIẾN: Hiển thị danh sách sản phẩm ---
+        // Sử dụng DTO từ CafebookModel
+        public List<SanPhamChoDanhGiaDto> SanPhamsDeDanhGia { get; set; } = new List<SanPhamChoDanhGiaDto>();
+
+        [BindProperty(SupportsGet = true)]
+        public int IdHoaDonHienTai { get; set; }
+        // --- KẾT THÚC CẢI TIẾN ---
+
+
+        private async Task<HttpClient> GetClientAsync()
+        {
+            var client = _httpClientFactory.CreateClient("CafebookApi");
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["jwtToken"];
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return client;
+        }
+
+        // OnGet để lấy danh sách sản phẩm của đơn hàng
+        public async Task<IActionResult> OnGetAsync([Required] int idHoaDon)
+        {
+            IdHoaDonHienTai = idHoaDon; // Gán ID từ URL
+            var client = await GetClientAsync();
+
+            try
+            {
+                // Gọi API mới (api/web/danhgia/cho-danh-gia/{idHoaDon})
+                var response = await client.GetFromJsonAsync<List<SanPhamChoDanhGiaDto>>(
+                    $"api/web/danhgia/cho-danh-gia/{idHoaDon}");
+
+                if (response != null)
+                {
+                    SanPhamsDeDanhGia = response;
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Không thể tải danh sách sản phẩm. " + ex.Message;
+                SanPhamsDeDanhGia = new List<SanPhamChoDanhGiaDto>();
+            }
+
+            return Page();
+        }
+
+        // OnPost để gửi MỘT đánh giá
+        public async Task<IActionResult> OnPostAsync()
+        {
+            // Gán lại IdHoaDonHienTai vì nó không được post về
+            // (Nó được post về qua DanhGiaInput.idHoaDon)
+            IdHoaDonHienTai = DanhGiaInput.idHoaDon;
+
+            if (DanhGiaInput.SoSao < 1 || DanhGiaInput.SoSao > 5)
+            {
+                ModelState.AddModelError("DanhGiaInput.SoSao", "Bạn phải chọn số sao.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Thông tin đánh giá không hợp lệ. Vui lòng chọn số sao.";
+                // Tải lại danh sách
+                await OnGetAsync(IdHoaDonHienTai);
+                return Page();
+            }
+
+            var client = await GetClientAsync();
+
+            using var formData = new MultipartFormDataContent();
+
+            formData.Add(new StringContent(DanhGiaInput.idHoaDon.ToString()), "idHoaDon");
+            formData.Add(new StringContent(DanhGiaInput.SoSao.ToString()), "SoSao");
+
+            // Chỉ xử lý idSanPham
+            formData.Add(new StringContent(DanhGiaInput.idSanPham.ToString()), "idSanPham");
+
+            if (!string.IsNullOrEmpty(DanhGiaInput.BinhLuan))
+            {
+                formData.Add(new StringContent(DanhGiaInput.BinhLuan), "BinhLuan");
+            }
+
+            if (HinhAnhFile != null && HinhAnhFile.Length > 0)
+            {
+                var fileContent = new StreamContent(HinhAnhFile.OpenReadStream());
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(HinhAnhFile.ContentType);
+                formData.Add(fileContent, "hinhAnhFile", HinhAnhFile.FileName);
+            }
+
+            try
+            {
+                var response = await client.PostAsync("api/web/danhgia", formData);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["SuccessMessage"] = "Gửi đánh giá thành công!";
+                    // Chuyển hướng về chính trang này (để tải lại danh sách đã cập nhật)
+                    return RedirectToPage("/Account/DanhGiaView", new { idHoaDon = IdHoaDonHienTai });
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Lỗi khi gửi đánh giá: {errorContent}";
+                    await OnGetAsync(IdHoaDonHienTai); // Tải lại danh sách
+                    return Page();
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
+                await OnGetAsync(IdHoaDonHienTai); // Tải lại danh sách
+                return Page();
+            }
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\DatLaiMatKhauView.cshtml
 ================================================================================
 ﻿@page "/Account/ResetPassword"
@@ -4208,6 +4931,27 @@ else if (Model.OrderDetails != null)
                             <div class="order-item-info">
                                 <h6>@item.TenSanPham</h6>
                                 <div class="qty">x @item.SoLuong</div>
+
+                                @if (order.TrangThaiGiaoHang == "Hoàn thành")
+                                {
+                                    bool daDanhGiaSP = await Model.KiemTraDaDanhGia(order.IdHoaDon, item.IdSanPham, null);
+                                    if (daDanhGiaSP)
+                                    {
+                                        <span class="text-success mt-2 d-block" style="font-size: 0.9rem;">
+                                            <span class="material-symbols-outlined" style="vertical-align: bottom; font-size: 1.1rem;">check_circle</span>
+                                            Đã đánh giá
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="./DanhGiaView"
+                                           asp-route-idHoaDon="@order.IdHoaDon"
+                                           asp-route-idSanPham="@item.IdSanPham"
+                                           class="btn btn-sm btn-outline-primary mt-2">
+                                            Viết đánh giá
+                                        </a>
+                                    }
+                                }
                             </div>
                             <div class="order-item-price">
                                 @item.DonGia.ToString("N0") đ
@@ -4253,7 +4997,7 @@ else
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHangDetailView.cshtml.cs
 ================================================================================
-﻿// TẠO TỆP MỚI: WebCafebookApi/Pages/Account/LichSuDonHangDetailView.cshtml.cs
+﻿// TỆP: WebCafebookApi/Pages/Account/LichSuDonHangDetailView.cshtml.cs
 using CafebookModel.Model.ModelWeb;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -4262,6 +5006,9 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+// Thêm 2 using này để xử lý AuthenticationHeaderValue
+using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Http;
 
 namespace WebCafebookApi.Pages.Account
 {
@@ -4305,6 +5052,42 @@ namespace WebCafebookApi.Pages.Account
             }
 
             return Page();
+        }
+
+        // ==================================================
+        // ===== VÙNG CODE ĐÃ SỬA LỖI _apiClient =====
+        // ==================================================
+        public async Task<bool> KiemTraDaDanhGia(int idHoaDon, int? idSanPham, int? idSach)
+        {
+            // 1. Lấy HttpClient từ Factory (giống như OnGetAsync)
+            var httpClient = _httpClientFactory.CreateClient("ApiClient");
+
+            // 2. Lấy token từ Session
+            var accessToken = HttpContext.Session.GetString("JWToken");
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return true; // Không có token, không thể kiểm tra, tạm ẩn nút
+            }
+
+            // 3. Gắn token vào header của request này
+            httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            try
+            {
+                // 4. Gọi API kiểm tra bằng httpClient
+                // (Giả định API controller của bạn là 'DanhGiaWebController' và route là 'api/danhgia/kiemtra')
+                var daDanhGia = await httpClient.GetFromJsonAsync<bool>($"api/danhgia/kiemtra?idHoaDon={idHoaDon}&idSanPham={idSanPham}&idSach={idSach}");
+
+                // 5. Xóa header sau khi dùng xong
+                httpClient.DefaultRequestHeaders.Authorization = null;
+                return daDanhGia;
+            }
+            catch (Exception)
+            {
+                httpClient.DefaultRequestHeaders.Authorization = null;
+                return true; // Giả định là ĐÃ đánh giá nếu có lỗi, để tránh cho người dùng đánh giá lại
+            }
         }
     }
 }
@@ -4558,9 +5341,19 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHang
                     @if (order.TrangThaiGiaoHang == "Hoàn thành")
                     {
                         <button class="btn btn-outline-secondary btn-sm" disabled>Mua Lại (Sắp có)</button>
-                        <button class="btn btn-primary btn-sm" disabled>Đánh Giá (Sắp có)</button>
-                    }
 
+                        <!--
+                            SỬA LOGIC:
+                            Xóa bỏ 'var firstItemForButton' và 'if (firstItem...)'
+                            Nút ĐÁNH GIÁ chỉ cần truyền idHoaDon.
+                            Trang DanhGiaView (đã sửa) sẽ tự động tải TẤT CẢ sản phẩm trong hóa đơn đó.
+                        -->
+                        <a asp-page="./DanhGiaView"
+                           asp-route-idHoaDon="@order.IdHoaDon"
+                           class="btn btn-primary btn-sm mx-1">
+                            ĐÁNH GIÁ
+                        </a>
+                    }
                     <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="btn btn-outline-primary btn-sm ms-auto">Xem Chi Tiết</a>
                 </div>
             </div>

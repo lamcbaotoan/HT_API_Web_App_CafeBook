@@ -38,62 +38,73 @@
 </style>
 
 <div class="col-lg-9">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-4 p-md-5">
-            <h4 class="mb-4">Đánh giá sản phẩm cho Đơn hàng #@Model.IdHoaDonHienTai</h4>
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Đánh giá sản phẩm cho Đơn hàng #@Model.IdHoaDonHienTai</h5>
+        </div>
+        <div class="card-body p-4">
 
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-            }
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="alert alert-success">@TempData["SuccessMessage"]</div>
             }
-
-            @if (!Model.SanPhamsDeDanhGia.Any())
+            @if (TempData["ErrorMessage"] != null)
             {
-                <div class="alert alert-warning">Không tìm thấy sản phẩm nào trong đơn hàng này, đơn hàng chưa hoàn thành, hoặc tất cả đã được đánh giá.</div>
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+            }
+            @if (TempData["InfoMessage"] != null)
+            {
+                <div class="alert alert-info">@TempData["InfoMessage"]</div>
+            }
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+
+            @if (Model.SanPhamsDeDanhGia == null || !Model.SanPhamsDeDanhGia.Any())
+            {
+                <p>Không có sản phẩm nào cần đánh giá cho đơn hàng này.</p>
             }
             else
             {
-                @foreach (var sanPham in Model.SanPhamsDeDanhGia)
+                foreach (var sanPham in Model.SanPhamsDeDanhGia)
                 {
-                    <div class="row mb-4 p-3 border rounded" style="background-color: #fcfcfc;">
-                        <div class="col-12 d-flex align-items-center mb-3">
-                            <img src="@(sanPham.HinhAnhUrl ?? "/images/default-food-icon.png")" alt="@sanPham.TenSanPham" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
-                            <h5>@sanPham.TenSanPham</h5>
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-2">
+                            <img src="@(sanPham.HinhAnhUrl ?? "/images/default-food-icon.png")" class="img-fluid rounded" alt="@sanPham.TenSanPham">
                         </div>
+                        <div class="col-md-10">
+                            <h6 class="mb-1">@sanPham.TenSanPham</h6>
 
-                        <div class="col-12">
                             @if (sanPham.DaDanhGia)
                             {
-                                <div class="alert alert-success text-center">
-                                    <span class="material-symbols-outlined" style="vertical-align: middle;">check_circle</span>
-                                    Bạn đã đánh giá sản phẩm này.
+                                <div class="alert alert-light" role="alert">
+                                    <small class="text-muted">Bạn đã đánh giá sản phẩm này.</small>
                                 </div>
                             }
                             else
                             {
-                                <form method="post" enctype="multipart/form-data">
+                                <form method="post" asp-page-handler="SubmitReview" enctype="multipart/form-data">
+
                                     <input type="hidden" asp-for="DanhGiaInput.idHoaDon" value="@Model.IdHoaDonHienTai" />
                                     <input type="hidden" asp-for="DanhGiaInput.idSanPham" value="@sanPham.IdSanPham" />
 
-                                    <div class="mb-3 text-center">
-                                        <label class="form-label d-block">Trải nghiệm của bạn thế nào?</label>
+                                    <div class="mb-2">
+                                        <label class="form-label d-block">Chất lượng sản phẩm:</label>
                                         <div class="rating">
-                                            <input type="radio" id="star5-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="5" required /><label for="star5-@sanPham.IdSanPham" title="5 sao">★</label>
-                                            <input type="radio" id="star4-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="4" /><label for="star4-@sanPham.IdSanPham" title="4 sao">★</label>
-                                            <input type="radio" id="star3-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="3" /><label for="star3-@sanPham.IdSanPham" title="3 sao">★</label>
-                                            <input type="radio" id="star2-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="2" /><label for="star2-@sanPham.IdSanPham" title="2 sao">★</label>
-                                            <input type="radio" id="star1-@sanPham.IdSanPham" name="DanhGiaInput.SoSao" value="1" /><label for="star1-@sanPham.IdSanPham" title="1 sao">★</label>
+                                            <input type="radio" id="star5-@sanPham.IdSanPham" asp-for="DanhGiaInput.SoSao" value="5" /><label for="star5-@sanPham.IdSanPham">☆</label>
+                                            <input type="radio" id="star4-@sanPham.IdSanPham" asp-for="DanhGiaInput.SoSao" value="4" /><label for="star4-@sanPham.IdSanPham">☆</label>
+                                            <input type="radio" id="star3-@sanPham.IdSanPham" asp-for="DanhGiaInput.SoSao" value="3" /><label for="star3-@sanPham.IdSanPham">☆</label>
+                                            <input type="radio" id="star2-@sanPham.IdSanPham" asp-for="DanhGiaInput.SoSao" value="2" /><label for="star2-@sanPham.IdSanPham">☆</label>
+                                            <input type="radio" id="star1-@sanPham.IdSanPham" asp-for="DanhGiaInput.SoSao" value="1" /><label for="star1-@sanPham.IdSanPham">☆</label>
                                         </div>
-                                        <span asp-validation-for="DanhGiaInput.SoSao" class="text-danger d-block"></span>
+
+                                        <span asp-validation-for="DanhGiaInput.SoSao" class="text-danger small d-block mt-1"></span>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label asp-for="DanhGiaInput.BinhLuan" class="form-label">Viết bình luận (không bắt buộc)</label>
+                                        <label asp-for="DanhGiaInput.BinhLuan" class="form-label">Viết bình luận</label>
                                         <textarea asp-for="DanhGiaInput.BinhLuan" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+
+                                        <span asp-validation-for="DanhGiaInput.BinhLuan" class="text-danger small"></span>
                                     </div>
 
                                     <div class="mb-3">

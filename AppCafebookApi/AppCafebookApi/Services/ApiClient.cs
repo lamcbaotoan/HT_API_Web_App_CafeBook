@@ -40,5 +40,25 @@ namespace AppCafebookApi.Services
                 return _instance;
             }
         }
+        /// <summary>
+        /// Gọi hàm này SAU KHI đăng nhập thành công
+        /// </summary>
+        public static void SetAuthorizationHeader(string token)
+        {
+            // Xóa header cũ và thêm token mới
+            Instance.DefaultRequestHeaders.Authorization = null;
+            if (!string.IsNullOrEmpty(token))
+            {
+                Instance.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+        }
+
+        /// <summary>
+        /// Gọi hàm này khi đăng xuất
+        /// </summary>
+        public static void ClearAuthorizationHeader()
+        {
+            Instance.DefaultRequestHeaders.Authorization = null;
+        }
     }
 }

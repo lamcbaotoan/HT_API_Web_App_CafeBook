@@ -8,7 +8,7 @@ using CafebookModel.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq; // <-- Đảm bảo bạn đã using Linq
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Windows;
@@ -62,6 +62,9 @@ namespace AppCafebookApi.View.quanly
                     Stretch = Stretch.UniformToFill
                 };
 
+                // === SỬA LỖI 2: THÊM LOGIC PHÂN QUYỀN ===
+
+                // 1. Ẩn tất cả các nút
                 btnTongQuan.Visibility = Visibility.Collapsed;
                 btnSanPham.Visibility = Visibility.Collapsed;
                 btnBan.Visibility = Visibility.Collapsed;
@@ -70,9 +73,13 @@ namespace AppCafebookApi.View.quanly
                 btnSach.Visibility = Visibility.Collapsed;
                 btnNhanSu.Visibility = Visibility.Collapsed;
                 btnKhachHang.Visibility = Visibility.Collapsed;
+                btnLuong.Visibility = Visibility.Collapsed; // <-- Nút này bị thiếu trong code của bạn
+                btnDanhGia.Visibility = Visibility.Collapsed; // <-- Thêm nút Đánh Giá
 
+                // 2. Hiện lại theo quyền
                 if (AuthService.CoQuyen("Dashboard.Xem"))
                     btnTongQuan.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("SanPham.QuanLy"))
                 {
                     btnSanPham.Visibility = Visibility.Visible;
@@ -81,14 +88,25 @@ namespace AppCafebookApi.View.quanly
                 }
                 if (AuthService.CoQuyen("Kho.Nhap", "Kho.KiemKe"))
                     btnKho.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("HoaDon.Tao", "HoaDon.ThanhToan", "HoaDon.Huy"))
                     btnDonHang.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("NhanSu.QuanLy", "NhanSu.TinhLuong"))
                     btnNhanSu.Visibility = Visibility.Visible;
+
+                // Gộp chung Lương vào Quyền Nhân sự
+                if (AuthService.CoQuyen("NhanSu.TinhLuong"))
+                    btnLuong.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("NhanSu.QuanLy"))
+                {
                     btnKhachHang.Visibility = Visibility.Visible;
+                    btnDanhGia.Visibility = Visibility.Visible; // <-- Hiện nút Đánh Giá
+                }
             }
 
+            // (Phần điều hướng mặc định giữ nguyên)
             if (btnTongQuan.Visibility == Visibility.Visible)
             {
                 UpdateSelectedButton(btnTongQuan);
@@ -106,6 +124,7 @@ namespace AppCafebookApi.View.quanly
 
         private async Task CheckNotificationsAsync()
         {
+            // (Hàm này giữ nguyên)
             try
             {
                 var result = await httpClient.GetFromJsonAsync<ThongBaoCountDto>("api/app/thongbao/unread-count");
@@ -148,22 +167,18 @@ namespace AppCafebookApi.View.quanly
             }
             else if (clickedButton == btnSanPham)
             {
-                // Giả sử bạn đã tạo page này
-                pageToNavigate = new QuanLySanPhamView(); 
+                pageToNavigate = new QuanLySanPhamView();
             }
             else if (clickedButton == btnDonHang)
             {
-                // Giả sử bạn đã tạo page này
                 pageToNavigate = new QuanLyDonHangView();
             }
             else if (clickedButton == btnKhachHang)
             {
-                // Giả sử bạn đã tạo page này
                 pageToNavigate = new QuanLyKhachHangView();
             }
             else if (clickedButton == btnSach)
             {
-                // Giả sử bạn đã tạo page này
                 pageToNavigate = new QuanLySachView();
             }
             else if (clickedButton == btnNhanSu)
@@ -174,14 +189,17 @@ namespace AppCafebookApi.View.quanly
             {
                 pageToNavigate = new QuanLyLuongView();
             }
-            // === SỬA LỖI CÚ PHÁP TẠI ĐÂY ===
-            // Xóa dấu ; ở dòng 144 và thêm { }
             else if (clickedButton == btnKho)
             {
                 pageToNavigate = new QuanLyTonKhoView();
             }
-            // === BỔ SUNG LOGIC TỪ CÁC MODULE TRƯỚC ===
-            else if (clickedButton.Name == "btnLichLamViec") // Dùng .Name an toàn
+            // === SỬA LỖI 3: THÊM CASE CHO NÚT ĐÁNH GIÁ ===
+            else if (clickedButton == btnDanhGia)
+            {
+                pageToNavigate = new QuanLyDanhGiaView();
+            }
+            // === KẾT THÚC SỬA LỖI 3 ===
+            else if (clickedButton.Name == "btnLichLamViec")
             {
                 pageToNavigate = new QuanLyLichLamViecView();
             }
@@ -197,7 +215,7 @@ namespace AppCafebookApi.View.quanly
             {
                 pageToNavigate = new BaoCaoNhanSuView();
             }
-            // === KẾT THÚC BỔ SUNG ===
+            // (Đã xóa dòng 'else if (clickedButton.Name == "")' bị lỗi)
 
             if (pageToNavigate != null)
             {
@@ -206,6 +224,7 @@ namespace AppCafebookApi.View.quanly
             }
             else
             {
+                // (Phần thông báo lỗi giữ nguyên)
                 MessageBox.Show($"Chức năng '{clickedButton.Content}' đang được phát triển!", "Thông báo");
                 clickedButton.IsChecked = false;
                 if (currentNavButton != null)
@@ -217,6 +236,7 @@ namespace AppCafebookApi.View.quanly
 
         private void UpdateSelectedButton(ToggleButton newButton)
         {
+            // (Hàm này giữ nguyên)
             if (currentNavButton != null && currentNavButton != newButton)
             {
                 currentNavButton.IsChecked = false;
@@ -227,19 +247,16 @@ namespace AppCafebookApi.View.quanly
 
         private async void BtnThongBao_Click(object sender, RoutedEventArgs e)
         {
+            // (Hàm này giữ nguyên)
             try
             {
-                // 1. Vẫn gọi API 'all' để lấy tất cả thông báo
                 var allNotifications = await httpClient.GetFromJsonAsync<List<ThongBaoDto>>("api/app/thongbao/all");
 
                 if (allNotifications != null)
                 {
-                    // 2. Lọc ra danh sách CHƯA ĐỌC (DaXem == false)
                     var unreadNotifications = allNotifications
                         .Where(t => t.DaXem == false)
                         .ToList();
-
-                    // 3. Gán danh sách đã lọc vào Popup
                     icThongBaoPopup.ItemsSource = unreadNotifications;
                 }
                 else
@@ -248,8 +265,6 @@ namespace AppCafebookApi.View.quanly
                 }
 
                 PopupThongBao.IsOpen = true;
-
-                // 4. Cập nhật lại số lượng trên badge (vì có thể đã đọc ở đâu đó)
                 await CheckNotificationsAsync();
             }
             catch (Exception ex)
@@ -260,16 +275,14 @@ namespace AppCafebookApi.View.quanly
 
         private async void ThongBaoItem_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            // (Hàm này giữ nguyên)
             if (sender is FrameworkElement element && element.DataContext is ThongBaoDto thongBao)
             {
                 PopupThongBao.IsOpen = false;
 
-                // Gọi API để đánh dấu là đã đọc (không cần đợi)
-                _ = httpClient.PostAsync($"api/app/thongbao/mark-as-read/{thongBao.IdThongBao}", null); 
+                _ = httpClient.PostAsync($"api/app/thongbao/mark-as-read/{thongBao.IdThongBao}", null);
 
-                // === LOGIC ĐIỀU HƯỚNG MỚI ===
-
-                if (thongBao.LoaiThongBao == "SuCoBan" && thongBao.IdLienQuan.HasValue) 
+                if (thongBao.LoaiThongBao == "SuCoBan" && thongBao.IdLienQuan.HasValue)
                 {
                     int idBanCanDen = thongBao.IdLienQuan.Value;
                     UpdateSelectedButton(btnBan);
@@ -277,27 +290,23 @@ namespace AppCafebookApi.View.quanly
                 }
                 else if (thongBao.LoaiThongBao == "HetHang")
                 {
-                    // (Giả sử btnKho và QuanLyTonKhoView đã tồn tại)
                     UpdateSelectedButton(btnKho);
                     MainFrame.Navigate(new QuanLyTonKhoView());
                 }
                 else if (thongBao.LoaiThongBao == "DonXinNghi")
                 {
-                    // Tìm nút btnDonXinNghi (nếu chưa có, dùng btnNhanSu)
-                    ToggleButton? targetButton = FindName("btnDonXinNghi") as ToggleButton ?? btnNhanSu; 
+                    ToggleButton? targetButton = FindName("btnDonXinNghi") as ToggleButton ?? btnNhanSu;
                     UpdateSelectedButton(targetButton);
                     MainFrame.Navigate(new QuanLyDonXinNghiView());
                 }
 
-                // === KẾT THÚC LOGIC MỚI ===
-
-                // Cập nhật lại badge (số thông báo sẽ giảm)
                 await CheckNotificationsAsync();
             }
         }
 
         private void BtnDangXuat_Click(object sender, RoutedEventArgs e)
         {
+            // (Hàm này giữ nguyên)
             var result = MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?",
                                         "Xác nhận đăng xuất",
                                         MessageBoxButton.YesNo,

@@ -8,19 +8,20 @@ namespace CafebookModel.Model.ModelWeb
         [Required]
         public int idHoaDon { get; set; }
 
-        [Required] // Sửa: Chuyển thành bắt buộc
+        [Required]
         public int idSanPham { get; set; }
 
-        // idSach đã bị xóa
-
-        [Required]
-        [Range(1, 5)]
+        [Required(ErrorMessage = "Vui lòng chọn số sao.")]
+        [Range(1, 5, ErrorMessage = "Vui lòng chọn số sao.")]
         public int SoSao { get; set; }
-        public string? BinhLuan { get; set; }
-        // File ảnh (IFormFile) sẽ được xử lý riêng tại Controller
+
+        // <<< SỬA LỖI TẠI ĐÂY >>>
+        [Required(ErrorMessage = "Vui lòng nhập bình luận của bạn.")]
+        [MinLength(10, ErrorMessage = "Bình luận cần ít nhất 10 ký tự.")]
+        public string BinhLuan { get; set; } = string.Empty; // Xóa '?' để
     }
 
-    // DTO dùng để HIỂN THỊ SP trên trang đánh giá (THÊM MỚI)
+    // DTO dùng để HIỂN THỊ SP trên trang đánh giá
     public class SanPhamChoDanhGiaDto
     {
         public int IdSanPham { get; set; }
@@ -42,7 +43,7 @@ namespace CafebookModel.Model.ModelWeb
         public PhanHoiWebDto? PhanHoi { get; set; }
     }
 
-    // DTO dùng để HIỂN THỊ phản hồi của nhân viên
+    // DTO cho Phản Hồi
     public class PhanHoiWebDto
     {
         public string TenNhanVien { get; set; } = "";

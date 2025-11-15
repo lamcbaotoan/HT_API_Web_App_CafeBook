@@ -39,40 +39,61 @@ namespace WebCafebookApi.Pages
                 return Page();
             }
 
-            var httpClient = _httpClientFactory.CreateClient("ApiClient");
+            var client = _httpClientFactory.CreateClient("ApiClient");
+
+            // --- Bước 1: Tải sản phẩm ---
             try
             {
-                SanPham = await httpClient.GetFromJsonAsync<SanPhamChiTietDto>($"api/web/thucdon/{Id}");
+                // <<< SỬA LỖI 404 TẠI ĐÂY >>>
+                // var productApiUrl = $"/api/web/sanpham/{Id}"; // <-- URL CŨ BỊ SAI
+                var productApiUrl = $"/api/web/thucdon/{Id}"; // <-- URL ĐÚNG (theo ThucDonController.cs)
 
-                // === SỬA LỖI CS0246: Đổi tên DTO cho đúng ===
-                DanhSachDanhGia = await httpClient.GetFromJsonAsync<List<DanhGiaWebDto>>($"api/danhgia/sanpham/{Id}");
-
-                // Tính toán thông tin tóm tắt đánh giá
-                if (DanhSachDanhGia.Any())
-                {
-                    TongSoDanhGia = DanhSachDanhGia.Count;
-                    SaoTrungBinh = DanhSachDanhGia.Average(d => d.SoSao);
-                }
+                SanPham = await client.GetFromJsonAsync<SanPhamChiTietDto>(productApiUrl);
             }
             catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 ErrorMessage = "Không tìm thấy sản phẩm bạn yêu cầu.";
+                return Page();
             }
             catch (System.Exception ex)
             {
-                ErrorMessage = $"Lỗi khi tải chi tiết: {ex.Message}";
+                ErrorMessage = $"Lỗi khi tải chi tiết sản phẩm: {ex.Message}";
+                return Page();
+            }
+
+            if (SanPham == null)
+            {
+                ErrorMessage = "Không tìm thấy sản phẩm bạn yêu cầu.";
+                return Page();
+            }
+
+            // --- Bước 2: Tải đánh giá (Code này đã đúng từ lần trước) ---
+            try
+            {
+                var reviewsApiUrl = $"/api/web/danhgia/sanpham/{Id}";
+                DanhSachDanhGia = await client.GetFromJsonAsync<List<DanhGiaWebDto>>(reviewsApiUrl) ?? new List<DanhGiaWebDto>();
+
+                if (DanhSachDanhGia.Any())
+                {
+                    SaoTrungBinh = DanhSachDanhGia.Average(d => d.SoSao);
+                    TongSoDanhGia = DanhSachDanhGia.Count;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                TempData["ReviewError"] = $"Không thể tải đánh giá: {ex.Message}";
+                DanhSachDanhGia = new List<DanhGiaWebDto>();
             }
 
             return Page();
         }
 
 
-        // === SỬA HÀM XỬ LÝ GIỎ HÀNG (XÓA 'Loai') ===
+        // (Hàm OnPostAddToCart giữ nguyên)
         public IActionResult OnPostAddToCart(int idSanPham)
         {
             var cart = HttpContext.Session.Get<List<CartItemDto>>(WebCafebookApi.Services.SessionExtensions.CartKey) ?? new List<CartItemDto>();
 
-            // SỬA LỖI CS1061: Xóa 'Loai' khỏi logic tìm kiếm
             var existingItem = cart.FirstOrDefault(i => i.Id == idSanPham);
 
             if (existingItem != null)
@@ -82,13 +103,13 @@ namespace WebCafebookApi.Pages
             }
             else
             {
-                // SỬA LỖI CS0117: Xóa 'Loai' khỏi đối tượng
                 cart.Add(new CartItemDto { Id = idSanPham, SoLuong = this.SoLuong });
                 TempData["CartMessage"] = "Đã thêm sản phẩm vào giỏ!";
             }
 
             HttpContext.Session.Set(WebCafebookApi.Services.SessionExtensions.CartKey, cart);
-            return RedirectToPage(new { id = idSanPham });
+
+            return RedirectToPage("/ChiTietSanPhamView", new { id = idSanPham });
         }
     }
 }

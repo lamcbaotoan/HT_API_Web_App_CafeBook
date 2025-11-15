@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Net.Http.Json;
 
 namespace WebCafebookApi.Pages.Account
 {
@@ -20,86 +21,91 @@ namespace WebCafebookApi.Pages.Account
             _httpContextAccessor = httpContextAccessor;
         }
 
-        // Dùng để nhận dữ liệu từ form
         [BindProperty]
         public TaoDanhGiaDto DanhGiaInput { get; set; } = new TaoDanhGiaDto();
 
-        // Dùng để nhận file ảnh upload
         [BindProperty]
         public IFormFile? HinhAnhFile { get; set; }
 
-        // --- CẢI TIẾN: Hiển thị danh sách sản phẩm ---
-        // Sử dụng DTO từ CafebookModel
         public List<SanPhamChoDanhGiaDto> SanPhamsDeDanhGia { get; set; } = new List<SanPhamChoDanhGiaDto>();
 
         [BindProperty(SupportsGet = true)]
         public int IdHoaDonHienTai { get; set; }
-        // --- KẾT THÚC CẢI TIẾN ---
 
-
-        private async Task<HttpClient> GetClientAsync()
+        public async Task<IActionResult> OnGetAsync(int idHoaDon)
         {
-            var client = _httpClientFactory.CreateClient("CafebookApi");
-            var token = _httpContextAccessor.HttpContext?.Request.Cookies["jwtToken"];
+            IdHoaDonHienTai = idHoaDon;
+            var client = _httpClientFactory.CreateClient("ApiClient");
+
+            // <<< SỬA LỖI 1: Sửa "JWToken" thành "JwtToken"
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JwtToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                // <<< SỬA LỖI 2: Sửa "/Account/LoginView" thành "/Account/Login"
+                return RedirectToPage("/Account/Login");
+            }
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            return client;
-        }
-
-        // OnGet để lấy danh sách sản phẩm của đơn hàng
-        public async Task<IActionResult> OnGetAsync([Required] int idHoaDon)
-        {
-            IdHoaDonHienTai = idHoaDon; // Gán ID từ URL
-            var client = await GetClientAsync();
 
             try
             {
-                // Gọi API mới (api/web/danhgia/cho-danh-gia/{idHoaDon})
-                var response = await client.GetFromJsonAsync<List<SanPhamChoDanhGiaDto>>(
-                    $"api/web/danhgia/cho-danh-gia/{idHoaDon}");
+                var apiUrl = $"api/web/danhgia/cho-danh-gia/{idHoaDon}";
+                var response = await client.GetAsync(apiUrl);
 
-                if (response != null)
+                if (response.IsSuccessStatusCode)
                 {
-                    SanPhamsDeDanhGia = response;
+                    SanPhamsDeDanhGia = await response.Content.ReadFromJsonAsync<List<SanPhamChoDanhGiaDto>>() ?? new List<SanPhamChoDanhGiaDto>();
+
+                    if (!SanPhamsDeDanhGia.Any())
+                    {
+                        TempData["InfoMessage"] = "Không tìm thấy sản phẩm nào trong đơn hàng này hoặc đơn hàng chưa hoàn thành.";
+                    }
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Không thể tải danh sách sản phẩm: {errorContent}";
                 }
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Không thể tải danh sách sản phẩm. " + ex.Message;
-                SanPhamsDeDanhGia = new List<SanPhamChoDanhGiaDto>();
+                TempData["ErrorMessage"] = $"Lỗi hệ thống khi tải trang: {ex.Message}";
             }
 
             return Page();
         }
 
-        // OnPost để gửi MỘT đánh giá
-        public async Task<IActionResult> OnPostAsync()
-        {
-            // Gán lại IdHoaDonHienTai vì nó không được post về
-            // (Nó được post về qua DanhGiaInput.idHoaDon)
-            IdHoaDonHienTai = DanhGiaInput.idHoaDon;
 
-            if (DanhGiaInput.SoSao < 1 || DanhGiaInput.SoSao > 5)
-            {
-                ModelState.AddModelError("DanhGiaInput.SoSao", "Bạn phải chọn số sao.");
-            }
+        public async Task<IActionResult> OnPostSubmitReviewAsync()
+        {
+            IdHoaDonHienTai = DanhGiaInput.idHoaDon;
 
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Thông tin đánh giá không hợp lệ. Vui lòng chọn số sao.";
-                // Tải lại danh sách
+                TempData["ErrorMessage"] = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
                 await OnGetAsync(IdHoaDonHienTai);
                 return Page();
             }
 
-            var client = await GetClientAsync();
+            var client = _httpClientFactory.CreateClient("ApiClient");
 
-            using var formData = new MultipartFormDataContent();
+            // <<< SỬA LỖI 1: Sửa "JWToken" thành "JwtToken"
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JwtToken");
 
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn.";
+                // <<< SỬA LỖI 2: Sửa "/Account/LoginView" thành "/Account/Login"
+                return RedirectToPage("/Account/Login");
+            }
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+
+            var formData = new MultipartFormDataContent();
             formData.Add(new StringContent(DanhGiaInput.idHoaDon.ToString()), "idHoaDon");
-            formData.Add(new StringContent(DanhGiaInput.SoSao.ToString()), "SoSao");
-
-            // Chỉ xử lý idSanPham
             formData.Add(new StringContent(DanhGiaInput.idSanPham.ToString()), "idSanPham");
+            formData.Add(new StringContent(DanhGiaInput.SoSao.ToString()), "SoSao");
 
             if (!string.IsNullOrEmpty(DanhGiaInput.BinhLuan))
             {
@@ -120,21 +126,20 @@ namespace WebCafebookApi.Pages.Account
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["SuccessMessage"] = "Gửi đánh giá thành công!";
-                    // Chuyển hướng về chính trang này (để tải lại danh sách đã cập nhật)
                     return RedirectToPage("/Account/DanhGiaView", new { idHoaDon = IdHoaDonHienTai });
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     TempData["ErrorMessage"] = $"Lỗi khi gửi đánh giá: {errorContent}";
-                    await OnGetAsync(IdHoaDonHienTai); // Tải lại danh sách
+                    await OnGetAsync(IdHoaDonHienTai);
                     return Page();
                 }
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Lỗi hệ thống: {ex.Message}";
-                await OnGetAsync(IdHoaDonHienTai); // Tải lại danh sách
+                await OnGetAsync(IdHoaDonHienTai);
                 return Page();
             }
         }

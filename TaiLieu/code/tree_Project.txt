@@ -181,11 +181,11 @@ Solution 'Project'/
 │   │   │   ├── ThongBaoController.cs
 │   │   │   ├── ThuongPhatController.cs
 │   │   │   └── VaiTroController.cs
-│   │   ├── Shared/
 │   │   └── Web/
 │   │       ├── QuanLy/
 │   │       │   └── SoDoBanController.cs
 │   │       ├── ChinhSachController.cs
+│   │       ├── DanhGiaWebController.cs
 │   │       ├── DatBanWebController.cs
 │   │       ├── KhachHangProfileController.cs
 │   │       ├── KhachHangTaiKhoanController.cs
@@ -203,6 +203,9 @@ Solution 'Project'/
 │   │   └── launchSettings.json
 │   ├── wwwroot/
 │   │   └── images/
+│   │       ├── anhdanhgia/
+│   │       │   ├── monan/
+│   │       │   └── sach/
 │   │       ├── avatars/
 │   │       │   ├── avatarKH/
 │   │       │   │   ├── 1_khach-vang-lai.jpg
@@ -292,6 +295,7 @@ Solution 'Project'/
 │   │   │   │   └── SoDoBanDto.cs
 │   │   │   ├── ChinhSachDto.cs
 │   │   │   ├── DangKyRequestModel.cs
+│   │   │   ├── DanhGiaWebDtos.cs
 │   │   │   ├── DatBanWebDto.cs
 │   │   │   ├── GioHangDto.cs
 │   │   │   ├── KhachHangDto.cs
@@ -321,6 +325,8 @@ Solution 'Project'/
     │   │   ├── DangNhapView.cshtml.cs
     │   │   ├── DangXuat.cshtml
     │   │   ├── DangXuat.cshtml.cs
+    │   │   ├── DanhGiaView.cshtml
+    │   │   ├── DanhGiaView.cshtml.cs
     │   │   ├── DatLaiMatKhauView.cshtml
     │   │   ├── DatLaiMatKhauView.cshtml.cs
     │   │   ├── DoiMatKhauView.cshtml
