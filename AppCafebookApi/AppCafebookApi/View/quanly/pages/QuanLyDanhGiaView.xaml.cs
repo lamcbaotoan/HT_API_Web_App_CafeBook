@@ -257,25 +257,53 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
 
+        // === BƯỚC 1: TÁI CẤU TRÚC LOGIC RA HÀM RIÊNG ===
+        private async Task UpdateProductStats(int? productId)
+        {
+            // Nếu không có Id sản phẩm (ví dụ: đánh giá chung), thì reset
+            if (!productId.HasValue)
+            {
+                tbAvgRating.Text = "0.0";
+                tbTotalReviews.Text = "0";
+                return;
+            }
+
+            try
+            {
+                // Gọi API lấy thống kê (hàm này đã có)
+                var stats = await GetProductStatsAsync(productId.Value);
+                if (stats != null)
+                {
+                    tbAvgRating.Text = stats.AverageRating.ToString("0.0");
+                    tbTotalReviews.Text = stats.TotalReviews.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi lấy thống kê: {ex.Message}");
+                tbAvgRating.Text = "Lỗi";
+                tbTotalReviews.Text = "Lỗi";
+            }
+        }
+
+        // === BƯỚC 2: CẬP NHẬT HÀM CŨ ===
         private async void LbSearchResults_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (lbSearchResults.SelectedItem is ProductSearchResultDto product)
             {
-                try
-                {
-                    var stats = await GetProductStatsAsync(product.IdSanPham);
-                    if (stats != null)
-                    {
-                        tbAvgRating.Text = stats.AverageRating.ToString("0.0");
-                        tbTotalReviews.Text = stats.TotalReviews.ToString();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Lỗi lấy thống kê: {ex.Message}");
-                    tbAvgRating.Text = "Lỗi";
-                    tbTotalReviews.Text = "Lỗi";
-                }
+                // Gọi hàm helper mới
+                await UpdateProductStats(product.IdSanPham);
+            }
+        }
+
+        // === BƯỚC 3: THÊM HÀM MỚI CHO LISTVIEW ===
+        private async void LvDanhGia_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Lấy đánh giá được chọn từ ListView
+            if (lvDanhGia.SelectedItem is DanhGiaQuanLyDto review)
+            {
+                // Gọi hàm helper mới với IdSanPham từ đánh giá
+                await UpdateProductStats(review.IdSanPham);
             }
         }
 
@@ -326,7 +354,46 @@ namespace AppCafebookApi.View.quanly.pages
             throw new NotImplementedException();
         }
     }
+    // BƯỚC 1: THAY THẾ 'StatusToButtonStyleConverter' BẰNG CONVERTER NÀY
+    public class StatusToStyleConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string trangThai = value as string ?? "";
+            Style? style;
+            if (trangThai == "Hiển thị")
+            {
+                style = Application.Current.TryFindResource("WarningButton") as Style;
+            }
+            else
+            {
+                style = Application.Current.TryFindResource("SecondaryButton") as Style;
+            }
+            return style ?? Application.Current.TryFindResource("BaseButton");
+        }
 
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // BƯỚC 2: THÊM CONVERTER MỚI NÀY VÀO
+    public class StatusToContentConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string trangThai = value as string ?? "";
+            return trangThai == "Hiển thị" ? "Ẩn" : "Hiện";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // --- KẾT THÚC SỬA LỖI ---
     // --- CONVERTER (Giữ nguyên) ---
     public class NullOrEmptyToVisibilityConverter : IValueConverter
     {

@@ -14,6 +14,10 @@
         <local:StatusToButtonStyleConverter x:Key="StatusToButtonStyleConverter"/>
         <local:NullOrEmptyToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:StatusToStyleConverter x:Key="StatusToStyleConverter"/>
+        <local:StatusToContentConverter x:Key="StatusToContentConverter"/>
+
+
         <Style TargetType="Button" x:Key="BaseButton">
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="5"/>
@@ -22,6 +26,7 @@
         </Style>
         <Style TargetType="Button" x:Key="PrimaryButton" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Background" Value="#6F4E37"/>
+
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style TargetType="Button" x:Key="SecondaryButton" BasedOn="{StaticResource BaseButton}">
@@ -30,6 +35,7 @@
         </Style>
         <Style TargetType="Button" x:Key="WarningButton" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Background" Value="#D27D2D"/>
+
             <Setter Property="Foreground" Value="White"/>
         </Style>
     </Page.Resources>
@@ -41,6 +47,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+
         </Grid.RowDefinitions>
 
         <TextBlock Text="Quản lý Đánh giá Khách hàng"
@@ -49,39 +56,47 @@
                    Foreground="#4E342E"
                    Margin="20"/>
 
+
         <Border Grid.Row="1" Background="White" CornerRadius="5" Margin="20,0,20,15" Padding="20"
                 BorderBrush="#E0E0E0" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,20,0">
                     <TextBlock Text="Tổng quan Sản phẩm" FontSize="18" FontWeight="SemiBold" Foreground="#4E342E"/>
                     <TextBlock Text="Nhập tên món để xem thống kê đánh giá" Margin="0,5,0,10" Foreground="#6D4C41"/>
+
                     <TextBox x:Name="txtProductSearch" 
                              Height="35" 
                              FontSize="14"
                              Padding="5"
-                             TextChanged="TxtProductSearch_TextChanged"/>
+  
+                           TextChanged="TxtProductSearch_TextChanged"/>
                     <ListBox x:Name="lbSearchResults" 
                              MaxHeight="150" 
-                             Margin="0,5,0,0"
+                     
+         Margin="0,5,0,0"
                              DisplayMemberPath="TenSanPham"
                              SelectionChanged="LbSearchResults_SelectionChanged"/>
                 </StackPanel>
 
-                <Border Grid.Column="1" Background="#F9FBE7" CornerRadius="5" Padding="20" MinWidth="250">
+                <Border Grid.Column="1" 
+ Background="#F9FBE7" CornerRadius="5" Padding="20" MinWidth="250">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="ĐIỂM TRUNG BÌNH (Sao)" FontSize="12" Foreground="Gray"/>
                         <TextBlock x:Name="tbAvgRating" Text="0.0" FontSize="32" FontWeight="Bold" Foreground="#f5b301" Margin="0,2,0,0"/>
+
 
                         <TextBlock Text="TỔNG SỐ ĐÁNH GIÁ (Hiển thị)" FontSize="12" Foreground="Gray" Margin="0,15,0,0"/>
                         <TextBlock x:Name="tbTotalReviews" Text="0" FontSize="32" FontWeight="Bold" Foreground="#4E342E" Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
             </Grid>
+
         </Border>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="20,0,20,10">
@@ -89,12 +104,14 @@
             <ComboBox x:Name="cbFilterSao" Width="100" Margin="0,0,20,0">
                 <ComboBoxItem Content="Tất cả" Tag="{x:Null}"/>
                 <ComboBoxItem Content="5 Sao" Tag="5"/>
+
                 <ComboBoxItem Content="4 Sao" Tag="4"/>
                 <ComboBoxItem Content="3 Sao" Tag="3"/>
                 <ComboBoxItem Content="2 Sao" Tag="2"/>
                 <ComboBoxItem Content="1 Sao" Tag="1"/>
             </ComboBox>
             <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+
             <ComboBox x:Name="cbFilterTrangThai" Width="120" Margin="0,0,20,0">
                 <ComboBoxItem Content="Tất cả" Tag="{x:Null}"/>
                 <ComboBoxItem Content="Hiển thị" Tag="Hiển thị"/>
@@ -103,58 +120,78 @@
             <Button x:Name="btnFilter" Content="Lọc" Style="{StaticResource PrimaryButton}" Click="BtnFilter_Click"/>
         </StackPanel>
 
+
         <ListView x:Name="lvDanhGia" Grid.Row="3" Margin="20,0,20,10"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  SelectionMode="Single">
+                  SelectionMode="Single"
+                  SelectionChanged="LvDanhGia_SelectionChanged">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Background="White" CornerRadius="5" BorderBrush="#EEE" BorderThickness="1"
-                            Padding="15" Margin="0,5">
+                       
+         Padding="15" Margin="0,5">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
+
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" Margin="0,0,15,0">
+
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                     <TextBlock Text="{Binding SoSao, StringFormat='{}{0} Sao'}" 
-                                               FontWeight="Bold" FontSize="16" Foreground="#f5b301"/>
+                                           
+     FontWeight="Bold" FontSize="16" Foreground="#f5b301"/>
                                     <TextBlock Text="từ" Margin="5,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding TenKhachHang}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
                                     <TextBlock Text="lúc" Margin="5,0" VerticalAlignment="Center" FontStyle="Italic"/>
                                     <TextBlock Text="{Binding NgayTao, StringFormat='HH:mm dd/MM/yyyy'}" VerticalAlignment="Center" FontStyle="Italic"/>
                                 </StackPanel>
+
                                 <TextBlock Text="{Binding TenSanPham}" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"
                                            Visibility="{Binding TenSanPham, Converter={StaticResource NullToVisibilityConverter}}"/>
+
                                 <TextBlock Text="{Binding BinhLuan}" TextWrapping="Wrap" Margin="0,0,0,10"
                                            Visibility="{Binding BinhLuan, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                <Image Source="{Binding HinhAnhUrl}" MaxHeight="150" HorizontalAlignment="Left"
+                                <Image Source="{Binding HinhAnhUrl}" MaxHeight="150" 
+ HorizontalAlignment="Left"
                                        Visibility="{Binding HinhAnhUrl, Converter={StaticResource NullToVisibilityConverter}}"/>
                                 <Border Background="#f9f9f9" CornerRadius="3" Padding="10" Margin="0,10,0,0"
+                      
                                         BorderBrush="#EEE" BorderThickness="1"
                                         Visibility="{Binding PhanHoi, Converter={StaticResource NullToVisibilityConverter}}">
                                     <StackPanel>
+
                                         <TextBlock FontWeight="SemiBold" Margin="0,0,0,5">
                                             <Run Text="Phản hồi từ "/>
-                                            <Run Text="{Binding PhanHoi.TenNhanVien}"/>:
+            
+                                 <Run Text="{Binding PhanHoi.TenNhanVien}"/>:
                                         </TextBlock>
+
                                         <TextBlock Text="{Binding PhanHoi.NoiDung}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
+
                             </StackPanel>
                             <StackPanel Grid.Column="1" VerticalAlignment="Top">
+
                                 <Button x:Name="btnToggleStatus"
                                         Tag="{Binding IdDanhGia}" Click="BtnToggleStatus_Click"
-                                        Style="{Binding TrangThai, Converter={StaticResource StatusToButtonStyleConverter}}"/>
+                                        Style="{Binding TrangThai, Converter={StaticResource StatusToStyleConverter}}"
+                                        Content="{Binding TrangThai, Converter={StaticResource StatusToContentConverter}}"/>
+
                                 <Button x:Name="btnReply" Content="Trả lời"
                                         Tag="{Binding}" Click="BtnReply_Click"
                                         Style="{StaticResource SecondaryButton}"/>
+
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -163,6 +200,7 @@
         </ListView>
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20">
+
             <Button x:Name="btnPrevPage" Content="&lt; Trước" Style="{StaticResource SecondaryButton}" Click="BtnPrevPage_Click"/>
             <TextBlock x:Name="tbCurrentPage" Text="1 / 1" VerticalAlignment="Center" Margin="10,0"/>
             <Button x:Name="btnNextPage" Content="Sau &gt;" Style="{StaticResource SecondaryButton}" Click="BtnNextPage_Click"/>
@@ -171,19 +209,23 @@
         <Popup x:Name="popupReply" Placement="Center" StaysOpen="False"
                AllowsTransparency="True" PopupAnimation="Fade">
             <Border Background="White" BorderBrush="Gray" BorderThickness="1" CornerRadius="5"
-                    Width="400" Padding="15">
+          
+           Width="400" Padding="15">
                 <Border.Effect>
                     <DropShadowEffect ShadowDepth="3" Opacity="0.3" BlurRadius="5"/>
                 </Border.Effect>
                 <StackPanel>
+
                     <TextBlock Text="Trả lời đánh giá" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
                     <TextBlock x:Name="tbReviewInfo" TextWrapping="Wrap" FontStyle="Italic" Background="#f5f5f5" Padding="5" Margin="0,0,0,10"/>
                     <TextBox x:Name="txtReplyInput" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                              AcceptsReturn="True"/>
+
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                         <Button x:Name="btnSendReply" Content="Gửi" Style="{StaticResource PrimaryButton}" Click="BtnSendReply_Click"/>
                         <Button x:Name="btnCancelReply" Content="Hủy" Style="{StaticResource SecondaryButton}" Click="BtnCancelReply_Click"/>
                     </StackPanel>
+
                 </StackPanel>
             </Border>
         </Popup>

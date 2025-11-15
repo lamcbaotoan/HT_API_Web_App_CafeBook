@@ -28,7 +28,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // THÊM DÒNG NÀY:
+    // Dùng FullName (bao gồm namespace) để phân biệt các DTO trùng tên
+    options.CustomSchemaIds(type => type.FullName); 
+});
 
 // 3️⃣ Cấu hình xác thực JWT
 builder.Services.AddAuthentication(options =>

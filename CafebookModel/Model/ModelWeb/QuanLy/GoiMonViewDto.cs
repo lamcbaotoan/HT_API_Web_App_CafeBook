@@ -1,8 +1,8 @@
-﻿// Tập tin: CafebookModel/Model/ModelApp/NhanVien/GoiMonDto.cs
+﻿// Tập tin: CafebookModel/Model/ModelWeb/QuanLy/GoiMonViewDto.cs
 using System;
 using System.Collections.Generic;
 
-namespace CafebookModel.Model.ModelApp.NhanVien
+namespace CafebookModel.Model.ModelWeb.QuanLy
 {
     // DTO chính chứa toàn bộ dữ liệu cho trang GoiMonView
     public class GoiMonViewDto
@@ -14,7 +14,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public List<KhuyenMaiDto> KhuyenMais { get; set; } = default!;
     }
 
-    // Thông tin cơ bản của hóa đơn (hiển thị ở panel bên phải)
+    // Thông tin cơ bản của hóa đơn
     public class HoaDonInfoDto
     {
         public int IdHoaDon { get; set; }
@@ -26,7 +26,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int? IdKhuyenMai { get; set; }
     }
 
-    // DTO cho một dòng trong DataGrid (ChiTietHoaDon)
+    // DTO cho một dòng trong danh sách chi tiết
     public class ChiTietDto
     {
         public int IdChiTietHoaDon { get; set; }
@@ -35,7 +35,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int SoLuong { get; set; }
         public decimal DonGia { get; set; }
         public decimal ThanhTien { get; set; }
-        public string? GhiChu { get; set; } // <-- NÂNG CẤP
+        public string? GhiChu { get; set; }
     }
 
     // DTO cho một thẻ Sản Phẩm
@@ -71,7 +71,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int IdHoaDon { get; set; }
         public int IdSanPham { get; set; }
         public int SoLuong { get; set; }
-        public string? GhiChu { get; set; } // <-- NÂNG CẤP
+        public string? GhiChu { get; set; }
     }
 
     public class UpdateSoLuongRequest
@@ -80,33 +80,16 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int SoLuongMoi { get; set; }
     }
 
-    public class ThanhToanRequest
-    {
-        public int IdHoaDon { get; set; }
-        public int? IdKhuyenMai { get; set; }
-        public string PhuongThucThanhToan { get; set; } = default!;
-    }
-
     public class ApplyPromotionRequest
     {
         public int IdHoaDon { get; set; }
         public int? IdKhuyenMai { get; set; }
     }
 
-    // DTO này dùng chung cho cả Phiếu Tạm Tính và Phiếu Bếp
-    public class PhieuGoiMonPrintDto
+    // DTO trả về khi thêm món
+    public class AddItemResponseDto
     {
-        public string IdPhieu { get; set; } = string.Empty;
-        public string TenQuan { get; set; } = string.Empty;
-        public string DiaChiQuan { get; set; } = string.Empty;
-        public string SdtQuan { get; set; } = string.Empty;
-        public DateTime NgayTao { get; set; }
-        public string TenNhanVien { get; set; } = string.Empty;
-        public string SoBan { get; set; } = string.Empty;
-        public string? GhiChu { get; set; } // Ghi chú chung của HĐ
-        public List<ChiTietDto> ChiTiet { get; set; } = new List<ChiTietDto>();
-        public decimal TongTienGoc { get; set; }
-        public decimal GiamGia { get; set; }
-        public decimal ThanhTien { get; set; }
+        public HoaDonInfoDto updatedHoaDonInfo { get; set; } = default!;
+        public ChiTietDto newItem { get; set; } = default!;
     }
 }

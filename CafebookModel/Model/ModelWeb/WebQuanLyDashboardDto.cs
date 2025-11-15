@@ -8,7 +8,6 @@ namespace CafebookModel.Model.ModelWeb
     {
         public string? HoTen { get; set; }
         public string? VaiTro { get; set; }
-        // SỬA: Đổi từ Base64 sang Url
         public string? AnhDaiDienUrl { get; set; }
         public string? CaHienTai { get; set; }
         public int TongBanDangPhucVu { get; set; }

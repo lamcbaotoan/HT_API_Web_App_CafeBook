@@ -11,7 +11,9 @@
     <Page.Resources>
         <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
         <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
-        <SolidColorBrush x:Key="AccentOrangeBrush" Color="#D27D2D"/>
+
+        <Color x:Key="AccentOrangeColor">#D27D2D</Color>
+        <SolidColorBrush x:Key="AccentOrangeBrush" Color="{StaticResource AccentOrangeColor}"/>
         <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
         <SolidColorBrush x:Key="WhiteTextBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
@@ -52,7 +54,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="DeleteDataGridButtonStyle" TargetType="Button" BasedOn="{StaticResource DataGridButtonStyle}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource TextGrayBrush}"/>
@@ -63,7 +64,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
         <Style x:Key="InvoiceDataGridStyle" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="CanUserAddRows" Value="False"/>
@@ -72,9 +72,7 @@
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="RowHeight" Value="45"/>
         </Style>
-
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0,0,0,2"/>
@@ -83,10 +81,9 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
         </Style>
-
         <Style TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Padding" Value="10,8"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Style.Triggers>
@@ -96,7 +93,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
         <Style x:Key="CategoryRadioButton" TargetType="RadioButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
@@ -125,7 +121,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
         <Style x:Key="ProductCard" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource LightCreamBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
@@ -170,7 +165,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="ActionButton" TargetType="Button">
             <Setter Property="Padding" Value="15"/>
             <Setter Property="FontSize" Value="15"/>
@@ -178,6 +172,41 @@
             <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="SearchTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource WhiteTextBrush}"/>
+            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect ShadowDepth="0" Color="{StaticResource AccentOrangeColor}" Opacity="0.3" BlurRadius="8"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Page.Resources>
 
@@ -205,7 +234,19 @@
         </Border>
 
         <Grid Grid.Column="1" Background="{StaticResource SubtleGrayBrush}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="15" Background="{StaticResource SubtleGrayBrush}">
+                <TextBox x:Name="txtTimKiem" 
+                         Style="{StaticResource SearchTextBoxStyle}"
+                         TextChanged="TxtTimKiem_TextChanged"
+                         Tag="Tìm kiếm món..."/>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="icSanPham">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -220,7 +261,6 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-
                                     <Border Grid.Row="0" 
                                             Background="{StaticResource BorderGrayBrush}" 
                                             CornerRadius="6,6,0,0"
@@ -252,9 +292,35 @@
             </Border>
 
             <DataGrid Grid.Row="1" x:Name="dgChiTietHoaDon" Style="{StaticResource InvoiceDataGridStyle}">
-
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Tên Món" Binding="{Binding TenSanPham}" Width="*" IsReadOnly="True"/>
+                    <DataGridTemplateColumn Header="Tên Món" Width="*" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding TenSanPham}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding GhiChu, StringFormat='Ghi chú: {0}'}" 
+                                                 Foreground="{StaticResource TextGrayBrush}"
+                                                 FontStyle="Italic"
+                                                 FontSize="11"
+                                                 TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GhiChu}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding GhiChu}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTemplateColumn Header="Số Lượng" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
@@ -268,7 +334,6 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Đơn Giá" Binding="{Binding DonGia, StringFormat=N0}" Width="80" IsReadOnly="True"/>
                     <DataGridTextColumn Header="Thành Tiền" Binding="{Binding ThanhTien, StringFormat=N0}" Width="*" IsReadOnly="True" FontWeight="SemiBold"/>
 
                     <DataGridTemplateColumn Header="Xóa" Width="40">
@@ -296,7 +361,6 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-
                     <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -309,18 +373,14 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Tổng tiền:" Margin="5" FontSize="14" Foreground="{StaticResource TextGrayBrush}"/>
                         <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="lblTongTien" Text="0" Margin="5" FontSize="14" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource DarkBrownBrush}"/>
-
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Khuyến mãi:" Margin="5" VerticalAlignment="Center"/>
-
                         <Button Grid.Row="1" Grid.Column="1" x:Name="btnChonKhuyenMai" 
                                 Content="-- Chọn Khuyến mãi --" 
                                 Margin="5,5,0,5" 
                                 Click="BtnChonKhuyenMai_Click"
                                 FontWeight="SemiBold"/>
-
                         <Button Grid.Row="1" Grid.Column="2" x:Name="btnHuyKhuyenMai" 
                                 Content="X" 
                                 ToolTip="Gỡ bỏ khuyến mãi"
@@ -330,18 +390,14 @@
                                 Foreground="White"
                                 FontWeight="Bold" Width="25"
                                 Visibility="Collapsed"/>
-
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Tiền giảm:" Margin="5" FontSize="14" Foreground="{StaticResource TextGrayBrush}"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="lblTienGiam" Text="0" Margin="5" FontSize="14" HorizontalAlignment="Right" Foreground="{StaticResource StatusGreenBrush}" FontWeight="SemiBold"/>
-
                         <Separator Grid.Row="3" Grid.ColumnSpan="3" Margin="0,10"/>
                     </Grid>
-
                     <Grid Grid.Row="1" Margin="0,0,0,15">
                         <TextBlock Text="THÀNH TIỀN" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource DarkBrownBrush}"/>
                         <TextBlock x:Name="lblThanhTien" Text="0 VND" FontSize="22" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{StaticResource PrimaryBrownBrush}"/>
                     </Grid>
-
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -350,7 +406,6 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
                         <Button x:Name="btnThanhToan" Grid.Column="0" Style="{StaticResource ActionButton}" Background="{StaticResource StatusGreenBrush}" Click="BtnThanhToan_Click">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -363,7 +418,6 @@
                                 <TextBlock Grid.Column="1" Text="Thanh Toán" VerticalAlignment="Center" Margin="0,1,0,0"/>
                             </Grid>
                         </Button>
-
                         <Button x:Name="btnHuyDon" Grid.Column="1" ToolTip="Hủy Hóa đơn" Style="{StaticResource ActionButton}" 
                                 Background="{StaticResource StatusRedBrush}" Click="BtnHuyDon_Click" Margin="5,0,0,0">
                             <Viewbox Width="18" Height="18">

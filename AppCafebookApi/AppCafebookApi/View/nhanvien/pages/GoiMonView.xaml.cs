@@ -1,4 +1,5 @@
-﻿using AppCafebookApi.Services;
+﻿// Tập tin: AppCafebookApi/View/nhanvien/pages/GoiMonView.xaml.cs (ĐÃ SỬA)
+using AppCafebookApi.Services;
 using AppCafebookApi.View.common;
 using AppCafebookApi.View.Common;
 using CafebookModel.Model.ModelApp.NhanVien;
@@ -37,6 +38,9 @@ namespace AppCafebookApi.View.nhanvien.pages
         private List<KhuyenMaiDto> _availableKms = new List<KhuyenMaiDto>();
         private int? _currentKhuyenMaiId = null;
         private bool _isDataLoading = true;
+
+        // NÂNG CẤP: Lưu trữ danh mục đang chọn
+        private DanhMucDto _currentDanhMuc = new DanhMucDto { IdDanhMuc = 0, TenLoaiSP = "Tất cả" };
 
         static GoiMonView()
         {
@@ -80,6 +84,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
                 UpdateBillUI(response.HoaDonInfo);
 
+                // Kích hoạt bộ lọc "Tất cả"
                 if (lbLoaiSP.Items.Count > 0)
                 {
                     lbLoaiSP.UpdateLayout();
@@ -89,10 +94,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     {
                         rb.IsChecked = true;
                     }
-                    else
-                    {
-                        icSanPham.ItemsSource = _allSanPhams;
-                    }
+                    UpdateProductFilter(); // Gọi hàm lọc chung
                 }
             }
             catch (Exception ex)
@@ -104,6 +106,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private T? FindVisualChild<T>(DependencyObject? obj) where T : DependencyObject
         {
+            // ... (Hàm này giữ nguyên) ...
             if (obj == null) return null;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
@@ -122,15 +125,13 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private void UpdateBillUI(HoaDonInfoDto info)
         {
+            // ... (Hàm này giữ nguyên) ...
             if (info == null) return;
-
             lblTieuDeHoaDon.Text = $"Hóa đơn - {info.SoBan}";
             lblTongTien.Text = info.TongTienGoc.ToString("N0");
-            lblTienGiam.Text = info.GiamGia.ToString("N0"); 
+            lblTienGiam.Text = info.GiamGia.ToString("N0");
             lblThanhTien.Text = info.ThanhTien.ToString("N0") + " VND";
-
             _currentKhuyenMaiId = info.IdKhuyenMai;
-
             if (_currentKhuyenMaiId.HasValue && _currentKhuyenMaiId != 0)
             {
                 var km = _availableKms.FirstOrDefault(k => k.IdKhuyenMai == _currentKhuyenMaiId);
@@ -144,40 +145,90 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
         }
 
+        // --- NÂNG CẤP: Logic Lọc ---
+
         private void Category_Checked(object sender, RoutedEventArgs e)
         {
             var radioButton = sender as RadioButton;
             var danhMuc = radioButton?.DataContext as DanhMucDto;
 
-            if (danhMuc == null)
+            if (danhMuc != null)
             {
-                if (radioButton != null && radioButton.Content.ToString() == "Tất cả")
-                {
-                    icSanPham.ItemsSource = _allSanPhams;
-                }
-                return;
+                _currentDanhMuc = danhMuc;
+            }
+            else if (radioButton != null && radioButton.Content.ToString() == "Tất cả")
+            {
+                _currentDanhMuc = (lbLoaiSP.Items[0] as DanhMucDto) ?? new DanhMucDto { IdDanhMuc = 0 };
             }
 
-            if (danhMuc.IdDanhMuc == 0) // "Tất cả"
-            {
-                icSanPham.ItemsSource = _allSanPhams;
-            }
-            else
-            {
-                icSanPham.ItemsSource = _allSanPhams.Where(s => s.IdDanhMuc == danhMuc.IdDanhMuc).ToList();
-            }
+            UpdateProductFilter();
         }
+
+        private void TxtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Gọi hàm lọc chung mỗi khi gõ
+            UpdateProductFilter();
+        }
+
+        /// <summary>
+        /// Hàm lọc sản phẩm dựa trên Category và Ô tìm kiếm
+        /// </summary>
+        private void UpdateProductFilter()
+        {
+            if (_allSanPhams == null) return;
+
+            IEnumerable<SanPhamDto> filteredList = _allSanPhams;
+
+            // 1. Lọc theo Category
+            if (_currentDanhMuc != null && _currentDanhMuc.IdDanhMuc != 0)
+            {
+                filteredList = filteredList.Where(s => s.IdDanhMuc == _currentDanhMuc.IdDanhMuc);
+            }
+
+            // 2. Lọc theo Từ khóa tìm kiếm
+            string keyword = txtTimKiem.Text.Trim().ToLowerInvariant();
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filteredList = filteredList.Where(s =>
+                    s.TenSanPham.ToLowerInvariant().Contains(keyword)
+                );
+            }
+
+            icSanPham.ItemsSource = filteredList.ToList();
+        }
+
+        // --- KẾT THÚC NÂNG CẤP LỌC ---
+
 
         private async void ProductButton_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên như lần trước, đã có InputBoxWindow) ...
             var sanPham = (sender as Button)?.DataContext as SanPhamDto;
             if (sanPham == null) return;
+
+            var inputBox = new InputBoxWindow(
+                "Thêm ghi chú",
+                $"Nhập ghi chú cho món [{sanPham.TenSanPham}]:",
+                ""
+            );
+
+            string? ghiChu = null;
+            if (inputBox.ShowDialog() == true)
+            {
+                ghiChu = inputBox.InputText;
+            }
+
+            if (string.IsNullOrWhiteSpace(ghiChu))
+            {
+                ghiChu = null;
+            }
 
             var request = new AddItemRequest
             {
                 IdHoaDon = _idHoaDon,
                 IdSanPham = sanPham.IdSanPham,
-                SoLuong = 1
+                SoLuong = 1,
+                GhiChu = ghiChu
             };
 
             try
@@ -191,6 +242,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     UpdateBillUI(result.updatedHoaDonInfo);
 
                     ChiTietDto newItem = result.newItem;
+
                     var existingItem = _chiTietItems.FirstOrDefault(c => c.IdChiTietHoaDon == newItem.IdChiTietHoaDon);
                     if (existingItem != null)
                     {
@@ -216,6 +268,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnGiamSL_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên) ...
             var item = (sender as Button)?.DataContext as ChiTietDto;
             if (item == null) return;
             await UpdateQuantityAsync(item, item.SoLuong - 1);
@@ -223,6 +276,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnTangSL_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên) ...
             var item = (sender as Button)?.DataContext as ChiTietDto;
             if (item == null) return;
             await UpdateQuantityAsync(item, item.SoLuong + 1);
@@ -230,9 +284,9 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnXoaMon_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên) ...
             var item = (sender as Button)?.DataContext as ChiTietDto;
             if (item == null) return;
-
             var result = MessageBox.Show($"Bạn có chắc muốn xóa [{item.TenSanPham}]?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
@@ -242,12 +296,12 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async Task UpdateQuantityAsync(ChiTietDto item, int soLuongMoi)
         {
+            // ... (Hàm này giữ nguyên) ...
             var request = new UpdateSoLuongRequest
             {
                 IdChiTietHoaDon = item.IdChiTietHoaDon,
                 SoLuongMoi = soLuongMoi
             };
-
             try
             {
                 var response = await _httpClient.PutAsJsonAsync("api/app/nhanvien/goimon/update-quantity", request);
@@ -255,7 +309,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 {
                     var hoaDonInfo = await response.Content.ReadFromJsonAsync<HoaDonInfoDto>();
                     if (hoaDonInfo != null) UpdateBillUI(hoaDonInfo);
-
                     if (soLuongMoi <= 0)
                     {
                         _chiTietItems.Remove(item);
@@ -278,24 +331,23 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
         }
 
+        // ... (Tất cả các hàm còn lại: BtnChonKhuyenMai_Click, BtnHuyKhuyenMai_Click, ApplyKhuyenMaiApiCallAsync, 
+        // ...  BtnThanhToan_Click, BtnHuyDon_Click, BtnQuayLai_Click, BtnLuu_Click, BtnInPhieuGoiMon_Click 
+        // ...  GIỮ NGUYÊN) ...
+
         private async void BtnChonKhuyenMai_Click(object sender, RoutedEventArgs e)
         {
             if (_isDataLoading) return;
             _isDataLoading = true;
-
             var dialog = new ChonKhuyenMaiWindow(_idHoaDon, _currentKhuyenMaiId);
-
             if (dialog.ShowDialog() == true)
             {
                 int? selectedKmId = dialog.SelectedId;
                 if (selectedKmId == 0) selectedKmId = null;
-
                 await ApplyKhuyenMaiApiCallAsync(selectedKmId);
             }
-
             _isDataLoading = false;
         }
-
         private async void BtnHuyKhuyenMai_Click(object sender, RoutedEventArgs e)
         {
             if (_isDataLoading) return;
@@ -303,7 +355,6 @@ namespace AppCafebookApi.View.nhanvien.pages
             await ApplyKhuyenMaiApiCallAsync(null);
             _isDataLoading = false;
         }
-
         private async Task ApplyKhuyenMaiApiCallAsync(int? idKhuyenMai)
         {
             var request = new ApplyPromotionRequest
@@ -311,7 +362,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 IdHoaDon = _idHoaDon,
                 IdKhuyenMai = idKhuyenMai
             };
-
             try
             {
                 var response = await _httpClient.PutAsJsonAsync("api/app/nhanvien/goimon/apply-promotion", request);
@@ -334,18 +384,15 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show(ex.Message, "Lỗi API");
             }
         }
-
         private async void BtnThanhToan_Click(object sender, RoutedEventArgs e)
         {
             if (_isDataLoading) return;
             _isDataLoading = true;
-
             var request = new ApplyPromotionRequest
             {
                 IdHoaDon = _idHoaDon,
                 IdKhuyenMai = _currentKhuyenMaiId
             };
-
             try
             {
                 var response = await _httpClient.PutAsJsonAsync("api/app/nhanvien/goimon/apply-promotion", request);
@@ -363,16 +410,14 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
             _isDataLoading = false;
         }
-
         private async void BtnHuyDon_Click(object sender, RoutedEventArgs e)
         {
             var result = MessageBox.Show($"Bạn có chắc chắn muốn HỦY hóa đơn này không?\n(Các món đã thêm sẽ bị xóa)",
                             "Xác nhận Hủy", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result != MessageBoxResult.Yes) return;
-
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"api/app/donhang/update-status/{_idHoaDon}", "Hủy");
+                var response = await _httpClient.PutAsync($"api/app/nhanvien/goimon/cancel-order/{_idHoaDon}", null);
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Đã hủy hóa đơn thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -391,7 +436,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show(ex.Message, "Lỗi API");
             }
         }
-
         private void BtnQuayLai_Click(object sender, RoutedEventArgs e)
         {
             if (this.NavigationService.CanGoBack)
@@ -399,9 +443,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 this.NavigationService.GoBack();
             }
         }
-
-        // === SỬA LỖI LOGIC BẾP (YÊU CẦU MỚI) ===
-
         private async void BtnLuu_Click(object sender, RoutedEventArgs e)
         {
             if (AuthService.CurrentUser == null)
@@ -409,17 +450,12 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show("Lỗi phiên đăng nhập.", "Lỗi");
                 return;
             }
-
             try
             {
-                // SỬA: Chỉ gọi API, không điều hướng
                 var response = await _httpClient.PostAsync($"api/app/nhanvien/goimon/send-to-kitchen/{_idHoaDon}", null);
-
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Đã lưu và gửi các món mới đến bếp/pha chế.", "Đã lưu");
-                    // KHÔNG quay lại (theo logic mới)
-                    // if (this.NavigationService.CanGoBack) { this.NavigationService.GoBack(); }
                 }
                 else
                 {
@@ -431,7 +467,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show(ex.Message, "Lỗi API");
             }
         }
-
         private async void BtnInPhieuGoiMon_Click(object sender, RoutedEventArgs e)
         {
             if (AuthService.CurrentUser == null)
@@ -440,19 +475,13 @@ namespace AppCafebookApi.View.nhanvien.pages
                 return;
             }
             int idNhanVien = AuthService.CurrentUser.IdNhanVien;
-
             try
             {
-                // 1. Gọi API để đẩy món VÀ tạo thông báo
                 var response = await _httpClient.PostAsync($"api/app/nhanvien/goimon/print-and-notify-kitchen/{_idHoaDon}/{idNhanVien}", null);
-
                 if (response.IsSuccessStatusCode)
                 {
-                    // 2. MỞ CỬA SỔ IN (THEO YÊU CẦU MỚI)
                     var printWindow = new PhieuGoiMonPreviewWindow(_idHoaDon);
-                    printWindow.ShowDialog(); // Hiển thị cửa sổ in
-
-                    // 3. (Tùy chọn) Quay lại sau khi in
+                    printWindow.ShowDialog();
                     if (this.NavigationService.CanGoBack)
                     {
                         this.NavigationService.GoBack();

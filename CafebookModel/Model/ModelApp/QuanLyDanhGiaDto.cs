@@ -7,6 +7,7 @@ namespace CafebookModel.Model.ModelApp
     public class DanhGiaQuanLyDto
     {
         public int IdDanhGia { get; set; }
+        public int? IdSanPham { get; set; } // <-- ĐÃ THÊM
         public string TenKhachHang { get; set; } = string.Empty;
         public string? TenSanPham { get; set; } // Có thể null nếu là đánh giá chung
         public int SoSao { get; set; }
