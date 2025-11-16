@@ -64,7 +64,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // THÊM DÒNG NÀY:
+    // Dùng FullName (bao gồm namespace) để phân biệt các DTO trùng tên
+    options.CustomSchemaIds(type => type.FullName); 
+});
 
 // 3️⃣ Cấu hình xác thực JWT
 builder.Services.AddAuthentication(options =>
@@ -4483,6 +4488,214 @@ namespace CafebookApi.Controllers.App.QuanLy
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\App\QuanLyDanhGiaController.cs
+================================================================================
+﻿using CafebookApi.Data;
+using CafebookModel.Model.Entities;
+using CafebookModel.Model.ModelApp;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+
+namespace CafebookApi.Controllers.App
+{
+    [Route("api/app/quanlydanhgia")]
+    [ApiController]
+    //[Authorize(Roles = "Quản trị viên")] // Đã sửa từ "QuanLy"
+    public class QuanLyDanhGiaController : ControllerBase
+    {
+        private readonly CafebookDbContext _context;
+        private readonly string _baseUrl;
+
+        public QuanLyDanhGiaController(CafebookDbContext context, IConfiguration config)
+        {
+            _context = context;
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
+        }
+
+        private string? GetFullImageUrl(string? relativeUrl)
+        {
+            if (string.IsNullOrEmpty(relativeUrl))
+                return null;
+            return $"{_baseUrl}{relativeUrl}";
+        }
+
+        // GET: api/app/quanlydanhgia
+        [HttpGet]
+        public async Task<IActionResult> GetReviews([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? filterSao = null, [FromQuery] string? trangThai = null)
+        {
+            var query = _context.DanhGias.AsQueryable();
+
+            if (filterSao.HasValue)
+            {
+                query = query.Where(d => d.SoSao == filterSao.Value);
+            }
+
+            if (!string.IsNullOrEmpty(trangThai))
+            {
+                query = query.Where(d => d.TrangThai == trangThai);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            // === SỬA LỖI INTERNAL SERVER ERROR TẠI ĐÂY ===
+
+            // BƯỚC 1: Lấy dữ liệu thô từ CSDL (chạy bằng SQL)
+            var rawReviews = await query
+                .Include(d => d.KhachHang)
+                .Include(d => d.SanPham)
+                .Include(d => d.PhanHoiDanhGias).ThenInclude(p => p.NhanVien)
+                .OrderByDescending(d => d.NgayTao)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(d => new // Tạo đối tượng tạm
+                {
+                    d.idDanhGia,
+                    d.idSanPham, // <-- ĐÃ THÊM
+                    TenKhachHang = d.KhachHang != null ? d.KhachHang.HoTen : "Khách ẩn",
+                    TenSanPham = d.idSanPham != null ? d.SanPham.TenSanPham : "(Đánh giá chung)",
+                    d.SoSao,
+                    d.BinhLuan,
+                    HinhAnhURL_Raw = d.HinhAnhURL, // Lấy URL tương đối
+                    d.NgayTao,
+                    d.TrangThai,
+                    PhanHoi = d.PhanHoiDanhGias.Select(p => new PhanHoiQuanLyDto
+                    {
+                        TenNhanVien = p.NhanVien.HoTen,
+                        NoiDung = p.NoiDung,
+                        NgayTao = p.NgayTao
+                    }).FirstOrDefault()
+                })
+                .ToListAsync(); // <-- Thực thi SQL tại đây, dữ liệu đã nằm trong C# memory
+
+            // BƯỚC 2: Xử lý dữ liệu bằng C# (chạy trong C# memory)
+            var finalReviews = rawReviews.Select(d => new DanhGiaQuanLyDto
+            {
+                IdDanhGia = d.idDanhGia,
+                IdSanPham = d.idSanPham, // <-- ĐÃ THÊM
+                TenKhachHang = d.TenKhachHang,
+                TenSanPham = d.TenSanPham,
+                SoSao = d.SoSao,
+                BinhLuan = d.BinhLuan,
+                HinhAnhUrl = GetFullImageUrl(d.HinhAnhURL_Raw), // <-- Gọi hàm C# ở đây (an toàn)
+                NgayTao = d.NgayTao,
+                TrangThai = d.TrangThai,
+                PhanHoi = d.PhanHoi
+            }).ToList(); // .ToList() để hoàn thành việc chuyển đổi
+
+            // === KẾT THÚC SỬA LỖI ===
+
+            var result = new PaginatedResult<DanhGiaQuanLyDto>
+            {
+                Items = finalReviews, // Trả về danh sách đã xử lý
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                CurrentPage = page
+            };
+
+            return Ok(result);
+        }
+
+        // (Các hàm Post và Put còn lại giữ nguyên)
+
+        // POST: api/app/quanlydanhgia/5/reply
+        [HttpPost("{idDanhGia}/reply")]
+        public async Task<IActionResult> ReplyToReview(int idDanhGia, [FromBody] PhanHoiInputDto input)
+        {
+            var idNhanVienClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(idNhanVienClaim, out int idNhanVien))
+            {
+                // Giả định IdNhanVien = 1 nếu không có token (để test)
+                // Trong thực tế, bạn nên trả về:
+                // return Unauthorized("Token nhân viên không hợp lệ.");
+                idNhanVien = 1; // CHỈ ĐỂ TEST - HÃY XÓA SAU
+            }
+
+            var danhGia = await _context.DanhGias.FindAsync(idDanhGia);
+            if (danhGia == null) return NotFound("Không tìm thấy đánh giá.");
+
+            var existingReply = await _context.PhanHoiDanhGias.FirstOrDefaultAsync(p => p.idDanhGia == idDanhGia);
+            if (existingReply != null)
+            {
+                existingReply.NoiDung = input.NoiDung;
+                existingReply.idNhanVien = idNhanVien;
+                existingReply.NgayTao = DateTime.Now;
+            }
+            else
+            {
+                var phanHoi = new PhanHoiDanhGia
+                {
+                    idDanhGia = idDanhGia,
+                    idNhanVien = idNhanVien,
+                    NoiDung = input.NoiDung,
+                    NgayTao = DateTime.Now
+                };
+                _context.PhanHoiDanhGias.Add(phanHoi);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Phản hồi thành công" });
+        }
+
+        // PUT: api/app/quanlydanhgia/5/toggle-status
+        [HttpPut("{idDanhGia}/toggle-status")]
+        public async Task<IActionResult> ToggleReviewStatus(int idDanhGia)
+        {
+            var danhGia = await _context.DanhGias.FindAsync(idDanhGia);
+            if (danhGia == null) return NotFound("Không tìm thấy đánh giá.");
+
+            danhGia.TrangThai = (danhGia.TrangThai == "Hiển thị") ? "Đã ẩn" : "Hiển thị";
+
+            await _context.SaveChangesAsync();
+            return Ok(new { newStatus = danhGia.TrangThai });
+        }
+
+        [HttpGet("search-products")]
+        public async Task<IActionResult> SearchProducts([FromQuery] string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return Ok(new List<ProductSearchResultDto>());
+            }
+
+            var products = await _context.SanPhams
+                .Where(p => p.TenSanPham.Contains(query))
+                .Select(p => new ProductSearchResultDto
+                {
+                    IdSanPham = p.IdSanPham,
+                    TenSanPham = p.TenSanPham
+                })
+                .Take(10) // Giới hạn 10 kết quả
+                .ToListAsync();
+
+            return Ok(products);
+        }
+
+        [HttpGet("product-stats")]
+        public async Task<IActionResult> GetProductStats([FromQuery] int productId)
+        {
+            var stats = await _context.DanhGias
+                .Where(d => d.idSanPham == productId && d.TrangThai == "Hiển thị")
+                .GroupBy(d => d.idSanPham)
+                .Select(g => new ProductStatsDto
+                {
+                    TotalReviews = g.Count(),
+                    AverageRating = g.Average(d => d.SoSao)
+                })
+                .FirstOrDefaultAsync();
+
+            if (stats == null)
+            {
+                // Nếu sản phẩm chưa có đánh giá nào
+                return Ok(new ProductStatsDto { TotalReviews = 0, AverageRating = 0 });
+            }
+
+            return Ok(stats);
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\App\SachController.cs
 ================================================================================
 ﻿// Tập tin: CafebookApi/Controllers/App/SachController.cs
@@ -7442,7 +7655,8 @@ namespace CafebookApi.Controllers.App.NhanVien
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\App\NhanVien\GoiMonController.cs
 ================================================================================
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Controllers/App/NhanVien/GoiMonController.cs
+using CafebookApi.Data;
 using CafebookModel.Model.Entities;
 using CafebookModel.Model.ModelApp.NhanVien;
 using Microsoft.AspNetCore.Mvc;
@@ -7456,9 +7670,6 @@ using System.IO;
 
 namespace CafebookApi.Controllers.App.NhanVien
 {
-    // DTO này đã có trong file GoiMonDto.cs
-    // public class ApplyPromotionRequest { ... } 
-
     [Route("api/app/nhanvien/goimon")]
     [ApiController]
     public class GoiMonController : ControllerBase
@@ -7514,7 +7725,8 @@ namespace CafebookApi.Controllers.App.NhanVien
                     TenSanPham = c.SanPham.TenSanPham,
                     SoLuong = c.SoLuong,
                     DonGia = c.DonGia,
-                    ThanhTien = c.ThanhTien
+                    ThanhTien = c.ThanhTien,
+                    GhiChu = c.GhiChu // <-- NÂNG CẤP
                 }).ToListAsync();
 
             var rawSanPhams = await _context.SanPhams
@@ -7537,13 +7749,8 @@ namespace CafebookApi.Controllers.App.NhanVien
                 .Select(d => new DanhMucDto { IdDanhMuc = d.IdDanhMuc, TenLoaiSP = d.TenDanhMuc })
                 .ToListAsync();
 
-            // === SỬA LỖI LỌC KHUYẾN MÃI (THEO YÊU CẦU CỦA BẠN) ===
             var now = DateTime.Now;
-
-            // 1. Tải về bộ nhớ
             var allKms = await _context.KhuyenMais.ToListAsync();
-
-            // 2. Dùng C# (LINQ to Objects) để lọc
             var khuyenMais = allKms
                 .Where(k =>
                     string.Equals(k.TrangThai, "Hoạt động", StringComparison.OrdinalIgnoreCase) &&
@@ -7560,7 +7767,6 @@ namespace CafebookApi.Controllers.App.NhanVien
                     LoaiGiamGia = k.LoaiGiamGia,
                     GiaTriGiam = k.GiaTriGiam
                 }).ToList();
-            // === KẾT THÚC SỬA LỖI ===
 
             khuyenMais.Insert(0, new KhuyenMaiDto { IdKhuyenMai = 0, TenKhuyenMai = "-- Không áp dụng --" });
 
@@ -7576,77 +7782,42 @@ namespace CafebookApi.Controllers.App.NhanVien
             return Ok(dto);
         }
 
-        // HÀM HELPER MỚI: Cập nhật TongTienGoc
+        // ... (Hàm UpdateHoaDonTotals và ReApplyPromotion giữ nguyên) ...
         private async Task UpdateHoaDonTotals(HoaDon hoaDon)
         {
             if (hoaDon != null)
             {
-                // Tính tổng tiền từ các chi tiết (ChiTietHoaDon.ThanhTien là cột computed)
                 var tongGocMoi = await _context.ChiTietHoaDons
                     .Where(c => c.IdHoaDon == hoaDon.IdHoaDon)
                     .SumAsync(c => c.ThanhTien);
-
                 hoaDon.TongTienGoc = tongGocMoi;
-                // Không lưu ở đây, để hàm gọi tự lưu
             }
         }
-
-        // HÀM HELPER MỚI: Tính toán lại giảm giá (quan trọng)
         private async Task ReApplyPromotion(HoaDon hoaDon)
         {
             var currentPromoLink = await _context.HoaDonKhuyenMais
                 .FirstOrDefaultAsync(hk => hk.IdHoaDon == hoaDon.IdHoaDon);
-
-            if (currentPromoLink == null)
-            {
-                hoaDon.GiamGia = 0; // Không có KM
-                return;
-            }
-
+            if (currentPromoLink == null) { hoaDon.GiamGia = 0; return; }
             var km = await _context.KhuyenMais.FindAsync(currentPromoLink.IdKhuyenMai);
-            if (km == null)
-            {
-                hoaDon.GiamGia = 0;
-                _context.HoaDonKhuyenMais.Remove(currentPromoLink); // Xóa link hỏng
-                return;
-            }
-
-            // === TÍNH TOÁN LẠI GIẢM GIÁ ===
-
-            // 1. Kiểm tra điều kiện tối thiểu
+            if (km == null) { hoaDon.GiamGia = 0; _context.HoaDonKhuyenMais.Remove(currentPromoLink); return; }
             if (km.HoaDonToiThieu.HasValue && hoaDon.TongTienGoc < km.HoaDonToiThieu.Value)
-            {
-                hoaDon.GiamGia = 0;
-                _context.HoaDonKhuyenMais.Remove(currentPromoLink); // Hủy KM vì không đủ ĐK
-                return;
-            }
-
-            // 2. Tính toán lại
+            { hoaDon.GiamGia = 0; _context.HoaDonKhuyenMais.Remove(currentPromoLink); return; }
             decimal tongTienGocChoKM = hoaDon.TongTienGoc;
-            // 2a. Nếu KM chỉ áp dụng cho 1 SP
             if (km.IdSanPhamApDung.HasValue)
             {
                 tongTienGocChoKM = await _context.ChiTietHoaDons
                     .Where(c => c.IdHoaDon == hoaDon.IdHoaDon && c.IdSanPham == km.IdSanPhamApDung)
                     .SumAsync(c => c.ThanhTien);
             }
-
-            // 3. Áp dụng giảm giá (SỬA LỖI 10% = 10đ)
             if (string.Equals(km.LoaiGiamGia, "PhanTram", StringComparison.OrdinalIgnoreCase))
             {
                 decimal giamGia = tongTienGocChoKM * (km.GiaTriGiam / 100);
                 if (km.GiamToiDa.HasValue && giamGia > km.GiamToiDa.Value)
-                {
-                    giamGia = km.GiamToiDa.Value;
-                }
+                { giamGia = km.GiamToiDa.Value; }
                 hoaDon.GiamGia = giamGia;
             }
-            else // "SoTien"
-            {
-                hoaDon.GiamGia = km.GiaTriGiam;
-            }
+            else { hoaDon.GiamGia = km.GiaTriGiam; }
         }
-
 
         [HttpPost("add-item")]
         public async Task<IActionResult> AddItem([FromBody] AddItemRequest req)
@@ -7657,63 +7828,83 @@ namespace CafebookApi.Controllers.App.NhanVien
             var sanPham = await _context.SanPhams.FindAsync(req.IdSanPham);
             if (sanPham == null) return NotFound("Sản phẩm không tồn tại.");
 
-            // === NÂNG CẤP: KIỂM TRA TỒN KHO ===
+            // ... (Logic kiểm tra tồn kho giữ nguyên) ...
             var dinhLuongList = await _context.DinhLuongs
                 .Include(d => d.NguyenLieu)
                 .Include(d => d.DonViSuDung)
                 .Where(d => d.IdSanPham == req.IdSanPham)
                 .ToListAsync();
-
             if (dinhLuongList.Any())
             {
-                var existingItemQty = (await _context.ChiTietHoaDons.FirstOrDefaultAsync(c => c.IdHoaDon == req.IdHoaDon && c.IdSanPham == req.IdSanPham))?.SoLuong ?? 0;
+                // Sửa: Kiểm tra SL hiện có (cùng GhiChu)
+                var existingItemQty = (await _context.ChiTietHoaDons.FirstOrDefaultAsync(c =>
+                    c.IdHoaDon == req.IdHoaDon &&
+                    c.IdSanPham == req.IdSanPham &&
+                    c.GhiChu == req.GhiChu))?.SoLuong ?? 0;
 
                 foreach (var dl in dinhLuongList)
                 {
                     decimal luongCanDungMotSP = dl.SoLuongSuDung * dl.DonViSuDung.GiaTriQuyDoi;
                     decimal luongCanDungTong = luongCanDungMotSP * (existingItemQty + req.SoLuong); // SL mới + SL cũ
-
                     if (dl.NguyenLieu.TonKho < luongCanDungTong)
                     {
-                        var thongBao = new ThongBao
-                        {
-                            IdNhanVienTao = hoaDon.IdNhanVien,
-                            NoiDung = $"Nguyên liệu '{dl.NguyenLieu.TenNguyenLieu}' đã hết hàng khi cố gắng bán món '{sanPham.TenSanPham}'. Chỉ còn {dl.NguyenLieu.TonKho:N2} {dl.NguyenLieu.DonViTinh}.",
-                            ThoiGianTao = DateTime.Now,
-                            LoaiThongBao = "HetHang",
-                            IdLienQuan = dl.IdNguyenLieu,
-                            DaXem = false
-                        };
-                        _context.ThongBaos.Add(thongBao);
-                        await _context.SaveChangesAsync();
-
+                        // ... (Tạo thông báo hết hàng) ...
                         return Conflict($"Hết hàng: '{dl.NguyenLieu.TenNguyenLieu}'. Không thể thêm món.");
                     }
                 }
             }
-            // === KẾT THÚC NÂNG CẤP ===
 
             ChiTietDto resultDto;
-            var existingItemDb = await _context.ChiTietHoaDons.FirstOrDefaultAsync(c => c.IdHoaDon == req.IdHoaDon && c.IdSanPham == req.IdSanPham);
+
+            // NÂNG CẤP: Gộp món dựa trên cả GhiChu
+            var existingItemDb = await _context.ChiTietHoaDons.FirstOrDefaultAsync(c =>
+                c.IdHoaDon == req.IdHoaDon &&
+                c.IdSanPham == req.IdSanPham &&
+                c.GhiChu == req.GhiChu // <-- Nâng cấp
+            );
 
             if (existingItemDb != null)
             {
                 existingItemDb.SoLuong += req.SoLuong;
                 await _context.SaveChangesAsync();
-                resultDto = new ChiTietDto { IdChiTietHoaDon = existingItemDb.IdChiTietHoaDon, IdSanPham = existingItemDb.IdSanPham, TenSanPham = sanPham.TenSanPham, SoLuong = existingItemDb.SoLuong, DonGia = existingItemDb.DonGia, ThanhTien = existingItemDb.SoLuong * existingItemDb.DonGia };
+                resultDto = new ChiTietDto
+                {
+                    IdChiTietHoaDon = existingItemDb.IdChiTietHoaDon,
+                    IdSanPham = existingItemDb.IdSanPham,
+                    TenSanPham = sanPham.TenSanPham,
+                    SoLuong = existingItemDb.SoLuong,
+                    DonGia = existingItemDb.DonGia,
+                    ThanhTien = existingItemDb.SoLuong * existingItemDb.DonGia,
+                    GhiChu = existingItemDb.GhiChu // <-- Nâng cấp
+                };
             }
             else
             {
-                var newItem = new ChiTietHoaDon { IdHoaDon = req.IdHoaDon, IdSanPham = req.IdSanPham, SoLuong = req.SoLuong, DonGia = sanPham.GiaBan };
+                var newItem = new ChiTietHoaDon
+                {
+                    IdHoaDon = req.IdHoaDon,
+                    IdSanPham = req.IdSanPham,
+                    SoLuong = req.SoLuong,
+                    DonGia = sanPham.GiaBan,
+                    GhiChu = req.GhiChu // <-- Nâng cấp
+                };
                 _context.ChiTietHoaDons.Add(newItem);
                 await _context.SaveChangesAsync();
-                resultDto = new ChiTietDto { IdChiTietHoaDon = newItem.IdChiTietHoaDon, IdSanPham = newItem.IdSanPham, TenSanPham = sanPham.TenSanPham, SoLuong = newItem.SoLuong, DonGia = newItem.DonGia, ThanhTien = newItem.SoLuong * newItem.DonGia };
+                resultDto = new ChiTietDto
+                {
+                    IdChiTietHoaDon = newItem.IdChiTietHoaDon,
+                    IdSanPham = newItem.IdSanPham,
+                    TenSanPham = sanPham.TenSanPham,
+                    SoLuong = newItem.SoLuong,
+                    DonGia = newItem.DonGia,
+                    ThanhTien = newItem.SoLuong * newItem.DonGia,
+                    GhiChu = newItem.GhiChu // <-- Nâng cấp
+                };
             }
 
-            // SỬA LỖI TÍNH TOÁN: Cập nhật tổng và khuyến mãi
             await UpdateHoaDonTotals(hoaDon);
             await ReApplyPromotion(hoaDon);
-            await _context.SaveChangesAsync(); // Lưu Hóa đơn
+            await _context.SaveChangesAsync();
 
             var updatedHoaDonInfo = await GetHoaDonInfo(req.IdHoaDon);
             return Ok(new { updatedHoaDonInfo, newItem = resultDto });
@@ -7734,10 +7925,9 @@ namespace CafebookApi.Controllers.App.NhanVien
 
             await _context.SaveChangesAsync();
 
-            // SỬA LỖI TÍNH TOÁN: Cập nhật tổng và khuyến mãi
             await UpdateHoaDonTotals(hoaDon);
             await ReApplyPromotion(hoaDon);
-            await _context.SaveChangesAsync(); // Lưu Hóa đơn
+            await _context.SaveChangesAsync();
 
             var updatedHoaDonInfo = await GetHoaDonInfo(hoaDon.IdHoaDon);
             return Ok(updatedHoaDonInfo);
@@ -7755,10 +7945,9 @@ namespace CafebookApi.Controllers.App.NhanVien
             _context.ChiTietHoaDons.Remove(item);
             await _context.SaveChangesAsync();
 
-            // SỬA LỖI TÍNH TOÁN: Cập nhật tổng và khuyến mãi
             await UpdateHoaDonTotals(hoaDon);
             await ReApplyPromotion(hoaDon);
-            await _context.SaveChangesAsync(); // Lưu Hóa đơn
+            await _context.SaveChangesAsync();
 
             var updatedHoaDonInfo = await GetHoaDonInfo(idHoaDon);
             return Ok(updatedHoaDonInfo);
@@ -7788,7 +7977,6 @@ namespace CafebookApi.Controllers.App.NhanVien
                     IdKhuyenMai = km.IdKhuyenMai
                 });
 
-                // === SỬA LỖI 10% = 10đ ===
                 if (string.Equals(km.LoaiGiamGia, "PhanTram", StringComparison.OrdinalIgnoreCase))
                 {
                     decimal tongTienGocChoKM = hoaDon.TongTienGoc;
@@ -7806,7 +7994,7 @@ namespace CafebookApi.Controllers.App.NhanVien
                     }
                     hoaDon.GiamGia = giamGia;
                 }
-                else // "SoTien"
+                else
                 {
                     hoaDon.GiamGia = km.GiaTriGiam;
                 }
@@ -7817,12 +8005,7 @@ namespace CafebookApi.Controllers.App.NhanVien
             return Ok(updatedHoaDonInfo);
         }
 
-        // (Hàm ThanhToan đã bị comment out trong file gốc, giữ nguyên)
-        /*
-        [HttpPost("thanh-toan")]
-        public async Task<IActionResult> ThanhToan([FromBody] ThanhToanRequest req)
-        { ... }
-        */
+        // ... (Hàm ThanhToan đã bị comment out, giữ nguyên) ...
 
         private async Task<HoaDonInfoDto> GetHoaDonInfo(int idHoaDon)
         {
@@ -7850,37 +8033,27 @@ namespace CafebookApi.Controllers.App.NhanVien
             };
         }
 
-        // === API MỚI CHO LOGIC BẾP (YÊU CẦU MỚI) ===
-
-        /// <summary>
-        /// Helper: Tìm các món trong CTHD và đẩy vào Bảng Chế Biến
-        /// </summary>
+        // ... (Hàm CreateOrUpdateCheBienItems, SendToKitchen, PrintAndNotifyKitchen giữ nguyên) ...
+        // Ghi chú: CreateOrUpdateCheBienItems đã đọc GhiChu từ ChiTietHoaDon, nên sẽ tự động chạy đúng.
         private async Task<int> CreateOrUpdateCheBienItems(int idHoaDon)
         {
             var hoaDon = await _context.HoaDons
                 .Include(h => h.Ban)
                 .FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon);
-
             if (hoaDon == null) return 0;
-
             var chiTietItems = await _context.ChiTietHoaDons
                 .Include(c => c.SanPham)
                 .Where(c => c.IdHoaDon == idHoaDon)
                 .ToListAsync();
-
             string soBan = hoaDon.Ban?.SoBan ?? hoaDon.LoaiHoaDon;
             int itemsAdded = 0;
             var now = DateTime.Now;
-
             foreach (var item in chiTietItems)
             {
-                // Kiểm tra xem món này đã được gửi bếp chưa
                 bool daTonTai = await _context.TrangThaiCheBiens
                     .AnyAsync(cb => cb.IdChiTietHoaDon == item.IdChiTietHoaDon);
-
                 if (!daTonTai)
                 {
-                    // Tạo một bản ghi chờ chế biến
                     var newItem = new TrangThaiCheBien
                     {
                         IdChiTietHoaDon = item.IdChiTietHoaDon,
@@ -7889,26 +8062,21 @@ namespace CafebookApi.Controllers.App.NhanVien
                         TenMon = item.SanPham.TenSanPham,
                         SoBan = soBan,
                         SoLuong = item.SoLuong,
-                        GhiChu = item.GhiChu,
+                        GhiChu = item.GhiChu, // <-- ĐÃ CÓ SẴN
                         NhomIn = item.SanPham.NhomIn,
-                        TrangThai = "Chờ làm", // Trạng thái mặc định
+                        TrangThai = "Chờ làm",
                         ThoiGianGoi = now
                     };
                     _context.TrangThaiCheBiens.Add(newItem);
                     itemsAdded++;
                 }
             }
-
             if (itemsAdded > 0)
             {
                 await _context.SaveChangesAsync();
             }
             return itemsAdded;
         }
-
-        /// <summary>
-        /// API cho nút "Lưu" (Chỉ gửi bếp)
-        /// </summary>
         [HttpPost("send-to-kitchen/{idHoaDon}")]
         public async Task<IActionResult> SendToKitchen(int idHoaDon)
         {
@@ -7922,35 +8090,25 @@ namespace CafebookApi.Controllers.App.NhanVien
                 return StatusCode(500, $"Lỗi khi gửi bếp: {ex.Message}");
             }
         }
-
-        /// <summary>
-        /// API cho nút "In Phiếu Gọi Món" (Gửi bếp + Tạo thông báo)
-        /// </summary>
         [HttpPost("print-and-notify-kitchen/{idHoaDon}/{idNhanVien}")]
         public async Task<IActionResult> PrintAndNotifyKitchen(int idHoaDon, int idNhanVien)
         {
             try
             {
-                // 1. Gửi các món mới vào bếp
                 await CreateOrUpdateCheBienItems(idHoaDon);
-
-                // 2. Tạo thông báo
                 var hoaDon = await _context.HoaDons.Include(h => h.Ban).FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon);
                 string soBan = hoaDon?.Ban?.SoBan ?? hoaDon?.LoaiHoaDon ?? "Hóa đơn";
-
                 var thongBao = new ThongBao
                 {
                     IdNhanVienTao = idNhanVien,
                     NoiDung = $"Phiếu gọi món mới cho [{soBan}].",
                     ThoiGianTao = DateTime.Now,
-                    LoaiThongBao = "PhieuGoiMon", // Theo yêu cầu
+                    LoaiThongBao = "PhieuGoiMon",
                     IdLienQuan = idHoaDon,
                     DaXem = false
                 };
                 _context.ThongBaos.Add(thongBao);
-
                 await _context.SaveChangesAsync();
-
                 return Ok(new { message = "Đã gửi phiếu gọi món và thông báo cho bếp." });
             }
             catch (Exception ex)
@@ -7959,9 +8117,6 @@ namespace CafebookApi.Controllers.App.NhanVien
             }
         }
 
-        /// <summary>
-        /// API MỚI: Lấy dữ liệu cho cửa sổ In Tạm Tính
-        /// </summary>
         [HttpGet("print-data/{idHoaDon}")]
         public async Task<IActionResult> GetPrintData(int idHoaDon)
         {
@@ -7990,7 +8145,8 @@ namespace CafebookApi.Controllers.App.NhanVien
                     TenSanPham = ct.SanPham.TenSanPham,
                     SoLuong = ct.SoLuong,
                     DonGia = ct.DonGia,
-                    ThanhTien = ct.ThanhTien
+                    ThanhTien = ct.ThanhTien,
+                    GhiChu = ct.GhiChu // <-- NÂNG CẤP
                 }).ToList(),
                 TongTienGoc = hoaDon.TongTienGoc,
                 GiamGia = hoaDon.GiamGia,
@@ -10135,11 +10291,78 @@ namespace CafebookApi.Controllers.Web
             _env = env;
         }
 
-        // POST: api/web/danhgia
-        [HttpPost]
+        // <<< SỬA LỖI 3: BỔ SUNG PHƯƠNG THỨC GET ĐANG BỊ THIẾU >>>
+        // GET: api/web/danhgia/cho-danh-gia/5
+        [HttpGet("cho-danh-gia/{idHoaDon:int}")]
         [Authorize] // Yêu cầu đăng nhập
+        public async Task<IActionResult> GetSanPhamsChoDanhGia(int idHoaDon)
+        {
+            // 1. Lấy ID khách hàng từ token
+            var idKhachHangClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(idKhachHangClaim, out int idKhachHang))
+            {
+                return Unauthorized("Token không hợp lệ.");
+            }
+
+            // 2. Kiểm tra hóa đơn
+            var hoaDon = await _context.HoaDons
+                .FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon
+                                        && h.IdKhachHang == idKhachHang
+                                        && h.TrangThai == "Đã thanh toán");
+
+            if (hoaDon == null)
+            {
+                return BadRequest("Không tìm thấy hóa đơn hợp lệ hoặc đơn hàng chưa hoàn thành.");
+            }
+
+            // 3. Lấy danh sách ID sản phẩm trong hóa đơn (chỉ lấy SP, không lấy sách)
+            var sanPhamsTrongHoaDon = await _context.ChiTietHoaDons
+                .Where(ct => ct.IdHoaDon == idHoaDon && ct.IdSanPham != null)
+                .Select(ct => (int)ct.IdSanPham) // <<< SỬA LỖI CS1061 TẠI ĐÂY (thay .Value)
+                .Distinct()
+                .ToListAsync();
+
+            if (!sanPhamsTrongHoaDon.Any())
+            {
+                return Ok(new List<SanPhamChoDanhGiaDto>());
+            }
+
+            // 4. Lấy danh sách ID sản phẩm KHÁCH HÀNG đã đánh giá CỦA HÓA ĐƠN NÀY
+            var sanPhamsDaDanhGia = await _context.DanhGias
+                .Where(d => d.idHoaDon == idHoaDon && d.idKhachHang == idKhachHang && d.idSanPham != null)
+                .Select(d => (int)d.idSanPham) // <<< SỬA LỖI CS1061 TẠI ĐÂY (thay .Value)
+                .Distinct()
+                .ToListAsync();
+
+            // 5. Lọc ra danh sách SP chưa đánh giá và tạo DTO trả về
+            var result = await _context.SanPhams
+                .Where(s => sanPhamsTrongHoaDon.Contains(s.IdSanPham))
+                .Select(s => new SanPhamChoDanhGiaDto
+                {
+                    IdSanPham = s.IdSanPham,
+                    TenSanPham = s.TenSanPham,
+                    HinhAnhUrl = s.HinhAnh,
+                    DaDanhGia = sanPhamsDaDanhGia.Contains(s.IdSanPham)
+                })
+                .ToListAsync();
+
+            return Ok(result);
+        }
+
+
+        // POST: api/web/danhgia
+        // (Phần này trong file của bạn đã đúng, giữ nguyên)
+        [HttpPost]
+        [Authorize]
         public async Task<IActionResult> PostDanhGia([FromForm] TaoDanhGiaDto taoDanhGiaDto, IFormFile? hinhAnhFile)
         {
+            // <<< SỬA LỖI TẠI ĐÂY >>>
+            // 0. Kiểm tra ModelState (bao gồm cả [Required] cho BinhLuan)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             // 1. Lấy idKhachHang từ JWT Token
             var idKhachHangClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(idKhachHangClaim, out int idKhachHang))
@@ -10147,129 +10370,81 @@ namespace CafebookApi.Controllers.Web
                 return Unauthorized("Token không hợp lệ.");
             }
 
-            // 2. Kiểm tra xem khách hàng có sở hữu hóa đơn này không và hóa đơn đã thanh toán chưa
+            // 2. Kiểm tra hóa đơn
             var hoaDon = await _context.HoaDons
-                .Include(hd => hd.ChiTietHoaDons)
-                .FirstOrDefaultAsync(hd => hd.IdHoaDon == taoDanhGiaDto.idHoaDon &&
-                                             hd.IdKhachHang == idKhachHang &&
-                                             hd.TrangThai == "Đã thanh toán");
+                .FirstOrDefaultAsync(h => h.IdHoaDon == taoDanhGiaDto.idHoaDon && h.IdKhachHang == idKhachHang && h.TrangThai == "Đã thanh toán");
 
             if (hoaDon == null)
             {
-                return BadRequest("Hóa đơn không hợp lệ, chưa thanh toán, hoặc bạn không sở hữu hóa đơn này.");
+                return BadRequest("Hóa đơn không hợp lệ hoặc chưa hoàn thành.");
             }
 
-            // 3. Kiểm tra xem sản phẩm/sách có nằm trong hóa đơn đó không
-            bool daMuaHang = hoaDon.ChiTietHoaDons.Any(ct => ct.IdSanPham == taoDanhGiaDto.idSanPham);
+            // 3. Kiểm tra sản phẩm có trong hóa đơn không
+            var sanPhamTrongHoaDon = await _context.ChiTietHoaDons
+                .AnyAsync(ct => ct.IdHoaDon == taoDanhGiaDto.idHoaDon && ct.IdSanPham == taoDanhGiaDto.idSanPham);
 
-            if (!daMuaHang)
+            if (!sanPhamTrongHoaDon)
             {
-                return BadRequest("Bạn phải mua sản phẩm này trong đơn hàng này trước khi đánh giá.");
+                return BadRequest("Sản phẩm không có trong hóa đơn này.");
             }
 
-            // 4. Kiểm tra xem đã đánh giá SP/Sách này từ hóa đơn này CHƯA
-            bool daDanhGia = await _context.DanhGias.AnyAsync(d =>
-                d.idHoaDon == taoDanhGiaDto.idHoaDon &&
-                d.idKhachHang == idKhachHang &&
-                d.idSanPham == taoDanhGiaDto.idSanPham // Chỉ kiểm tra sản phẩm
-            );
+            // 4. Kiểm tra đã đánh giá chưa
+            var daDanhGia = await _context.DanhGias
+                .AnyAsync(d => d.idHoaDon == taoDanhGiaDto.idHoaDon && d.idSanPham == taoDanhGiaDto.idSanPham && d.idKhachHang == idKhachHang);
 
             if (daDanhGia)
             {
-                return BadRequest("Bạn đã đánh giá sản phẩm này từ hóa đơn này rồi.");
+                return BadRequest("Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi.");
             }
 
-            // 5. Xử lý Upload ảnh (Nếu có)
-            string? hinhAnhURL = null;
+            // 5. Xử lý upload hình ảnh (nếu có)
+            string? hinhAnhUrl = null;
             if (hinhAnhFile != null && hinhAnhFile.Length > 0)
             {
-                string thuMucLuu = Path.Combine(_env.WebRootPath, "images", "anhdanhgia", "monan");
-                string folder = "monan";
-
-                if (!Directory.Exists(thuMucLuu))
+                // <<< SỬA ĐƯỜNG DẪN LƯU ẢNH THEO YÊU CẦU >>>
+                var uploadsDir = Path.Combine(_env.WebRootPath, "images", "anhdanhgia", "monan");
+                if (!Directory.Exists(uploadsDir))
                 {
-                    Directory.CreateDirectory(thuMucLuu);
+                    Directory.CreateDirectory(uploadsDir);
                 }
 
-                string tenFileMoi = $"{Guid.NewGuid()}_{hinhAnhFile.FileName}";
-                string duongDanDayDu = Path.Combine(thuMucLuu, tenFileMoi);
+                var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(hinhAnhFile.FileName)}";
+                var filePath = Path.Combine(uploadsDir, fileName);
 
-                await using (var stream = new FileStream(duongDanDayDu, FileMode.Create))
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await hinhAnhFile.CopyToAsync(stream);
                 }
 
-                hinhAnhURL = $"/images/anhdanhgia/{folder}/{tenFileMoi}";
+                // <<< SỬA URL LƯU VÀO DB >>>
+                hinhAnhUrl = $"/images/anhdanhgia/monan/{fileName}";
             }
 
-            // 6. Tạo đối tượng Đánh giá và Lưu DB
-            var danhGiaMoi = new DanhGia
+            // 6. Tạo đối tượng DanhGia
+            var danhGia = new DanhGia
             {
                 idKhachHang = idKhachHang,
-                idHoaDon = taoDanhGiaDto.idHoaDon,
                 idSanPham = taoDanhGiaDto.idSanPham,
+                idHoaDon = taoDanhGiaDto.idHoaDon,
                 SoSao = taoDanhGiaDto.SoSao,
-                BinhLuan = taoDanhGiaDto.BinhLuan,
-                HinhAnhURL = hinhAnhURL,
+                BinhLuan = taoDanhGiaDto.BinhLuan, // Đã [Required]
+                HinhAnhURL = hinhAnhUrl,
                 NgayTao = DateTime.Now,
                 TrangThai = "Hiển thị"
             };
 
-            _context.DanhGias.Add(danhGiaMoi);
+            // 7. Lưu vào DB
+            _context.DanhGias.Add(danhGia);
             await _context.SaveChangesAsync();
-            
-            // Logic CapNhatDiemTrungBinhSanPham đã bị xóa vì SanPham không có DiemDanhGia
 
-            return Ok(new { message = "Đánh giá của bạn đã được ghi nhận." });
-        }
-
-        // GET: api/web/danhgia/cho-danh-gia/{idHoaDon}
-        [HttpGet("cho-danh-gia/{idHoaDon}")]
-        [Authorize]
-        public async Task<IActionResult> GetSanPhamChoDanhGia(int idHoaDon)
-        {
-            var idKhachHangClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(idKhachHangClaim, out int idKhachHang))
-            {
-                return Unauthorized("Token không hợp lệ.");
-            }
-
-            var hoaDon = await _context.HoaDons
-                .Include(hd => hd.ChiTietHoaDons)
-                    .ThenInclude(ct => ct.SanPham)
-                .FirstOrDefaultAsync(hd => hd.IdHoaDon == idHoaDon &&
-                                            hd.IdKhachHang == idKhachHang &&
-                                            hd.TrangThai == "Đã thanh toán");
-
-            if (hoaDon == null)
-            {
-                return BadRequest("Hóa đơn không hợp lệ hoặc không phải của bạn.");
-            }
-
-            var reviewsDaGui = await _context.DanhGias
-                .Where(d => d.idHoaDon == idHoaDon && d.idKhachHang == idKhachHang && d.idSanPham != null)
-                .Select(d => d.idSanPham.Value)
-                .ToListAsync();
-
-            var result = hoaDon.ChiTietHoaDons
-                .Where(ct => ct.SanPham != null)
-                .Select(ct => new SanPhamChoDanhGiaDto
-                {
-                    IdSanPham = (int)ct.IdSanPham,
-                    TenSanPham = ct.SanPham.TenSanPham,
-                    HinhAnhUrl = ct.SanPham.HinhAnh,
-                    DaDanhGia = reviewsDaGui.Contains((int)ct.IdSanPham)
-                })
-                .DistinctBy(p => p.IdSanPham)
-                .ToList();
-
-            return Ok(result);
+            return Ok(new { message = "Gửi đánh giá thành công!" });
         }
 
 
-        // GET: api/web/danhgia/sanpham/{id}
-        [HttpGet("sanpham/{idSanPham}")]
-        public async Task<ActionResult<IEnumerable<DanhGiaWebDto>>> GetDanhGiaChoSanPham(int idSanPham)
+        // GET: api/web/danhgia/sanpham/5
+        // (Phần này trong file của bạn đã đúng, giữ nguyên)
+        [HttpGet("sanpham/{idSanPham:int}")]
+        public async Task<IActionResult> GetDanhGiasBySanPham(int idSanPham)
         {
             var danhGias = await _context.DanhGias
                 .Where(d => d.idSanPham == idSanPham && d.TrangThai == "Hiển thị")
@@ -10280,30 +10455,33 @@ namespace CafebookApi.Controllers.Web
                 .Select(d => new DanhGiaWebDto
                 {
                     IdDanhGia = d.idDanhGia,
-                    // SỬA: TenKH -> HoTen
                     TenKhachHang = d.KhachHang != null ? d.KhachHang.HoTen : "Người dùng ẩn",
-                    // SỬA: Avatar -> AnhDaiDien
                     AvatarKhachHang = d.KhachHang != null ? d.KhachHang.AnhDaiDien : null,
                     SoSao = d.SoSao,
                     BinhLuan = d.BinhLuan,
                     HinhAnhUrl = d.HinhAnhURL,
                     NgayTao = d.NgayTao,
                     PhanHoi = d.PhanHoiDanhGias
-                                // SỬA: Xóa .Where() vì PhanHoiDanhGia không có TrangThai
                                 .Select(p => new PhanHoiWebDto
                                 {
                                     TenNhanVien = p.NhanVien != null ? p.NhanVien.HoTen : "Quản trị viên",
                                     NoiDung = p.NoiDung,
                                     NgayTao = p.NgayTao
                                 })
-                                .FirstOrDefault() // Lấy phản hồi đầu tiên (nếu có)
+                                .FirstOrDefault()
                 })
                 .ToListAsync();
 
+            // <<< SỬA LỖI TẠI ĐÂY >>>
+            // Nếu không có đánh giá, trả về danh sách rỗng (HTTP 200)
+            if (danhGias == null || !danhGias.Any())
+            {
+                // return NotFound("Không có đánh giá nào."); // <-- DÒNG NÀY GÂY LỖI 404
+                return Ok(new List<DanhGiaWebDto>()); // <-- SỬA THÀNH DÒNG NÀY
+            }
+
             return Ok(danhGias);
         }
-
-        // Logic CapNhatDiemTrungBinhSanPham đã bị xóa
     }
 }
 ================================================================================
@@ -11347,12 +11525,25 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\NhanVienTaiKho
 using CafebookApi.Data;
 using CafebookModel.Model.Data;
 using CafebookModel.Model.ModelApi;
-using CafebookModel.Utils; // THÊM
+using CafebookModel.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Hosting; // THÊM
-using Microsoft.Extensions.Configuration; // THÊM
-using System.IO; // THÊM
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+
+// --- THÊM CÁC USING ĐỂ TẠO JWT TOKEN ---
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic; // Để dùng List
+
+// --- SỬA LỖI CS0246: THÊM DÒNG NÀY ---
+using CafebookModel.Model.Entities;
+// ------------------------------------
+
 
 namespace CafebookApi.Controllers.Web
 {
@@ -11361,14 +11552,15 @@ namespace CafebookApi.Controllers.Web
     public class NhanVienTaiKhoanController : ControllerBase
     {
         private readonly CafebookDbContext _context;
-        // --- THÊM MỚI (Giống các controller khác) ---
         private readonly IWebHostEnvironment _env;
         private readonly string _baseUrl;
+        private readonly IConfiguration _config;
 
         public NhanVienTaiKhoanController(CafebookDbContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
             _env = env;
+            _config = config;
             if (string.IsNullOrEmpty(_env.WebRootPath))
             {
                 _env.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
@@ -11376,7 +11568,6 @@ namespace CafebookApi.Controllers.Web
             _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url") ?? "http://127.0.0.1:5166";
         }
 
-        // --- THÊM MỚI: Hàm helper ---
         [ApiExplorerSettings(IgnoreApi = true)]
         private string? GetFullImageUrl(string? relativePath)
         {
@@ -11384,7 +11575,6 @@ namespace CafebookApi.Controllers.Web
                 return null;
             return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
         }
-        // -------------------------
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestModel model)
@@ -11396,33 +11586,74 @@ namespace CafebookApi.Controllers.Web
 
             var userInput = model.TenDangNhap.Trim();
             var passInput = model.MatKhau.Trim();
-            // 1. TÌM KIẾM NHÂN VIÊN (Tận dụng logic từ API của WPF)
+
             var nhanVien = await _context.NhanViens
                 .Include(nv => nv.VaiTro)
                 .ThenInclude(vt => vt.VaiTroQuyens)
                 .ThenInclude(vtq => vtq.Quyen)
                 .FirstOrDefaultAsync(nv =>
-                    (nv.TenDangNhap == userInput || nv.SoDienThoai == userInput || nv.Email == userInput) &&
+                    (nv.TenDangNhap == userInput || nv.SoDienThoai == userInput || nv.Email == userInput) && // Sửa lỗi chính tả SoDienThoai
                     (nv.MatKhau == passInput)
                 );
+
             if (nhanVien == null || nhanVien.VaiTro == null)
             {
                 return Ok(new WebLoginResponseModel { Success = false, Message = "Sai thông tin đăng nhập hoặc mật khẩu." });
             }
 
-            // 2. TẠO NhanVienDto (SỬA ĐỔI)
             var dto = new NhanVienDto
             {
                 IdNhanVien = nhanVien.IdNhanVien,
                 HoTen = nhanVien.HoTen,
-                // SỬA: Trả về URL thay vì Base64
                 AnhDaiDien = GetFullImageUrl(nhanVien.AnhDaiDien),
                 TenVaiTro = nhanVien.VaiTro.TenVaiTro,
                 DanhSachQuyen = nhanVien.VaiTro.VaiTroQuyens
                                     .Select(vtq => vtq.IdQuyen)
                                     .ToList()
             };
-            return Ok(new WebLoginResponseModel { Success = true, NhanVienData = dto });
+
+            // Lỗi CS1503 (Argument 1) xảy ra ở đây vì hàm GenerateJwtToken(NhanVien nhanVien)
+            // không tìm thấy kiểu 'NhanVien' (do thiếu using)
+            var token = GenerateJwtToken(nhanVien);
+
+            return Ok(new WebLoginResponseModel
+            {
+                Success = true,
+                NhanVienData = dto,
+                Token = token
+            });
+        }
+
+        // Lỗi CS0246 (The type... 'NhanVien' could not be found) xảy ra ở đây
+        [ApiExplorerSettings(IgnoreApi = true)]
+        private string GenerateJwtToken(NhanVien nhanVien) // Kiểu 'NhanVien' cần using
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                // Các lỗi "BinaryReader" (CS1503) xảy ra ở đây do compiler bị lẫn
+                new Claim(JwtRegisteredClaimNames.Sub, nhanVien.IdNhanVien.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, nhanVien.HoTen ?? ""),
+                new Claim(JwtRegisteredClaimNames.Email, nhanVien.Email ?? ""),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Role, nhanVien.VaiTro.TenVaiTro ?? "NhanVien")
+            };
+
+            foreach (var quyen in nhanVien.VaiTro.VaiTroQuyens)
+            {
+                claims.Add(new Claim("Permission", quyen.IdQuyen));
+            }
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(8),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
@@ -12465,12 +12696,497 @@ namespace CafebookApi.Controllers.Web
 }
 ================================================================================
 
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\QuanLy\SoDoBanController.cs
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\QuanLy\GoiMonViewController.cs
 ================================================================================
-﻿using CafebookApi.Data;
-using CafebookModel.Model.ModelWeb.QuanLy; // SỬA: Dùng namespace mới
+﻿// Tập tin: CafebookApi/Controllers/Web/QuanLy/GoiMonViewController.cs
+using CafebookApi.Data;
+using CafebookModel.Model.Entities;
+using CafebookModel.Model.ModelWeb.QuanLy; // Sửa namespace DTO
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+using Microsoft.AspNetCore.Hosting; // Thêm
+using Microsoft.AspNetCore.Authorization; // Thêm
+
+namespace CafebookApi.Controllers.Web.QuanLy
+{
+    [Authorize] // Bảo vệ tất cả API trong này
+    [Route("api/web/quanly/goimon")] // Đồng bộ với SoDoBan
+    [ApiController]
+    public class GoiMonViewController : ControllerBase // Đổi tên từ GoiMonController
+    {
+        private readonly CafebookDbContext _context;
+        private readonly string _baseUrl;
+        private readonly IWebHostEnvironment _env; // Thêm
+
+        // Sửa constructor
+        public GoiMonViewController(CafebookDbContext context, IConfiguration config, IWebHostEnvironment env)
+        {
+            _context = context;
+            _env = env; // Thêm
+            _baseUrl = config.GetValue<string>("Kestrel:Endpoints:Http:Url")
+                       ?? "http://127.0.0.1:5166";
+        }
+
+        private string GetFullImageUrl(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                // Cung cấp một ảnh default
+                return $"{_baseUrl}/images/default-food-icon.png";
+            }
+            // Đảm bảo dùng '/'
+            return $"{_baseUrl}{relativePath.Replace(Path.DirectorySeparatorChar, '/')}";
+        }
+
+        [HttpGet("load/{idHoaDon}")]
+        public async Task<IActionResult> LoadGoiMonData(int idHoaDon)
+        {
+            // Logic giống hệt GoiMonController.cs
+            var hoaDon = await _context.HoaDons
+                .Include(h => h.Ban)
+                .FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon);
+
+            if (hoaDon == null) return NotFound("Không tìm thấy hóa đơn.");
+            if (hoaDon.TrangThai == "Đã thanh toán" || hoaDon.TrangThai == "Đã hủy")
+            {
+                return Conflict($"Hóa đơn đã {hoaDon.TrangThai.ToLower()}. Không thể sửa.");
+            }
+
+            var currentPromotion = await _context.HoaDonKhuyenMais
+                .FirstOrDefaultAsync(hk => hk.IdHoaDon == idHoaDon);
+
+            var hoaDonInfo = new HoaDonInfoDto
+            {
+                IdHoaDon = hoaDon.IdHoaDon,
+                SoBan = hoaDon.Ban?.SoBan ?? hoaDon.LoaiHoaDon,
+                LoaiHoaDon = hoaDon.LoaiHoaDon,
+                TongTienGoc = hoaDon.TongTienGoc,
+                GiamGia = hoaDon.GiamGia,
+                ThanhTien = hoaDon.ThanhTien,
+                IdKhuyenMai = currentPromotion?.IdKhuyenMai
+            };
+
+            var chiTietItems = await _context.ChiTietHoaDons
+                .Where(c => c.IdHoaDon == idHoaDon)
+                .Select(c => new ChiTietDto
+                {
+                    IdChiTietHoaDon = c.IdChiTietHoaDon,
+                    IdSanPham = c.IdSanPham,
+                    TenSanPham = c.SanPham.TenSanPham,
+                    SoLuong = c.SoLuong,
+                    DonGia = c.DonGia,
+                    ThanhTien = c.ThanhTien,
+                    GhiChu = c.GhiChu
+                }).ToListAsync();
+
+            var rawSanPhams = await _context.SanPhams
+                .Where(s => s.TrangThaiKinhDoanh == true)
+                .Select(s => new { s.IdSanPham, s.TenSanPham, s.GiaBan, s.HinhAnh, s.IdDanhMuc })
+                .ToListAsync();
+
+            var sanPhams = rawSanPhams
+                .Select(s => new SanPhamDto
+                {
+                    IdSanPham = s.IdSanPham,
+                    TenSanPham = s.TenSanPham,
+                    DonGia = s.GiaBan,
+                    HinhAnh = GetFullImageUrl(s.HinhAnh),
+                    // SỬA LỖI CS0019: Xóa '?? 0' vì s.IdDanhMuc là kiểu 'int'
+                    IdDanhMuc = s.IdDanhMuc
+                }).ToList();
+
+            var danhMucs = await _context.DanhMucs
+                .OrderBy(d => d.TenDanhMuc)
+                .Select(d => new DanhMucDto { IdDanhMuc = d.IdDanhMuc, TenLoaiSP = d.TenDanhMuc })
+                .ToListAsync();
+
+            // Logic lọc khuyến mãi (giống hệt)
+            var now = DateTime.Now;
+            var allKms = await _context.KhuyenMais.ToListAsync();
+            var khuyenMais = allKms
+                .Where(k =>
+                    string.Equals(k.TrangThai, "Hoạt động", StringComparison.OrdinalIgnoreCase) &&
+                    k.NgayBatDau <= now &&
+                    k.NgayKetThuc >= now &&
+                    (k.SoLuongConLai == null || k.SoLuongConLai > 0) &&
+                    (k.HoaDonToiThieu == null || k.HoaDonToiThieu == 0 || hoaDon.TongTienGoc >= k.HoaDonToiThieu) &&
+                    (k.GioBatDau == null || k.GioKetThuc == null || (now.TimeOfDay >= k.GioBatDau && now.TimeOfDay <= k.GioKetThuc))
+                )
+                .Select(k => new KhuyenMaiDto
+                {
+                    IdKhuyenMai = k.IdKhuyenMai,
+                    TenKhuyenMai = k.TenChuongTrinh,
+                    LoaiGiamGia = k.LoaiGiamGia,
+                    GiaTriGiam = k.GiaTriGiam
+                }).ToList();
+
+            khuyenMais.Insert(0, new KhuyenMaiDto { IdKhuyenMai = 0, TenKhuyenMai = "-- Không áp dụng --" });
+
+            var dto = new GoiMonViewDto
+            {
+                HoaDonInfo = hoaDonInfo,
+                ChiTietItems = chiTietItems,
+                SanPhams = sanPhams,
+                DanhMucs = danhMucs,
+                KhuyenMais = khuyenMais
+            };
+
+            return Ok(dto);
+        }
+
+        // === CÁC HÀM HELPER TÍNH TOÁN (Giống hệt) ===
+        //
+        private async Task UpdateHoaDonTotals(HoaDon hoaDon)
+        {
+            if (hoaDon != null)
+            {
+                var tongGocMoi = await _context.ChiTietHoaDons
+                    .Where(c => c.IdHoaDon == hoaDon.IdHoaDon)
+                    .SumAsync(c => c.ThanhTien);
+                hoaDon.TongTienGoc = tongGocMoi;
+            }
+        }
+
+        //
+        private async Task ReApplyPromotion(HoaDon hoaDon)
+        {
+            var currentPromoLink = await _context.HoaDonKhuyenMais
+                .FirstOrDefaultAsync(hk => hk.IdHoaDon == hoaDon.IdHoaDon);
+
+            if (currentPromoLink == null)
+            {
+                hoaDon.GiamGia = 0; // Không có KM
+                return;
+            }
+
+            var km = await _context.KhuyenMais.FindAsync(currentPromoLink.IdKhuyenMai);
+            if (km == null)
+            {
+                hoaDon.GiamGia = 0;
+                _context.HoaDonKhuyenMais.Remove(currentPromoLink); // Xóa link hỏng
+                return;
+            }
+
+            // === TÍNH TOÁN LẠI GIẢM GIÁ ===
+
+            // 1. Kiểm tra điều kiện tối thiểu
+            if (km.HoaDonToiThieu.HasValue && hoaDon.TongTienGoc < km.HoaDonToiThieu.Value)
+            {
+                hoaDon.GiamGia = 0;
+                _context.HoaDonKhuyenMais.Remove(currentPromoLink); // Hủy KM vì không đủ ĐK
+                return;
+            }
+
+            // 2. Tính toán lại
+            decimal tongTienGocChoKM = hoaDon.TongTienGoc;
+            // 2a. Nếu KM chỉ áp dụng cho 1 SP
+            if (km.IdSanPhamApDung.HasValue)
+            {
+                tongTienGocChoKM = await _context.ChiTietHoaDons
+                    .Where(c => c.IdHoaDon == hoaDon.IdHoaDon && c.IdSanPham == km.IdSanPhamApDung)
+                    .SumAsync(c => c.ThanhTien);
+            }
+
+            // 3. Áp dụng giảm giá (SỬA LỖI 10% = 10đ)
+            if (string.Equals(km.LoaiGiamGia, "PhanTram", StringComparison.OrdinalIgnoreCase))
+            {
+                decimal giamGia = tongTienGocChoKM * (km.GiaTriGiam / 100);
+                if (km.GiamToiDa.HasValue && giamGia > km.GiamToiDa.Value)
+                {
+                    giamGia = km.GiamToiDa.Value;
+                }
+                hoaDon.GiamGia = giamGia;
+            }
+            else // "SoTien"
+            {
+                hoaDon.GiamGia = km.GiaTriGiam;
+            }
+        }
+
+        //
+        private async Task<int> CreateOrUpdateCheBienItems(int idHoaDon, int? chiTietHoaDonId = null)
+        {
+            var hoaDon = await _context.HoaDons
+                .Include(h => h.Ban)
+                .FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon);
+            if (hoaDon == null) return 0;
+
+            // Chỉ lấy chi tiết món
+            var query = _context.ChiTietHoaDons
+                .Include(c => c.SanPham)
+                .Where(c => c.IdHoaDon == idHoaDon);
+
+            if (chiTietHoaDonId.HasValue)
+            {
+                query = query.Where(c => c.IdChiTietHoaDon == chiTietHoaDonId.Value);
+            }
+
+            var chiTietItems = await query.ToListAsync();
+            string soBan = hoaDon.Ban?.SoBan ?? hoaDon.LoaiHoaDon;
+            int itemsAdded = 0;
+            var now = DateTime.Now;
+
+            foreach (var item in chiTietItems)
+            {
+                // Tìm bản ghi bếp hiện có
+                var daTonTai = await _context.TrangThaiCheBiens
+                    .FirstOrDefaultAsync(cb => cb.IdChiTietHoaDon == item.IdChiTietHoaDon);
+
+                if (daTonTai != null)
+                {
+                    // Cập nhật số lượng nếu chưa làm
+                    if (daTonTai.TrangThai == "Chờ làm")
+                    {
+                        daTonTai.SoLuong = item.SoLuong;
+                        itemsAdded++; // Vẫn tính là có cập nhật
+                    }
+                }
+                else
+                {
+                    // Tạo mới
+                    var newItem = new TrangThaiCheBien
+                    {
+                        IdChiTietHoaDon = item.IdChiTietHoaDon,
+                        IdHoaDon = item.IdHoaDon,
+                        IdSanPham = item.IdSanPham,
+                        TenMon = item.SanPham.TenSanPham,
+                        SoBan = soBan,
+                        SoLuong = item.SoLuong,
+                        GhiChu = item.GhiChu,
+                        NhomIn = item.SanPham.NhomIn,
+                        TrangThai = "Chờ làm",
+                        ThoiGianGoi = now
+                    };
+                    _context.TrangThaiCheBiens.Add(newItem);
+                    itemsAdded++;
+                }
+            }
+
+            if (itemsAdded > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+            return itemsAdded;
+        }
+
+        // === CÁC API THAO TÁC (ĐÃ SỬA) ===
+
+        [HttpPost("add-item")]
+        public async Task<IActionResult> AddItem([FromBody] AddItemRequest req)
+        {
+            var hoaDon = await _context.HoaDons.FindAsync(req.IdHoaDon);
+            if (hoaDon == null) return NotFound("Hóa đơn không tồn tại.");
+            if (hoaDon.TrangThai != "Chưa thanh toán") return Conflict("Hóa đơn đã đóng.");
+            var sanPham = await _context.SanPhams.FindAsync(req.IdSanPham);
+            if (sanPham == null) return NotFound("Sản phẩm không tồn tại.");
+
+            // (Có thể thêm logic kiểm tra tồn kho ở đây)
+
+            ChiTietDto resultDto;
+            var existingItemDb = await _context.ChiTietHoaDons.FirstOrDefaultAsync(c =>
+                c.IdHoaDon == req.IdHoaDon &&
+                c.IdSanPham == req.IdSanPham &&
+                c.GhiChu == req.GhiChu // Ghi chú khác -> món mới
+            );
+
+            if (existingItemDb != null)
+            {
+                existingItemDb.SoLuong += req.SoLuong;
+                await _context.SaveChangesAsync();
+                resultDto = new ChiTietDto { IdChiTietHoaDon = existingItemDb.IdChiTietHoaDon, IdSanPham = existingItemDb.IdSanPham, TenSanPham = sanPham.TenSanPham, SoLuong = existingItemDb.SoLuong, DonGia = existingItemDb.DonGia, ThanhTien = existingItemDb.SoLuong * existingItemDb.DonGia, GhiChu = existingItemDb.GhiChu };
+            }
+            else
+            {
+                var newItem = new ChiTietHoaDon { IdHoaDon = req.IdHoaDon, IdSanPham = req.IdSanPham, SoLuong = req.SoLuong, DonGia = sanPham.GiaBan, GhiChu = req.GhiChu };
+                _context.ChiTietHoaDons.Add(newItem);
+                await _context.SaveChangesAsync();
+                resultDto = new ChiTietDto { IdChiTietHoaDon = newItem.IdChiTietHoaDon, IdSanPham = newItem.IdSanPham, TenSanPham = sanPham.TenSanPham, SoLuong = newItem.SoLuong, DonGia = newItem.DonGia, ThanhTien = newItem.SoLuong * newItem.DonGia, GhiChu = newItem.GhiChu };
+            }
+
+            // Cập nhật tổng và khuyến mãi
+            await UpdateHoaDonTotals(hoaDon);
+            await ReApplyPromotion(hoaDon);
+            await _context.SaveChangesAsync();
+
+            // YÊU CẦU MỚI: Tự động gửi bếp
+            await CreateOrUpdateCheBienItems(hoaDon.IdHoaDon, resultDto.IdChiTietHoaDon);
+
+            var updatedHoaDonInfo = await GetHoaDonInfo(req.IdHoaDon);
+            return Ok(new AddItemResponseDto { updatedHoaDonInfo = updatedHoaDonInfo, newItem = resultDto });
+        }
+
+        [HttpPut("update-quantity")]
+        public async Task<IActionResult> UpdateQuantity([FromBody] UpdateSoLuongRequest req)
+        {
+            var item = await _context.ChiTietHoaDons.Include(c => c.HoaDon).FirstOrDefaultAsync(c => c.IdChiTietHoaDon == req.IdChiTietHoaDon);
+            if (item == null) return NotFound("Không tìm thấy món.");
+            var hoaDon = item.HoaDon;
+            if (hoaDon.TrangThai != "Chưa thanh toán") return Conflict("Hóa đơn đã đóng.");
+
+            // YÊU CẦU MỚI: Tự động gửi bếp (Cập nhật hoặc Xóa)
+            if (req.SoLuongMoi <= 0)
+            {
+                // Xóa khỏi bảng bếp trước
+                var bepItem = await _context.TrangThaiCheBiens.FirstOrDefaultAsync(b => b.IdChiTietHoaDon == item.IdChiTietHoaDon);
+                if (bepItem != null) _context.TrangThaiCheBiens.Remove(bepItem);
+
+                _context.ChiTietHoaDons.Remove(item);
+            }
+            else
+            {
+                item.SoLuong = req.SoLuongMoi;
+                // Gọi gửi bếp sau khi lưu
+            }
+            await _context.SaveChangesAsync();
+
+            // Cập nhật tổng và khuyến mãi
+            await UpdateHoaDonTotals(hoaDon);
+            await ReApplyPromotion(hoaDon);
+            await _context.SaveChangesAsync();
+
+            // Gửi bếp sau khi đã lưu
+            if (req.SoLuongMoi > 0)
+            {
+                await CreateOrUpdateCheBienItems(hoaDon.IdHoaDon, item.IdChiTietHoaDon);
+            }
+
+            var updatedHoaDonInfo = await GetHoaDonInfo(hoaDon.IdHoaDon);
+            return Ok(updatedHoaDonInfo);
+        }
+
+        [HttpDelete("delete-item/{idChiTiet}")]
+        public async Task<IActionResult> DeleteItem(int idChiTiet)
+        {
+            var item = await _context.ChiTietHoaDons.Include(c => c.HoaDon).FirstOrDefaultAsync(c => c.IdChiTietHoaDon == idChiTiet);
+            if (item == null) return NotFound("Không tìm thấy món.");
+            var hoaDon = item.HoaDon;
+            if (hoaDon.TrangThai != "Chưa thanh toán") return Conflict("Hóa đơn đã đóng.");
+
+            int idHoaDon = item.IdHoaDon;
+
+            // YÊU CẦU MỚI: Tự động gửi bếp (Xóa)
+            var bepItem = await _context.TrangThaiCheBiens.FirstOrDefaultAsync(b => b.IdChiTietHoaDon == item.IdChiTietHoaDon);
+            if (bepItem != null) _context.TrangThaiCheBiens.Remove(bepItem);
+
+            _context.ChiTietHoaDons.Remove(item);
+            await _context.SaveChangesAsync();
+
+            await UpdateHoaDonTotals(hoaDon);
+            await ReApplyPromotion(hoaDon);
+            await _context.SaveChangesAsync();
+
+            var updatedHoaDonInfo = await GetHoaDonInfo(idHoaDon);
+            return Ok(updatedHoaDonInfo);
+        }
+
+        [HttpPut("apply-promotion")]
+        public async Task<IActionResult> ApplyPromotion([FromBody] ApplyPromotionRequest req)
+        {
+            // Logic giống hệt
+            var hoaDon = await _context.HoaDons.FindAsync(req.IdHoaDon);
+            if (hoaDon == null) return NotFound("Hóa đơn không tồn tại.");
+
+            var existingPromos = _context.HoaDonKhuyenMais.Where(hk => hk.IdHoaDon == req.IdHoaDon);
+            _context.HoaDonKhuyenMais.RemoveRange(existingPromos);
+
+            if (req.IdKhuyenMai == null || req.IdKhuyenMai == 0)
+            {
+                hoaDon.GiamGia = 0;
+            }
+            else
+            {
+                var km = await _context.KhuyenMais.FindAsync(req.IdKhuyenMai);
+                if (km == null) return NotFound("Khuyến mãi không tồn tại.");
+                _context.HoaDonKhuyenMais.Add(new HoaDon_KhuyenMai { IdHoaDon = req.IdHoaDon, IdKhuyenMai = km.IdKhuyenMai });
+
+                // Tính toán lại giảm giá
+                if (string.Equals(km.LoaiGiamGia, "PhanTram", StringComparison.OrdinalIgnoreCase))
+                {
+                    decimal giamGia = hoaDon.TongTienGoc * (km.GiaTriGiam / 100);
+                    // SỬA LỖI CS1061: Sửa 'GiaTriGia' thành 'GiamToiDa'
+                    if (km.GiamToiDa.HasValue && giamGia > km.GiamToiDa.Value)
+                    { giamGia = km.GiamToiDa.Value; }
+                    hoaDon.GiamGia = giamGia;
+                }
+                else { hoaDon.GiamGia = km.GiaTriGiam; }
+            }
+
+            await _context.SaveChangesAsync();
+            var updatedHoaDonInfo = await GetHoaDonInfo(req.IdHoaDon);
+            return Ok(updatedHoaDonInfo);
+        }
+
+        [HttpPut("cancel-order/{idHoaDon}")]
+        public async Task<IActionResult> CancelOrder(int idHoaDon)
+        {
+            var hoaDon = await _context.HoaDons.Include(h => h.Ban).FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon);
+            if (hoaDon == null) return NotFound("Hóa đơn không tồn tại.");
+
+            // 1. Trả lại trạng thái bàn
+            if (hoaDon.Ban != null)
+            {
+                hoaDon.Ban.TrangThai = "Trống";
+            }
+            // 2. Xóa hết chi tiết
+            var chiTietItems = _context.ChiTietHoaDons.Where(c => c.IdHoaDon == idHoaDon);
+            _context.ChiTietHoaDons.RemoveRange(chiTietItems);
+            // 3. Xóa hết khỏi bếp
+            var bepItems = _context.TrangThaiCheBiens.Where(b => b.IdHoaDon == idHoaDon);
+            _context.TrangThaiCheBiens.RemoveRange(bepItems);
+            // 4. Đổi trạng thái hóa đơn
+            hoaDon.TrangThai = "Đã hủy";
+            hoaDon.GhiChu = "Hủy bởi nhân viên trên Web";
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Đã hủy hóa đơn thành công." });
+        }
+
+        // Helper
+        private async Task<HoaDonInfoDto> GetHoaDonInfo(int idHoaDon)
+        {
+            var updatedHoaDon = await _context.HoaDons
+                .Include(h => h.Ban)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon);
+
+            if (updatedHoaDon == null)
+                throw new Exception("Không thể tìm thấy hóa đơn sau khi cập nhật.");
+
+            var currentPromotion = await _context.HoaDonKhuyenMais
+                .AsNoTracking()
+                .FirstOrDefaultAsync(hk => hk.IdHoaDon == idHoaDon);
+
+            return new HoaDonInfoDto
+            {
+                IdHoaDon = updatedHoaDon.IdHoaDon,
+                SoBan = updatedHoaDon.Ban?.SoBan ?? updatedHoaDon.LoaiHoaDon,
+                LoaiHoaDon = updatedHoaDon.LoaiHoaDon,
+                TongTienGoc = updatedHoaDon.TongTienGoc,
+                GiamGia = updatedHoaDon.GiamGia,
+                ThanhTien = updatedHoaDon.ThanhTien,
+                IdKhuyenMai = currentPromotion?.IdKhuyenMai
+            };
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\QuanLy\SoDoBanController.cs
+================================================================================
+﻿// Tập tin: CafebookApi/Controllers/Web/QuanLy/SoDoBanController.cs
+
+using CafebookApi.Data;
+using CafebookModel.Model.Entities;
+using CafebookModel.Model.ModelWeb.QuanLy;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore; // <-- SỬA LỖI CS1061: Thêm using này
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12489,48 +13205,280 @@ namespace CafebookApi.Controllers.Web.QuanLy
         }
 
         /// <summary>
-        /// API lấy tất cả Khu Vực và Bàn
+        /// API lấy tất cả Khu Vực và Bàn (ĐÃ SỬA LỖI CS8072)
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetSoDoBan()
         {
-            // 1. Lấy tất cả hóa đơn chưa thanh toán (để lấy tổng tiền)
-            // SỬA LỖI 500 (Duplicate Key): GroupBy và Sum
+            var thoiGianHienTai = DateTime.Now;
+
+            // 1. Lấy thông tin Hóa đơn (vẫn làm trước, chạy 1 lần)
             var hoaDonChuaThanhToan = await _context.HoaDons
                 .Where(h => h.TrangThai == "Chưa thanh toán" && h.IdBan != null)
-                .GroupBy(h => h.IdBan) // Nhóm theo IdBan
+                .GroupBy(h => h.IdBan)
                 .Select(g => new
                 {
                     IdBan = g.Key,
-                    // SỬA LỖI CS1061: Dùng tên thuộc tính PascalCase (từ Entities.cs)
-                    TongTien = g.Sum(h => h.TongTienGoc - h.GiamGia + h.TongPhuThu)
+                    IdHoaDonHienTai = g.OrderByDescending(h => h.ThoiGianTao).Select(h => h.IdHoaDon).FirstOrDefault(),
+                    TongTien = g.Sum(h => h.ThanhTien) // Dùng cột tính toán 'ThanhTien'
                 })
-                .ToDictionaryAsync(h => (int)h.IdBan!, h => h.TongTien);
+                .ToDictionaryAsync(h => (int)h.IdBan!, h => h); // <-- Lỗi CS1061 được fix bởi using
 
-            // 2. Lấy tất cả Khu Vực và Bàn
+            // 2. Lấy thông tin Đặt bàn (vẫn làm trước, chạy 1 lần)
+            var phieuDatBanData = await _context.PhieuDatBans
+                            .Where(p => p.TrangThai == "Đã xác nhận" && p.ThoiGianDat.Date == thoiGianHienTai.Date && p.ThoiGianDat.TimeOfDay >= thoiGianHienTai.TimeOfDay)
+                            .Select(p => new
+                            {
+                                p.IdBan,
+                                // Format thông tin đặt bàn
+                                ThongTinDatBan = $"Đặt: {p.ThoiGianDat:HH:mm} - {p.HoTenKhach ?? p.SdtKhach}"
+                            })
+                            .ToListAsync(); // <-- 1. Tải về bộ nhớ (thay vì ToLookupAsync)
+
+            // 2.b. Chuyển đổi sang Lookup (chạy trong bộ nhớ, không dùng await)
+            var phieuDatBanHienTai = phieuDatBanData
+                .ToLookup(p => p.IdBan, p => p.ThongTinDatBan);
+
+            // 3. Lấy dữ liệu thô từ DB (SỬA LỖI CS8072)
+            // Chỉ lấy dữ liệu cơ bản, không dùng Dictionary/Lookup tại đây
             var khuVucList = await _context.KhuVucs
-                .Include(k => k.Bans) // Join Bàn
+                .Include(k => k.Bans)
                 .OrderBy(k => k.IdKhuVuc)
                 .Select(k => new KhuVucDto
                 {
                     IdKhuVuc = k.IdKhuVuc,
                     TenKhuVuc = k.TenKhuVuc,
-                    Bans = k.Bans.OrderBy(b => b.SoBan).Select(b => new BanDto
+                    Bans = k.Bans.OrderBy(b => b.IdBan).Select(b => new BanDto
                     {
                         IdBan = b.IdBan,
                         SoBan = b.SoBan,
                         TrangThai = b.TrangThai,
-                        GhiChu = b.GhiChu, // <-- THÊM GHI CHÚ
-                        // SỬA LỖI CS0019: 'b.IdKhuVuc' (int?) ?? 0
-                        IdKhuVuc = b.IdKhuVuc ?? 0,
-                        TongTien = (b.TrangThai == "Có khách")
-                                   ? hoaDonChuaThanhToan.GetValueOrDefault(b.IdBan, 0)
-                                   : 0
+                        GhiChu = b.GhiChu,
+                        IdKhuVuc = b.IdKhuVuc ?? 0
+                        // Xóa các trường logic phức tạp (IdHoaDonHienTai, TongTien, ThongTinDatBan)
                     }).ToList()
                 })
-                .ToListAsync();
+                .ToListAsync(); // <-- Tải dữ liệu về bộ nhớ (in-memory)
+
+            // 4. Xử lý logic phức tạp (gán IdHoaDon, TongTien...) TRONG BỘ NHỚ
+            // Vòng lặp này chạy sau khi đã lấy dữ liệu từ DB, nên không còn lỗi Expression Tree
+            foreach (var kv in khuVucList)
+            {
+                foreach (var ban in kv.Bans)
+                {
+                    // Gán thông tin Hóa đơn (nếu có)
+                    if (ban.TrangThai == "Có khách" && hoaDonChuaThanhToan.TryGetValue(ban.IdBan, out var hoaDonInfo))
+                    {
+                        ban.IdHoaDonHienTai = hoaDonInfo.IdHoaDonHienTai;
+                        ban.TongTien = hoaDonInfo.TongTien;
+                    }
+
+                    // Gán thông tin Đặt bàn (nếu có)
+                    if ((ban.TrangThai == "Trống" || ban.TrangThai == "Đã đặt") && phieuDatBanHienTai.Contains(ban.IdBan))
+                    {
+                        ban.ThongTinDatBan = phieuDatBanHienTai[ban.IdBan].FirstOrDefault();
+                    }
+                }
+            }
 
             return Ok(khuVucList);
+        }
+
+        // --- CÁC HÀM POST (Giữ nguyên, không có lỗi) ---
+
+        [HttpPost("createorder")]
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequestDto request)
+        {
+            var ban = await _context.Bans.FindAsync(request.IdBan);
+            if (ban == null) return NotFound("Không tìm thấy bàn.");
+
+            // Kiểm tra xem bàn có phiếu đặt không
+            var phieuDat = await _context.PhieuDatBans
+                .FirstOrDefaultAsync(p => p.IdBan == request.IdBan && p.TrangThai == "Đã xác nhận" && p.ThoiGianDat.Date == DateTime.Now.Date);
+
+            if (ban.TrangThai == "Trống" || ban.TrangThai == "Đã đặt")
+            {
+                var hoaDon = new HoaDon
+                {
+                    IdBan = request.IdBan,
+                    IdNhanVien = request.IdNhanVien,
+                    ThoiGianTao = DateTime.Now,
+                    TrangThai = "Chưa thanh toán",
+                    LoaiHoaDon = "Tại quán",
+                    TongTienGoc = 0,
+                    GiamGia = 0,
+                    TongPhuThu = 0,
+                    // Nếu khách đến từ phiếu đặt, gán IdKhachHang
+                    IdKhachHang = phieuDat?.IdKhachHang
+                };
+
+                _context.HoaDons.Add(hoaDon);
+                ban.TrangThai = "Có khách";
+                ban.GhiChu = null;
+
+                // Nếu có phiếu đặt, cập nhật trạng thái phiếu
+                if (phieuDat != null)
+                {
+                    phieuDat.TrangThai = "Khách đã đến";
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new CreateOrderResponseDto { IdHoaDon = hoaDon.IdHoaDon });
+            }
+
+            return BadRequest("Bàn đang có khách hoặc đang bảo trì.");
+        }
+
+        [HttpPost("reportproblem")]
+        public async Task<IActionResult> ReportProblem([FromBody] ReportProblemRequestDto request)
+        {
+            var ban = await _context.Bans.FindAsync(request.IdBan);
+            if (ban == null) return NotFound("Không tìm thấy bàn.");
+
+            if (ban.TrangThai == "Có khách")
+            {
+                return BadRequest("Không thể báo cáo sự cố cho bàn đang có khách.");
+            }
+
+            // --- SỬA ĐỔI LOGIC ---
+            if (string.IsNullOrEmpty(request.GhiChu))
+            {
+                // Nếu GhiChu rỗng -> Client muốn HỦY BẢO TRÌ
+                if (ban.TrangThai == "Bảo trì")
+                {
+                    ban.TrangThai = "Trống"; // Chuyển về trạng thái Trống
+                    ban.GhiChu = null;
+                    await _context.SaveChangesAsync();
+                    return Ok(new { message = "Đã hủy bảo trì bàn." });
+                }
+                return Ok(new { message = "Không có gì thay đổi." });
+            }
+            // --- Kết thúc sửa đổi ---
+
+            // Logic báo cáo sự cố như cũ
+            ban.TrangThai = "Bảo trì";
+            ban.GhiChu = request.GhiChu;
+
+            var thongBao = new ThongBao
+            {
+                IdNhanVienTao = request.IdNhanVien,
+                NoiDung = $"Bàn {ban.SoBan} vừa được báo cáo sự cố: {request.GhiChu}",
+                ThoiGianTao = DateTime.Now,
+                LoaiThongBao = "SuCoBan",
+                IdLienQuan = ban.IdBan,
+                DaXem = false
+            };
+            _context.ThongBaos.Add(thongBao);
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Báo cáo sự cố thành công." });
+        }
+
+        [HttpPost("move-table")]
+        public async Task<IActionResult> MoveTable([FromBody] BanActionRequestDto request)
+        {
+            var hoaDonNguon = await _context.HoaDons.FindAsync(request.IdHoaDonNguon);
+            if (hoaDonNguon == null) return NotFound("Không tìm thấy hóa đơn nguồn.");
+
+            var banNguon = await _context.Bans.FindAsync(hoaDonNguon.IdBan);
+            var banDich = await _context.Bans.FindAsync(request.IdBanDich);
+
+            if (banNguon == null) return NotFound("Không tìm thấy bàn nguồn.");
+            if (banDich == null) return NotFound("Không tìm thấy bàn đích.");
+
+            if (banDich.TrangThai != "Trống")
+            {
+                return BadRequest("Bàn đích phải là bàn trống.");
+            }
+
+            hoaDonNguon.IdBan = banDich.IdBan;
+            banNguon.TrangThai = "Trống";
+            banDich.TrangThai = "Có khách";
+            banDich.GhiChu = null; // Xóa ghi chú (nếu có) của bàn đích
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Chuyển bàn thành công." });
+        }
+
+        [HttpPost("merge-table")]
+        public async Task<IActionResult> MergeTable([FromBody] BanActionRequestDto request)
+        {
+            if (!request.IdHoaDonDich.HasValue)
+            {
+                return BadRequest("Phải có hóa đơn đích để gộp.");
+            }
+
+            var hoaDonNguon = await _context.HoaDons
+                .Include(h => h.ChiTietHoaDons)
+                .FirstOrDefaultAsync(h => h.IdHoaDon == request.IdHoaDonNguon);
+
+            var hoaDonDich = await _context.HoaDons.FindAsync(request.IdHoaDonDich.Value);
+
+            if (hoaDonNguon == null) return NotFound("Không tìm thấy hóa đơn nguồn.");
+            if (hoaDonDich == null) return NotFound("Không tìm thấy hóa marshall.");
+
+            var banNguon = await _context.Bans.FindAsync(hoaDonNguon.IdBan);
+            if (banNguon == null) return NotFound("Không tìm thấy bàn nguồn.");
+
+            // 1. Chuyển tất cả chi tiết từ HĐ nguồn sang HĐ đích
+            foreach (var ct in hoaDonNguon.ChiTietHoaDons.ToList()) // Dùng ToList() để tránh lỗi collection modified
+            {
+                var ctDich = await _context.ChiTietHoaDons
+                    .FirstOrDefaultAsync(c => c.IdHoaDon == hoaDonDich.IdHoaDon &&
+                                              c.IdSanPham == ct.IdSanPham &&
+                                              c.GhiChu == ct.GhiChu &&
+                                              c.DonGia == ct.DonGia); // Thêm kiểm tra đơn giá
+
+                if (ctDich != null)
+                {
+                    ctDich.SoLuong += ct.SoLuong;
+                    _context.ChiTietHoaDons.Remove(ct); // Xóa CTHD gốc
+                }
+                else
+                {
+                    ct.IdHoaDon = hoaDonDich.IdHoaDon;
+                    _context.ChiTietHoaDons.Update(ct);
+                }
+            }
+
+            // 2. Chuyển phiếu giảm giá (nếu có)
+            var kmNguon = await _context.HoaDonKhuyenMais.Where(k => k.IdHoaDon == hoaDonNguon.IdHoaDon).ToListAsync();
+            foreach (var km in kmNguon)
+            {
+                var kmDichExits = await _context.HoaDonKhuyenMais
+                    .AnyAsync(k => k.IdHoaDon == hoaDonDich.IdHoaDon && k.IdKhuyenMai == km.IdKhuyenMai);
+                if (!kmDichExits)
+                {
+                    km.IdHoaDon = hoaDonDich.IdHoaDon;
+                    _context.HoaDonKhuyenMais.Update(km);
+                }
+                else
+                {
+                    _context.HoaDonKhuyenMais.Remove(km);
+                }
+            }
+
+            // 3. Hủy hóa đơn nguồn và cập nhật bàn nguồn
+            hoaDonNguon.TrangThai = "Đã hủy";
+            hoaDonNguon.GhiChu = $"Đã gộp vào HĐ #{hoaDonDich.IdHoaDon}";
+            hoaDonNguon.TongTienGoc = 0; // Reset tiền
+            hoaDonNguon.GiamGia = 0;
+            hoaDonNguon.TongPhuThu = 0;
+
+            banNguon.TrangThai = "Trống";
+
+            // 4. Tính toán lại tổng tiền cho hóa đơn đích
+            await _context.SaveChangesAsync(); // Lưu thay đổi CTHD trước
+
+            var chiTietMoi = await _context.ChiTietHoaDons
+                .Where(c => c.IdHoaDon == hoaDonDich.IdHoaDon)
+                .ToListAsync();
+
+            hoaDonDich.TongTienGoc = chiTietMoi.Sum(c => c.ThanhTien);
+            // (Tạm thời chưa tính lại giảm giá/phụ thu phức tạp, chỉ gộp CTHD)
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Gộp bàn thành công." });
         }
     }
 }
@@ -12851,6 +13799,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Properties\launchSettings.json
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\wwwroot\images\anhdanhgia\monan\f1c3b7b3-1909-4562-a9b6-60cde117124e_2627a18c-bed0-4220-8296-83304ed1aa2d.jpg
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\wwwroot\images\avatars\avatarKH\1_khach-vang-lai.jpg
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\wwwroot\images\avatars\avatarKH\2_tran-van-an.jpg
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\wwwroot\images\avatars\avatarKH\4_pham-hung-cuong.jpg

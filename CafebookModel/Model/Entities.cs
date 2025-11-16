@@ -984,10 +984,23 @@ namespace CafebookModel.Model.Entities
         [StringLength(50)]
         public string? LoaiChat { get; set; }
 
+        // === CẬP NHẬT (THEO FSD MỚI) ===
+        [StringLength(100)]
+        public string? GuestSessionId { get; set; } // Hỗ trợ khách vãng lai
+
+        [StringLength(20)]
+        public string? LoaiTinNhan { get; set; } // "KhachHang", "AI", "NhanVien"
+
+        public int? IdThongBaoHoTro { get; set; }
+        // === KẾT THÚC CẬP NHẬT ===
+
         [ForeignKey("IdKhachHang")]
         public virtual KhachHang? KhachHang { get; set; }
         [ForeignKey("IdNhanVien")]
         public virtual NhanVien? NhanVien { get; set; }
+
+        [ForeignKey("IdThongBaoHoTro")]
+        public virtual ThongBaoHoTro? ThongBaoHoTro { get; set; }
     }
 
     [Table("DeXuatSanPham")]
@@ -1194,5 +1207,48 @@ namespace CafebookModel.Model.Entities
             // Constructor gán giá trị cho thuộc tính NgayTao ở trên
             this.NgayTao = DateTime.Now;
         }
+    }
+
+    [Table("ThongBaoHoTro")]
+    public class ThongBaoHoTro
+    {
+        [Key]
+        public int IdThongBao { get; set; }
+
+        // ======================================
+        // === SỬA LỖI CS0266 TẠI ĐÂY ===
+        // ======================================
+        // 1. Xóa [Required]
+        // 2. Thêm dấu '?' để cho phép NULL
+        public int? IdKhachHang { get; set; }
+        // ======================================
+
+        [StringLength(100)]
+        public string? GuestSessionId { get; set; } // Hỗ trợ khách vãng lai
+
+        public string? NoiDungYeuCau { get; set; }
+
+        [Required]
+        public DateTime ThoiGianTao { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string TrangThai { get; set; } = string.Empty;
+
+        public int? IdNhanVien { get; set; }
+
+        public DateTime? ThoiGianPhanHoi { get; set; }
+
+        [StringLength(500)]
+        public string? GhiChu { get; set; }
+
+        // Navigation Properties
+        [ForeignKey("IdKhachHang")]
+        public virtual KhachHang? KhachHang { get; set; } // Thêm '?'
+
+        [ForeignKey("IdNhanVien")]
+        public virtual NhanVien? NhanVien { get; set; }
+
+        public virtual ICollection<ChatLichSu> ChatLichSus { get; set; } = new List<ChatLichSu>();
     }
 }

@@ -1,5 +1,35 @@
 === MÃ NGUỒN DỰ ÁN: AppCafebookApi ===
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi.slnLaunch.user
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi.slnx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\CodeChunks.db
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\CodeChunks.db-shm
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\CodeChunks.db-wal
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\SemanticSymbols.db
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\SemanticSymbols.db-shm
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\SemanticSymbols.db-wal
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\CodeChunks.db
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\CodeChunks.db-shm
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\CodeChunks.db-wal
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\SemanticSymbols.db
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\SemanticSymbols.db-shm
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\SemanticSymbols.db-wal
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\config\applicationhost.config
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\copilot-chat\0986bd90\sessions\2e962a96-ebeb-4440-b29d-ce75a4a6de55
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\DesignTimeBuild\.dtbcache.v2
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\0eb86ccf-c385-4061-beba-9da0ffcb019d.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\3250ec98-3c1c-4351-90d0-cd93b4b6621d.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\5544ba18-87a5-4f04-9f48-c1f6d9f4b92c.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\c8eb00ca-2367-4458-b85e-804f0c5e2396.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\d35ac808-8e33-417d-93d2-892830410180.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\.futdcache.v2
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\.suo
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\DocumentLayout.backup.json
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\DocumentLayout.json
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\HierarchyCache.v1.txt
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\ProjectEvaluation\appcafebookapi.metadata.v10.bin
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\ProjectEvaluation\appcafebookapi.projects.v10.bin
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\ProjectEvaluation\appcafebookapi.strings.v10.bin
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\App.xaml
 ================================================================================
 ﻿<Application x:Class="AppCafebookApi.App"
@@ -119,6 +149,26 @@ namespace AppCafebookApi.Services
 
                 return _instance;
             }
+        }
+        /// <summary>
+        /// Gọi hàm này SAU KHI đăng nhập thành công
+        /// </summary>
+        public static void SetAuthorizationHeader(string token)
+        {
+            // Xóa header cũ và thêm token mới
+            Instance.DefaultRequestHeaders.Authorization = null;
+            if (!string.IsNullOrEmpty(token))
+            {
+                Instance.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+        }
+
+        /// <summary>
+        /// Gọi hàm này khi đăng xuất
+        /// </summary>
+        public static void ClearAuthorizationHeader()
+        {
+            Instance.DefaultRequestHeaders.Authorization = null;
         }
     }
 }
@@ -3924,6 +3974,89 @@ namespace AppCafebookApi.View.common
         // ### THÊM NÚT ĐÓNG (YÊU CẦU 1 & 2) ###
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
+            this.Close();
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\Common\InputBoxWindow.xaml
+================================================================================
+﻿<Window x:Class="AppCafebookApi.View.Common.InputBoxWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AppCafebookApi.View.Common"
+        mc:Ignorable="d"
+        Title="Input Box" Height="220" Width="400"
+        WindowStyle="ToolWindow"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F5"
+        Loaded="Window_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="lblPrompt" Text="Vui lòng nhập:" TextWrapping="Wrap" FontSize="14" Margin="0,0,0,10"/>
+
+        <TextBox Grid.Row="1" x:Name="txtInput" 
+                 TextWrapping="Wrap"
+                 AcceptsReturn="False"
+                 FontSize="14"
+                 Padding="5"
+                 VerticalAlignment="Top"
+                 BorderBrush="#BDBDBD"
+                 BorderThickness="1"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button x:Name="btnOk" Content="OK" Width="80" Height="30" Margin="0,0,10,0" IsDefault="True" Click="BtnOk_Click"/>
+            <Button x:Name="btnCancel" Content="Hủy" Width="80" Height="30" IsCancel="True" Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\Common\InputBoxWindow.xaml.cs
+================================================================================
+﻿// Tập tin: AppCafebookApi/View/Common/InputBoxWindow.xaml.cs (ĐÃ SỬA)
+using System.Windows;
+
+namespace AppCafebookApi.View.Common // (Hoặc .common tùy theo thư mục của bạn)
+{
+    public partial class InputBoxWindow : Window
+    {
+        public string InputText { get; private set; }
+
+        public InputBoxWindow(string title, string prompt, string defaultValue = "")
+        {
+            InitializeComponent();
+            this.Title = title;
+            lblPrompt.Text = prompt;
+            txtInput.Text = defaultValue;
+            InputText = defaultValue;
+        }
+
+        // SỬA: Đã xóa chữ 'D' bị thừa
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            txtInput.Focus();
+            txtInput.SelectAll();
+        }
+
+        private void BtnOk_Click(object sender, RoutedEventArgs e)
+        {
+            InputText = txtInput.Text;
+            this.DialogResult = true;
+            this.Close();
+        }
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = false;
             this.Close();
         }
     }
@@ -8772,7 +8905,9 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
     <Page.Resources>
         <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
         <SolidColorBrush x:Key="DarkBrownBrush" Color="#4E342E"/>
-        <SolidColorBrush x:Key="AccentOrangeBrush" Color="#D27D2D"/>
+
+        <Color x:Key="AccentOrangeColor">#D27D2D</Color>
+        <SolidColorBrush x:Key="AccentOrangeBrush" Color="{StaticResource AccentOrangeColor}"/>
         <SolidColorBrush x:Key="LightCreamBrush" Color="#FFF8E1"/>
         <SolidColorBrush x:Key="WhiteTextBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="TextGrayBrush" Color="#757575"/>
@@ -8813,7 +8948,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="DeleteDataGridButtonStyle" TargetType="Button" BasedOn="{StaticResource DataGridButtonStyle}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource TextGrayBrush}"/>
@@ -8824,7 +8958,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 </Trigger>
             </Style.Triggers>
         </Style>
-
         <Style x:Key="InvoiceDataGridStyle" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="CanUserAddRows" Value="False"/>
@@ -8833,9 +8966,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="RowHeight" Value="45"/>
         </Style>
-
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0,0,0,2"/>
@@ -8844,10 +8975,9 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
         </Style>
-
         <Style TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Padding" Value="10,8"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Style.Triggers>
@@ -8857,7 +8987,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 </Trigger>
             </Style.Triggers>
         </Style>
-
         <Style x:Key="CategoryRadioButton" TargetType="RadioButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource DarkBrownBrush}"/>
@@ -8886,7 +9015,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 </Trigger>
             </Style.Triggers>
         </Style>
-
         <Style x:Key="ProductCard" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource LightCreamBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
@@ -8931,7 +9059,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="ActionButton" TargetType="Button">
             <Setter Property="Padding" Value="15"/>
             <Setter Property="FontSize" Value="15"/>
@@ -8939,6 +9066,41 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
             <Setter Property="Foreground" Value="{StaticResource WhiteTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="SearchTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderGrayBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource WhiteTextBrush}"/>
+            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect ShadowDepth="0" Color="{StaticResource AccentOrangeColor}" Opacity="0.3" BlurRadius="8"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Page.Resources>
 
@@ -8966,7 +9128,19 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
         </Border>
 
         <Grid Grid.Column="1" Background="{StaticResource SubtleGrayBrush}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="15" Background="{StaticResource SubtleGrayBrush}">
+                <TextBox x:Name="txtTimKiem" 
+                         Style="{StaticResource SearchTextBoxStyle}"
+                         TextChanged="TxtTimKiem_TextChanged"
+                         Tag="Tìm kiếm món..."/>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="icSanPham">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -8981,7 +9155,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-
                                     <Border Grid.Row="0" 
                                             Background="{StaticResource BorderGrayBrush}" 
                                             CornerRadius="6,6,0,0"
@@ -9013,9 +9186,35 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
             </Border>
 
             <DataGrid Grid.Row="1" x:Name="dgChiTietHoaDon" Style="{StaticResource InvoiceDataGridStyle}">
-
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Tên Món" Binding="{Binding TenSanPham}" Width="*" IsReadOnly="True"/>
+                    <DataGridTemplateColumn Header="Tên Món" Width="*" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding TenSanPham}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding GhiChu, StringFormat='Ghi chú: {0}'}" 
+                                                 Foreground="{StaticResource TextGrayBrush}"
+                                                 FontStyle="Italic"
+                                                 FontSize="11"
+                                                 TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GhiChu}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding GhiChu}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTemplateColumn Header="Số Lượng" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
@@ -9029,7 +9228,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Đơn Giá" Binding="{Binding DonGia, StringFormat=N0}" Width="80" IsReadOnly="True"/>
                     <DataGridTextColumn Header="Thành Tiền" Binding="{Binding ThanhTien, StringFormat=N0}" Width="*" IsReadOnly="True" FontWeight="SemiBold"/>
 
                     <DataGridTemplateColumn Header="Xóa" Width="40">
@@ -9057,7 +9255,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-
                     <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -9070,18 +9267,14 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Tổng tiền:" Margin="5" FontSize="14" Foreground="{StaticResource TextGrayBrush}"/>
                         <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="lblTongTien" Text="0" Margin="5" FontSize="14" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource DarkBrownBrush}"/>
-
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Khuyến mãi:" Margin="5" VerticalAlignment="Center"/>
-
                         <Button Grid.Row="1" Grid.Column="1" x:Name="btnChonKhuyenMai" 
                                 Content="-- Chọn Khuyến mãi --" 
                                 Margin="5,5,0,5" 
                                 Click="BtnChonKhuyenMai_Click"
                                 FontWeight="SemiBold"/>
-
                         <Button Grid.Row="1" Grid.Column="2" x:Name="btnHuyKhuyenMai" 
                                 Content="X" 
                                 ToolTip="Gỡ bỏ khuyến mãi"
@@ -9091,18 +9284,14 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                                 Foreground="White"
                                 FontWeight="Bold" Width="25"
                                 Visibility="Collapsed"/>
-
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Tiền giảm:" Margin="5" FontSize="14" Foreground="{StaticResource TextGrayBrush}"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="lblTienGiam" Text="0" Margin="5" FontSize="14" HorizontalAlignment="Right" Foreground="{StaticResource StatusGreenBrush}" FontWeight="SemiBold"/>
-
                         <Separator Grid.Row="3" Grid.ColumnSpan="3" Margin="0,10"/>
                     </Grid>
-
                     <Grid Grid.Row="1" Margin="0,0,0,15">
                         <TextBlock Text="THÀNH TIỀN" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource DarkBrownBrush}"/>
                         <TextBlock x:Name="lblThanhTien" Text="0 VND" FontSize="22" FontWeight="Bold" HorizontalAlignment="Right" Foreground="{StaticResource PrimaryBrownBrush}"/>
                     </Grid>
-
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -9111,7 +9300,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
                         <Button x:Name="btnThanhToan" Grid.Column="0" Style="{StaticResource ActionButton}" Background="{StaticResource StatusGreenBrush}" Click="BtnThanhToan_Click">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -9124,7 +9312,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                                 <TextBlock Grid.Column="1" Text="Thanh Toán" VerticalAlignment="Center" Margin="0,1,0,0"/>
                             </Grid>
                         </Button>
-
                         <Button x:Name="btnHuyDon" Grid.Column="1" ToolTip="Hủy Hóa đơn" Style="{StaticResource ActionButton}" 
                                 Background="{StaticResource StatusRedBrush}" Click="BtnHuyDon_Click" Margin="5,0,0,0">
                             <Viewbox Width="18" Height="18">
@@ -9156,7 +9343,8 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvien\pages\GoiMonView.xaml.cs
 ================================================================================
-﻿using AppCafebookApi.Services;
+﻿// Tập tin: AppCafebookApi/View/nhanvien/pages/GoiMonView.xaml.cs (ĐÃ SỬA)
+using AppCafebookApi.Services;
 using AppCafebookApi.View.common;
 using AppCafebookApi.View.Common;
 using CafebookModel.Model.ModelApp.NhanVien;
@@ -9195,6 +9383,9 @@ namespace AppCafebookApi.View.nhanvien.pages
         private List<KhuyenMaiDto> _availableKms = new List<KhuyenMaiDto>();
         private int? _currentKhuyenMaiId = null;
         private bool _isDataLoading = true;
+
+        // NÂNG CẤP: Lưu trữ danh mục đang chọn
+        private DanhMucDto _currentDanhMuc = new DanhMucDto { IdDanhMuc = 0, TenLoaiSP = "Tất cả" };
 
         static GoiMonView()
         {
@@ -9238,6 +9429,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
                 UpdateBillUI(response.HoaDonInfo);
 
+                // Kích hoạt bộ lọc "Tất cả"
                 if (lbLoaiSP.Items.Count > 0)
                 {
                     lbLoaiSP.UpdateLayout();
@@ -9247,10 +9439,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     {
                         rb.IsChecked = true;
                     }
-                    else
-                    {
-                        icSanPham.ItemsSource = _allSanPhams;
-                    }
+                    UpdateProductFilter(); // Gọi hàm lọc chung
                 }
             }
             catch (Exception ex)
@@ -9262,6 +9451,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private T? FindVisualChild<T>(DependencyObject? obj) where T : DependencyObject
         {
+            // ... (Hàm này giữ nguyên) ...
             if (obj == null) return null;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
@@ -9280,15 +9470,13 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private void UpdateBillUI(HoaDonInfoDto info)
         {
+            // ... (Hàm này giữ nguyên) ...
             if (info == null) return;
-
             lblTieuDeHoaDon.Text = $"Hóa đơn - {info.SoBan}";
             lblTongTien.Text = info.TongTienGoc.ToString("N0");
-            lblTienGiam.Text = info.GiamGia.ToString("N0"); 
+            lblTienGiam.Text = info.GiamGia.ToString("N0");
             lblThanhTien.Text = info.ThanhTien.ToString("N0") + " VND";
-
             _currentKhuyenMaiId = info.IdKhuyenMai;
-
             if (_currentKhuyenMaiId.HasValue && _currentKhuyenMaiId != 0)
             {
                 var km = _availableKms.FirstOrDefault(k => k.IdKhuyenMai == _currentKhuyenMaiId);
@@ -9302,40 +9490,90 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
         }
 
+        // --- NÂNG CẤP: Logic Lọc ---
+
         private void Category_Checked(object sender, RoutedEventArgs e)
         {
             var radioButton = sender as RadioButton;
             var danhMuc = radioButton?.DataContext as DanhMucDto;
 
-            if (danhMuc == null)
+            if (danhMuc != null)
             {
-                if (radioButton != null && radioButton.Content.ToString() == "Tất cả")
-                {
-                    icSanPham.ItemsSource = _allSanPhams;
-                }
-                return;
+                _currentDanhMuc = danhMuc;
+            }
+            else if (radioButton != null && radioButton.Content.ToString() == "Tất cả")
+            {
+                _currentDanhMuc = (lbLoaiSP.Items[0] as DanhMucDto) ?? new DanhMucDto { IdDanhMuc = 0 };
             }
 
-            if (danhMuc.IdDanhMuc == 0) // "Tất cả"
-            {
-                icSanPham.ItemsSource = _allSanPhams;
-            }
-            else
-            {
-                icSanPham.ItemsSource = _allSanPhams.Where(s => s.IdDanhMuc == danhMuc.IdDanhMuc).ToList();
-            }
+            UpdateProductFilter();
         }
+
+        private void TxtTimKiem_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Gọi hàm lọc chung mỗi khi gõ
+            UpdateProductFilter();
+        }
+
+        /// <summary>
+        /// Hàm lọc sản phẩm dựa trên Category và Ô tìm kiếm
+        /// </summary>
+        private void UpdateProductFilter()
+        {
+            if (_allSanPhams == null) return;
+
+            IEnumerable<SanPhamDto> filteredList = _allSanPhams;
+
+            // 1. Lọc theo Category
+            if (_currentDanhMuc != null && _currentDanhMuc.IdDanhMuc != 0)
+            {
+                filteredList = filteredList.Where(s => s.IdDanhMuc == _currentDanhMuc.IdDanhMuc);
+            }
+
+            // 2. Lọc theo Từ khóa tìm kiếm
+            string keyword = txtTimKiem.Text.Trim().ToLowerInvariant();
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filteredList = filteredList.Where(s =>
+                    s.TenSanPham.ToLowerInvariant().Contains(keyword)
+                );
+            }
+
+            icSanPham.ItemsSource = filteredList.ToList();
+        }
+
+        // --- KẾT THÚC NÂNG CẤP LỌC ---
+
 
         private async void ProductButton_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên như lần trước, đã có InputBoxWindow) ...
             var sanPham = (sender as Button)?.DataContext as SanPhamDto;
             if (sanPham == null) return;
+
+            var inputBox = new InputBoxWindow(
+                "Thêm ghi chú",
+                $"Nhập ghi chú cho món [{sanPham.TenSanPham}]:",
+                ""
+            );
+
+            string? ghiChu = null;
+            if (inputBox.ShowDialog() == true)
+            {
+                ghiChu = inputBox.InputText;
+            }
+
+            if (string.IsNullOrWhiteSpace(ghiChu))
+            {
+                ghiChu = null;
+            }
 
             var request = new AddItemRequest
             {
                 IdHoaDon = _idHoaDon,
                 IdSanPham = sanPham.IdSanPham,
-                SoLuong = 1
+                SoLuong = 1,
+                GhiChu = ghiChu
             };
 
             try
@@ -9349,6 +9587,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                     UpdateBillUI(result.updatedHoaDonInfo);
 
                     ChiTietDto newItem = result.newItem;
+
                     var existingItem = _chiTietItems.FirstOrDefault(c => c.IdChiTietHoaDon == newItem.IdChiTietHoaDon);
                     if (existingItem != null)
                     {
@@ -9374,6 +9613,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnGiamSL_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên) ...
             var item = (sender as Button)?.DataContext as ChiTietDto;
             if (item == null) return;
             await UpdateQuantityAsync(item, item.SoLuong - 1);
@@ -9381,6 +9621,7 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnTangSL_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên) ...
             var item = (sender as Button)?.DataContext as ChiTietDto;
             if (item == null) return;
             await UpdateQuantityAsync(item, item.SoLuong + 1);
@@ -9388,9 +9629,9 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async void BtnXoaMon_Click(object sender, RoutedEventArgs e)
         {
+            // ... (Hàm này giữ nguyên) ...
             var item = (sender as Button)?.DataContext as ChiTietDto;
             if (item == null) return;
-
             var result = MessageBox.Show($"Bạn có chắc muốn xóa [{item.TenSanPham}]?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
@@ -9400,12 +9641,12 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async Task UpdateQuantityAsync(ChiTietDto item, int soLuongMoi)
         {
+            // ... (Hàm này giữ nguyên) ...
             var request = new UpdateSoLuongRequest
             {
                 IdChiTietHoaDon = item.IdChiTietHoaDon,
                 SoLuongMoi = soLuongMoi
             };
-
             try
             {
                 var response = await _httpClient.PutAsJsonAsync("api/app/nhanvien/goimon/update-quantity", request);
@@ -9413,7 +9654,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 {
                     var hoaDonInfo = await response.Content.ReadFromJsonAsync<HoaDonInfoDto>();
                     if (hoaDonInfo != null) UpdateBillUI(hoaDonInfo);
-
                     if (soLuongMoi <= 0)
                     {
                         _chiTietItems.Remove(item);
@@ -9436,24 +9676,23 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
         }
 
+        // ... (Tất cả các hàm còn lại: BtnChonKhuyenMai_Click, BtnHuyKhuyenMai_Click, ApplyKhuyenMaiApiCallAsync, 
+        // ...  BtnThanhToan_Click, BtnHuyDon_Click, BtnQuayLai_Click, BtnLuu_Click, BtnInPhieuGoiMon_Click 
+        // ...  GIỮ NGUYÊN) ...
+
         private async void BtnChonKhuyenMai_Click(object sender, RoutedEventArgs e)
         {
             if (_isDataLoading) return;
             _isDataLoading = true;
-
             var dialog = new ChonKhuyenMaiWindow(_idHoaDon, _currentKhuyenMaiId);
-
             if (dialog.ShowDialog() == true)
             {
                 int? selectedKmId = dialog.SelectedId;
                 if (selectedKmId == 0) selectedKmId = null;
-
                 await ApplyKhuyenMaiApiCallAsync(selectedKmId);
             }
-
             _isDataLoading = false;
         }
-
         private async void BtnHuyKhuyenMai_Click(object sender, RoutedEventArgs e)
         {
             if (_isDataLoading) return;
@@ -9461,7 +9700,6 @@ namespace AppCafebookApi.View.nhanvien.pages
             await ApplyKhuyenMaiApiCallAsync(null);
             _isDataLoading = false;
         }
-
         private async Task ApplyKhuyenMaiApiCallAsync(int? idKhuyenMai)
         {
             var request = new ApplyPromotionRequest
@@ -9469,7 +9707,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 IdHoaDon = _idHoaDon,
                 IdKhuyenMai = idKhuyenMai
             };
-
             try
             {
                 var response = await _httpClient.PutAsJsonAsync("api/app/nhanvien/goimon/apply-promotion", request);
@@ -9492,18 +9729,15 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show(ex.Message, "Lỗi API");
             }
         }
-
         private async void BtnThanhToan_Click(object sender, RoutedEventArgs e)
         {
             if (_isDataLoading) return;
             _isDataLoading = true;
-
             var request = new ApplyPromotionRequest
             {
                 IdHoaDon = _idHoaDon,
                 IdKhuyenMai = _currentKhuyenMaiId
             };
-
             try
             {
                 var response = await _httpClient.PutAsJsonAsync("api/app/nhanvien/goimon/apply-promotion", request);
@@ -9521,16 +9755,14 @@ namespace AppCafebookApi.View.nhanvien.pages
             }
             _isDataLoading = false;
         }
-
         private async void BtnHuyDon_Click(object sender, RoutedEventArgs e)
         {
             var result = MessageBox.Show($"Bạn có chắc chắn muốn HỦY hóa đơn này không?\n(Các món đã thêm sẽ bị xóa)",
                             "Xác nhận Hủy", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result != MessageBoxResult.Yes) return;
-
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"api/app/donhang/update-status/{_idHoaDon}", "Hủy");
+                var response = await _httpClient.PutAsync($"api/app/nhanvien/goimon/cancel-order/{_idHoaDon}", null);
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Đã hủy hóa đơn thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -9549,7 +9781,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show(ex.Message, "Lỗi API");
             }
         }
-
         private void BtnQuayLai_Click(object sender, RoutedEventArgs e)
         {
             if (this.NavigationService.CanGoBack)
@@ -9557,9 +9788,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 this.NavigationService.GoBack();
             }
         }
-
-        // === SỬA LỖI LOGIC BẾP (YÊU CẦU MỚI) ===
-
         private async void BtnLuu_Click(object sender, RoutedEventArgs e)
         {
             if (AuthService.CurrentUser == null)
@@ -9567,17 +9795,12 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show("Lỗi phiên đăng nhập.", "Lỗi");
                 return;
             }
-
             try
             {
-                // SỬA: Chỉ gọi API, không điều hướng
                 var response = await _httpClient.PostAsync($"api/app/nhanvien/goimon/send-to-kitchen/{_idHoaDon}", null);
-
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Đã lưu và gửi các món mới đến bếp/pha chế.", "Đã lưu");
-                    // KHÔNG quay lại (theo logic mới)
-                    // if (this.NavigationService.CanGoBack) { this.NavigationService.GoBack(); }
                 }
                 else
                 {
@@ -9589,7 +9812,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 MessageBox.Show(ex.Message, "Lỗi API");
             }
         }
-
         private async void BtnInPhieuGoiMon_Click(object sender, RoutedEventArgs e)
         {
             if (AuthService.CurrentUser == null)
@@ -9598,19 +9820,13 @@ namespace AppCafebookApi.View.nhanvien.pages
                 return;
             }
             int idNhanVien = AuthService.CurrentUser.IdNhanVien;
-
             try
             {
-                // 1. Gọi API để đẩy món VÀ tạo thông báo
                 var response = await _httpClient.PostAsync($"api/app/nhanvien/goimon/print-and-notify-kitchen/{_idHoaDon}/{idNhanVien}", null);
-
                 if (response.IsSuccessStatusCode)
                 {
-                    // 2. MỞ CỬA SỔ IN (THEO YÊU CẦU MỚI)
                     var printWindow = new PhieuGoiMonPreviewWindow(_idHoaDon);
-                    printWindow.ShowDialog(); // Hiển thị cửa sổ in
-
-                    // 3. (Tùy chọn) Quay lại sau khi in
+                    printWindow.ShowDialog();
                     if (this.NavigationService.CanGoBack)
                     {
                         this.NavigationService.GoBack();
@@ -14232,7 +14448,10 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\
         <Geometry x:Key="IconProfile">M12,12A5,5 0 0,1 7,7A5,5 0 0,1 12,2A5,5 0 0,1 17,7A5,5 0 0,1 12,12M12,14C14.67,14 20,15.33 20,18V20H4V18C4,15.33 9.33,14 12,14Z</Geometry>
         <Geometry x:Key="IconLeave">M19,3H18V1H16V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.89 20.1,3 19,3M19,19H5V10H19V19M10,14V12H7V14H10M14,14V12H11V14H14M18,14V12H15V14H18Z</Geometry>
         <Geometry x:Key="IconPayroll">M20,6H4V4H20V6M20,10H4V8H20V10M18,14H6V12H18V14M18,18H6V16H18V18M19,20H5C3.89,20 3,19.1 3,18V3C3,1.89 3.89,1 5,1H19C20.1,1 21,1.89 21,3V18C21,19.1 20.1,20 19,20Z</Geometry>
-        
+
+        <Geometry x:Key="IconReview">M12,17.27L18.18,21L17,14.64L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7,14.64L5.82,21L12,17.27Z</Geometry>
+
+
         <Style x:Key="NavToggleButton" TargetType="ToggleButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource SubtleWhiteTextBrush}"/>
@@ -14315,7 +14534,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Margin="20">
-                    <!-- Avatar Icon -->
                     <Border x:Name="AvatarBorder"
                             Height="70" Width="70"
                             Background="{StaticResource LightCreamBrush}"
@@ -14344,6 +14562,9 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\
                         <ToggleButton x:Name="btnLuong" Content="Quản lý Lương" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconPayroll}" Click="NavButton_Click"/>
                         <ToggleButton x:Name="btnNhanSu" Content="Quản lý Nhân sự" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconUsers}" Click="NavButton_Click"/>
                         <ToggleButton x:Name="btnKhachHang" Content="Quản lý KH &amp; KM" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconPromotion}" Click="NavButton_Click"/>
+
+                        <ToggleButton x:Name="btnDanhGia" Content="Quản lý Đánh Giá" Style="{StaticResource NavToggleButton}" Tag="{StaticResource IconReview}" Click="NavButton_Click"/>
+
                     </StackPanel>
                 </ScrollViewer>
 
@@ -14366,8 +14587,8 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\
                         </Grid>
                     </Button>
                     <Button x:Name="btnDangXuat" Style="{StaticResource FooterButton}" Click="BtnDangXuat_Click"
-                             Background="{StaticResource AccentOrangeBrush}"
-                             Foreground="{StaticResource WhiteTextBrush}">
+                            Background="{StaticResource AccentOrangeBrush}"
+                            Foreground="{StaticResource WhiteTextBrush}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -14441,7 +14662,7 @@ using CafebookModel.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq; // <-- Đảm bảo bạn đã using Linq
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Windows;
@@ -14495,6 +14716,9 @@ namespace AppCafebookApi.View.quanly
                     Stretch = Stretch.UniformToFill
                 };
 
+                // === SỬA LỖI 2: THÊM LOGIC PHÂN QUYỀN ===
+
+                // 1. Ẩn tất cả các nút
                 btnTongQuan.Visibility = Visibility.Collapsed;
                 btnSanPham.Visibility = Visibility.Collapsed;
                 btnBan.Visibility = Visibility.Collapsed;
@@ -14503,9 +14727,13 @@ namespace AppCafebookApi.View.quanly
                 btnSach.Visibility = Visibility.Collapsed;
                 btnNhanSu.Visibility = Visibility.Collapsed;
                 btnKhachHang.Visibility = Visibility.Collapsed;
+                btnLuong.Visibility = Visibility.Collapsed; // <-- Nút này bị thiếu trong code của bạn
+                btnDanhGia.Visibility = Visibility.Collapsed; // <-- Thêm nút Đánh Giá
 
+                // 2. Hiện lại theo quyền
                 if (AuthService.CoQuyen("Dashboard.Xem"))
                     btnTongQuan.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("SanPham.QuanLy"))
                 {
                     btnSanPham.Visibility = Visibility.Visible;
@@ -14514,14 +14742,25 @@ namespace AppCafebookApi.View.quanly
                 }
                 if (AuthService.CoQuyen("Kho.Nhap", "Kho.KiemKe"))
                     btnKho.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("HoaDon.Tao", "HoaDon.ThanhToan", "HoaDon.Huy"))
                     btnDonHang.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("NhanSu.QuanLy", "NhanSu.TinhLuong"))
                     btnNhanSu.Visibility = Visibility.Visible;
+
+                // Gộp chung Lương vào Quyền Nhân sự
+                if (AuthService.CoQuyen("NhanSu.TinhLuong"))
+                    btnLuong.Visibility = Visibility.Visible;
+
                 if (AuthService.CoQuyen("NhanSu.QuanLy"))
+                {
                     btnKhachHang.Visibility = Visibility.Visible;
+                    btnDanhGia.Visibility = Visibility.Visible; // <-- Hiện nút Đánh Giá
+                }
             }
 
+            // (Phần điều hướng mặc định giữ nguyên)
             if (btnTongQuan.Visibility == Visibility.Visible)
             {
                 UpdateSelectedButton(btnTongQuan);
@@ -14539,6 +14778,7 @@ namespace AppCafebookApi.View.quanly
 
         private async Task CheckNotificationsAsync()
         {
+            // (Hàm này giữ nguyên)
             try
             {
                 var result = await httpClient.GetFromJsonAsync<ThongBaoCountDto>("api/app/thongbao/unread-count");
@@ -14581,22 +14821,18 @@ namespace AppCafebookApi.View.quanly
             }
             else if (clickedButton == btnSanPham)
             {
-                // Giả sử bạn đã tạo page này
-                pageToNavigate = new QuanLySanPhamView(); 
+                pageToNavigate = new QuanLySanPhamView();
             }
             else if (clickedButton == btnDonHang)
             {
-                // Giả sử bạn đã tạo page này
                 pageToNavigate = new QuanLyDonHangView();
             }
             else if (clickedButton == btnKhachHang)
             {
-                // Giả sử bạn đã tạo page này
                 pageToNavigate = new QuanLyKhachHangView();
             }
             else if (clickedButton == btnSach)
             {
-                // Giả sử bạn đã tạo page này
                 pageToNavigate = new QuanLySachView();
             }
             else if (clickedButton == btnNhanSu)
@@ -14607,14 +14843,17 @@ namespace AppCafebookApi.View.quanly
             {
                 pageToNavigate = new QuanLyLuongView();
             }
-            // === SỬA LỖI CÚ PHÁP TẠI ĐÂY ===
-            // Xóa dấu ; ở dòng 144 và thêm { }
             else if (clickedButton == btnKho)
             {
                 pageToNavigate = new QuanLyTonKhoView();
             }
-            // === BỔ SUNG LOGIC TỪ CÁC MODULE TRƯỚC ===
-            else if (clickedButton.Name == "btnLichLamViec") // Dùng .Name an toàn
+            // === SỬA LỖI 3: THÊM CASE CHO NÚT ĐÁNH GIÁ ===
+            else if (clickedButton == btnDanhGia)
+            {
+                pageToNavigate = new QuanLyDanhGiaView();
+            }
+            // === KẾT THÚC SỬA LỖI 3 ===
+            else if (clickedButton.Name == "btnLichLamViec")
             {
                 pageToNavigate = new QuanLyLichLamViecView();
             }
@@ -14630,7 +14869,7 @@ namespace AppCafebookApi.View.quanly
             {
                 pageToNavigate = new BaoCaoNhanSuView();
             }
-            // === KẾT THÚC BỔ SUNG ===
+            // (Đã xóa dòng 'else if (clickedButton.Name == "")' bị lỗi)
 
             if (pageToNavigate != null)
             {
@@ -14639,6 +14878,7 @@ namespace AppCafebookApi.View.quanly
             }
             else
             {
+                // (Phần thông báo lỗi giữ nguyên)
                 MessageBox.Show($"Chức năng '{clickedButton.Content}' đang được phát triển!", "Thông báo");
                 clickedButton.IsChecked = false;
                 if (currentNavButton != null)
@@ -14650,6 +14890,7 @@ namespace AppCafebookApi.View.quanly
 
         private void UpdateSelectedButton(ToggleButton newButton)
         {
+            // (Hàm này giữ nguyên)
             if (currentNavButton != null && currentNavButton != newButton)
             {
                 currentNavButton.IsChecked = false;
@@ -14660,19 +14901,16 @@ namespace AppCafebookApi.View.quanly
 
         private async void BtnThongBao_Click(object sender, RoutedEventArgs e)
         {
+            // (Hàm này giữ nguyên)
             try
             {
-                // 1. Vẫn gọi API 'all' để lấy tất cả thông báo
                 var allNotifications = await httpClient.GetFromJsonAsync<List<ThongBaoDto>>("api/app/thongbao/all");
 
                 if (allNotifications != null)
                 {
-                    // 2. Lọc ra danh sách CHƯA ĐỌC (DaXem == false)
                     var unreadNotifications = allNotifications
                         .Where(t => t.DaXem == false)
                         .ToList();
-
-                    // 3. Gán danh sách đã lọc vào Popup
                     icThongBaoPopup.ItemsSource = unreadNotifications;
                 }
                 else
@@ -14681,8 +14919,6 @@ namespace AppCafebookApi.View.quanly
                 }
 
                 PopupThongBao.IsOpen = true;
-
-                // 4. Cập nhật lại số lượng trên badge (vì có thể đã đọc ở đâu đó)
                 await CheckNotificationsAsync();
             }
             catch (Exception ex)
@@ -14693,16 +14929,14 @@ namespace AppCafebookApi.View.quanly
 
         private async void ThongBaoItem_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            // (Hàm này giữ nguyên)
             if (sender is FrameworkElement element && element.DataContext is ThongBaoDto thongBao)
             {
                 PopupThongBao.IsOpen = false;
 
-                // Gọi API để đánh dấu là đã đọc (không cần đợi)
-                _ = httpClient.PostAsync($"api/app/thongbao/mark-as-read/{thongBao.IdThongBao}", null); 
+                _ = httpClient.PostAsync($"api/app/thongbao/mark-as-read/{thongBao.IdThongBao}", null);
 
-                // === LOGIC ĐIỀU HƯỚNG MỚI ===
-
-                if (thongBao.LoaiThongBao == "SuCoBan" && thongBao.IdLienQuan.HasValue) 
+                if (thongBao.LoaiThongBao == "SuCoBan" && thongBao.IdLienQuan.HasValue)
                 {
                     int idBanCanDen = thongBao.IdLienQuan.Value;
                     UpdateSelectedButton(btnBan);
@@ -14710,27 +14944,23 @@ namespace AppCafebookApi.View.quanly
                 }
                 else if (thongBao.LoaiThongBao == "HetHang")
                 {
-                    // (Giả sử btnKho và QuanLyTonKhoView đã tồn tại)
                     UpdateSelectedButton(btnKho);
                     MainFrame.Navigate(new QuanLyTonKhoView());
                 }
                 else if (thongBao.LoaiThongBao == "DonXinNghi")
                 {
-                    // Tìm nút btnDonXinNghi (nếu chưa có, dùng btnNhanSu)
-                    ToggleButton? targetButton = FindName("btnDonXinNghi") as ToggleButton ?? btnNhanSu; 
+                    ToggleButton? targetButton = FindName("btnDonXinNghi") as ToggleButton ?? btnNhanSu;
                     UpdateSelectedButton(targetButton);
                     MainFrame.Navigate(new QuanLyDonXinNghiView());
                 }
 
-                // === KẾT THÚC LOGIC MỚI ===
-
-                // Cập nhật lại badge (số thông báo sẽ giảm)
                 await CheckNotificationsAsync();
             }
         }
 
         private void BtnDangXuat_Click(object sender, RoutedEventArgs e)
         {
+            // (Hàm này giữ nguyên)
             var result = MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?",
                                         "Xác nhận đăng xuất",
                                         MessageBoxButton.YesNo,
@@ -17115,6 +17345,664 @@ namespace AppCafebookApi.View.quanly.pages
             }
         }
         #endregion
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\pages\QuanLyDanhGiaView.xaml
+================================================================================
+﻿<Page x:Class="AppCafebookApi.View.quanly.pages.QuanLyDanhGiaView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:AppCafebookApi.View.quanly.pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="700" d:DesignWidth="1000"
+      Title="QuanLyDanhGiaView"
+      Loaded="Page_Loaded"
+      FontFamily="Segoe UI">
+
+    <Page.Resources>
+        <local:StatusToButtonStyleConverter x:Key="StatusToButtonStyleConverter"/>
+        <local:NullOrEmptyToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:StatusToStyleConverter x:Key="StatusToStyleConverter"/>
+        <local:StatusToContentConverter x:Key="StatusToContentConverter"/>
+
+
+        <Style TargetType="Button" x:Key="BaseButton">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style TargetType="Button" x:Key="PrimaryButton" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background" Value="#6F4E37"/>
+
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style TargetType="Button" x:Key="SecondaryButton" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background" Value="#A1887F"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style TargetType="Button" x:Key="WarningButton" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background" Value="#D27D2D"/>
+
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#FFF8E1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Quản lý Đánh giá Khách hàng"
+                   Grid.Row="0"
+                   FontSize="24" FontWeight="SemiBold"
+                   Foreground="#4E342E"
+                   Margin="20"/>
+
+
+        <Border Grid.Row="1" Background="White" CornerRadius="5" Margin="20,0,20,15" Padding="20"
+                BorderBrush="#E0E0E0" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                    <TextBlock Text="Tổng quan Sản phẩm" FontSize="18" FontWeight="SemiBold" Foreground="#4E342E"/>
+                    <TextBlock Text="Nhập tên món để xem thống kê đánh giá" Margin="0,5,0,10" Foreground="#6D4C41"/>
+
+                    <TextBox x:Name="txtProductSearch" 
+                             Height="35" 
+                             FontSize="14"
+                             Padding="5"
+  
+                           TextChanged="TxtProductSearch_TextChanged"/>
+                    <ListBox x:Name="lbSearchResults" 
+                             MaxHeight="150" 
+                     
+         Margin="0,5,0,0"
+                             DisplayMemberPath="TenSanPham"
+                             SelectionChanged="LbSearchResults_SelectionChanged"/>
+                </StackPanel>
+
+                <Border Grid.Column="1" 
+ Background="#F9FBE7" CornerRadius="5" Padding="20" MinWidth="250">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="ĐIỂM TRUNG BÌNH (Sao)" FontSize="12" Foreground="Gray"/>
+                        <TextBlock x:Name="tbAvgRating" Text="0.0" FontSize="32" FontWeight="Bold" Foreground="#f5b301" Margin="0,2,0,0"/>
+
+
+                        <TextBlock Text="TỔNG SỐ ĐÁNH GIÁ (Hiển thị)" FontSize="12" Foreground="Gray" Margin="0,15,0,0"/>
+                        <TextBlock x:Name="tbTotalReviews" Text="0" FontSize="32" FontWeight="Bold" Foreground="#4E342E" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </Border>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="20,0,20,10">
+            <TextBlock Text="Lọc theo sao:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <ComboBox x:Name="cbFilterSao" Width="100" Margin="0,0,20,0">
+                <ComboBoxItem Content="Tất cả" Tag="{x:Null}"/>
+                <ComboBoxItem Content="5 Sao" Tag="5"/>
+
+                <ComboBoxItem Content="4 Sao" Tag="4"/>
+                <ComboBoxItem Content="3 Sao" Tag="3"/>
+                <ComboBoxItem Content="2 Sao" Tag="2"/>
+                <ComboBoxItem Content="1 Sao" Tag="1"/>
+            </ComboBox>
+            <TextBlock Text="Trạng thái:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+
+            <ComboBox x:Name="cbFilterTrangThai" Width="120" Margin="0,0,20,0">
+                <ComboBoxItem Content="Tất cả" Tag="{x:Null}"/>
+                <ComboBoxItem Content="Hiển thị" Tag="Hiển thị"/>
+                <ComboBoxItem Content="Đã ẩn" Tag="Đã ẩn"/>
+            </ComboBox>
+            <Button x:Name="btnFilter" Content="Lọc" Style="{StaticResource PrimaryButton}" Click="BtnFilter_Click"/>
+        </StackPanel>
+
+
+        <ListView x:Name="lvDanhGia" Grid.Row="3" Margin="20,0,20,10"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  SelectionMode="Single"
+                  SelectionChanged="LvDanhGia_SelectionChanged">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="White" CornerRadius="5" BorderBrush="#EEE" BorderThickness="1"
+                       
+         Padding="15" Margin="0,5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,15,0">
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                    <TextBlock Text="{Binding SoSao, StringFormat='{}{0} Sao'}" 
+                                           
+     FontWeight="Bold" FontSize="16" Foreground="#f5b301"/>
+                                    <TextBlock Text="từ" Margin="5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TenKhachHang}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                                    <TextBlock Text="lúc" Margin="5,0" VerticalAlignment="Center" FontStyle="Italic"/>
+                                    <TextBlock Text="{Binding NgayTao, StringFormat='HH:mm dd/MM/yyyy'}" VerticalAlignment="Center" FontStyle="Italic"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding TenSanPham}" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"
+                                           Visibility="{Binding TenSanPham, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                                <TextBlock Text="{Binding BinhLuan}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                           Visibility="{Binding BinhLuan, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                <Image Source="{Binding HinhAnhUrl}" MaxHeight="150" 
+ HorizontalAlignment="Left"
+                                       Visibility="{Binding HinhAnhUrl, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                <Border Background="#f9f9f9" CornerRadius="3" Padding="10" Margin="0,10,0,0"
+                      
+                                        BorderBrush="#EEE" BorderThickness="1"
+                                        Visibility="{Binding PhanHoi, Converter={StaticResource NullToVisibilityConverter}}">
+                                    <StackPanel>
+
+                                        <TextBlock FontWeight="SemiBold" Margin="0,0,0,5">
+                                            <Run Text="Phản hồi từ "/>
+            
+                                 <Run Text="{Binding PhanHoi.TenNhanVien}"/>:
+                                        </TextBlock>
+
+                                        <TextBlock Text="{Binding PhanHoi.NoiDung}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Top">
+
+                                <Button x:Name="btnToggleStatus"
+                                        Tag="{Binding IdDanhGia}" Click="BtnToggleStatus_Click"
+                                        Style="{Binding TrangThai, Converter={StaticResource StatusToStyleConverter}}"
+                                        Content="{Binding TrangThai, Converter={StaticResource StatusToContentConverter}}"/>
+
+                                <Button x:Name="btnReply" Content="Trả lời"
+                                        Tag="{Binding}" Click="BtnReply_Click"
+                                        Style="{StaticResource SecondaryButton}"/>
+
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20">
+
+            <Button x:Name="btnPrevPage" Content="&lt; Trước" Style="{StaticResource SecondaryButton}" Click="BtnPrevPage_Click"/>
+            <TextBlock x:Name="tbCurrentPage" Text="1 / 1" VerticalAlignment="Center" Margin="10,0"/>
+            <Button x:Name="btnNextPage" Content="Sau &gt;" Style="{StaticResource SecondaryButton}" Click="BtnNextPage_Click"/>
+        </StackPanel>
+
+        <Popup x:Name="popupReply" Placement="Center" StaysOpen="False"
+               AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Background="White" BorderBrush="Gray" BorderThickness="1" CornerRadius="5"
+          
+           Width="400" Padding="15">
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="3" Opacity="0.3" BlurRadius="5"/>
+                </Border.Effect>
+                <StackPanel>
+
+                    <TextBlock Text="Trả lời đánh giá" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <TextBlock x:Name="tbReviewInfo" TextWrapping="Wrap" FontStyle="Italic" Background="#f5f5f5" Padding="5" Margin="0,0,0,10"/>
+                    <TextBox x:Name="txtReplyInput" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                             AcceptsReturn="True"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button x:Name="btnSendReply" Content="Gửi" Style="{StaticResource PrimaryButton}" Click="BtnSendReply_Click"/>
+                        <Button x:Name="btnCancelReply" Content="Hủy" Style="{StaticResource SecondaryButton}" Click="BtnCancelReply_Click"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+        </Popup>
+
+    </Grid>
+</Page>
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\pages\QuanLyDanhGiaView.xaml.cs
+================================================================================
+﻿using AppCafebookApi.Services;
+using CafebookModel.Model.ModelApp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Threading; // THÊM DÒNG NÀY
+
+namespace AppCafebookApi.View.quanly.pages
+{
+    public partial class QuanLyDanhGiaView : Page
+    {
+        private readonly HttpClient _httpClient;
+        private int _currentPage = 1;
+        private int _totalPages = 1;
+
+        private DispatcherTimer _searchTimer; // Timer cho tìm kiếm
+
+        public QuanLyDanhGiaView()
+        {
+            InitializeComponent();
+
+            // SỬA LỖI: Dùng HttpClient từ ApiClient Singleton
+            _httpClient = ApiClient.Instance; // <-- Dòng này ĐÚNG
+
+            // Khởi tạo timer
+            _searchTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(500) // Chờ 0.5 giây sau khi gõ
+            };
+            _searchTimer.Tick += SearchTimer_Tick;
+        }
+
+        // === LOGIC CHO TAB 1 (QUẢN LÝ ĐÁNH GIÁ) ===
+
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            cbFilterSao.SelectedIndex = 0;
+            cbFilterTrangThai.SelectedIndex = 0;
+            await LoadDataAsync();
+        }
+
+        private async Task LoadDataAsync()
+        {
+            try
+            {
+                int? filterSao = (cbFilterSao.SelectedItem as ComboBoxItem)?.Tag as int?;
+                string? trangThai = (cbFilterTrangThai.SelectedItem as ComboBoxItem)?.Tag as string;
+
+                var result = await GetReviewsAsync(_currentPage, filterSao, trangThai);
+
+                if (result != null)
+                {
+                    lvDanhGia.ItemsSource = result.Items;
+                    _totalPages = result.TotalPages;
+                    _currentPage = result.CurrentPage;
+
+                    tbCurrentPage.Text = $"{_currentPage} / {_totalPages}";
+                    btnPrevPage.IsEnabled = _currentPage > 1;
+                    btnNextPage.IsEnabled = _currentPage < _totalPages;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi tải danh sách đánh giá: {ex.Message}", "Lỗi API");
+            }
+        }
+
+        private async void BtnFilter_Click(object sender, RoutedEventArgs e)
+        {
+            _currentPage = 1;
+            await LoadDataAsync();
+        }
+
+        private async void BtnPrevPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentPage > 1)
+            {
+                _currentPage--;
+                await LoadDataAsync();
+            }
+        }
+
+        private async void BtnNextPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentPage < _totalPages)
+            {
+                _currentPage++;
+                await LoadDataAsync();
+            }
+        }
+
+        private async void BtnToggleStatus_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is int idDanhGia)
+            {
+                try
+                {
+                    bool success = await ToggleReviewStatusAsync(idDanhGia);
+                    if (success)
+                    {
+                        await LoadDataAsync();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Không thể cập nhật trạng thái.", "Lỗi");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi API");
+                }
+            }
+        }
+
+        private void BtnReply_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is DanhGiaQuanLyDto review)
+            {
+                popupReply.DataContext = review;
+                tbReviewInfo.Text = $"Đang trả lời: \"{review.BinhLuan?.Substring(0, Math.Min(50, review.BinhLuan.Length))}...\"";
+                txtReplyInput.Text = review.PhanHoi?.NoiDung ?? "";
+                popupReply.IsOpen = true;
+                txtReplyInput.Focus();
+            }
+        }
+
+        private async void BtnSendReply_Click(object sender, RoutedEventArgs e)
+        {
+            if (popupReply.DataContext is DanhGiaQuanLyDto review)
+            {
+                string noiDung = txtReplyInput.Text;
+                if (string.IsNullOrWhiteSpace(noiDung))
+                {
+                    MessageBox.Show("Vui lòng nhập nội dung phản hồi.", "Thiếu thông tin");
+                    return;
+                }
+
+                try
+                {
+                    bool success = await ReplyToReviewAsync(review.IdDanhGia, noiDung);
+                    if (success)
+                    {
+                        MessageBox.Show("Gửi phản hồi thành công!");
+                        popupReply.IsOpen = false;
+                        await LoadDataAsync();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Không thể gửi phản hồi.", "Lỗi");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi API");
+                }
+            }
+        }
+
+        private void BtnCancelReply_Click(object sender, RoutedEventArgs e)
+        {
+            popupReply.IsOpen = false;
+        }
+
+        // === CÁC HÀM HELPER GỌI API (Tab 1) ===
+
+        private async Task<PaginatedResult<DanhGiaQuanLyDto>?> GetReviewsAsync(int page = 1, int? filterSao = null, string? trangThai = null)
+        {
+            try
+            {
+                var queryParams = new List<string> { $"page={page}", "pageSize=10" };
+                if (filterSao.HasValue) { queryParams.Add($"filterSao={filterSao.Value}"); }
+                if (!string.IsNullOrEmpty(trangThai)) { queryParams.Add($"trangThai={Uri.EscapeDataString(trangThai)}"); }
+                string url = $"api/app/quanlydanhgia?{string.Join("&", queryParams)}";
+
+                var response = await _httpClient.GetAsync(url);
+
+                // NẾU LÀ 401 (Chưa đăng nhập) THÌ SẼ BÁO LỖI
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"API Error: {response.StatusCode} - {errorContent}");
+                }
+
+                return await response.Content.ReadFromJsonAsync<PaginatedResult<DanhGiaQuanLyDto>>();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Lỗi GetReviewsAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async Task<bool> ReplyToReviewAsync(int idDanhGia, string noiDung)
+        {
+            try
+            {
+                var input = new PhanHoiInputDto { NoiDung = noiDung };
+                var response = await _httpClient.PostAsJsonAsync($"api/app/quanlydanhgia/{idDanhGia}/reply", input);
+                return response.IsSuccessStatusCode; // Sẽ là true nếu API chạy thành công
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Lỗi ReplyToReviewAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task<bool> ToggleReviewStatusAsync(int idDanhGia)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsync($"api/app/quanlydanhgia/{idDanhGia}/toggle-status", null);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Lỗi ToggleReviewStatusAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        // === LOGIC MỚI CHO TAB 2 (TỔNG QUAN) ===
+
+        private void TxtProductSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Reset timer mỗi khi gõ phím
+            _searchTimer.Stop();
+            _searchTimer.Start();
+        }
+
+        private async void SearchTimer_Tick(object? sender, EventArgs e)
+        {
+            _searchTimer.Stop(); // Dừng timer
+            string query = txtProductSearch.Text;
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                lbSearchResults.ItemsSource = null;
+                return;
+            }
+
+            try
+            {
+                var products = await SearchProductsAsync(query);
+                lbSearchResults.ItemsSource = products;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Lỗi tìm kiếm sản phẩm: {ex.Message}");
+            }
+        }
+
+        // === BƯỚC 1: TÁI CẤU TRÚC LOGIC RA HÀM RIÊNG ===
+        private async Task UpdateProductStats(int? productId)
+        {
+            // Nếu không có Id sản phẩm (ví dụ: đánh giá chung), thì reset
+            if (!productId.HasValue)
+            {
+                tbAvgRating.Text = "0.0";
+                tbTotalReviews.Text = "0";
+                return;
+            }
+
+            try
+            {
+                // Gọi API lấy thống kê (hàm này đã có)
+                var stats = await GetProductStatsAsync(productId.Value);
+                if (stats != null)
+                {
+                    tbAvgRating.Text = stats.AverageRating.ToString("0.0");
+                    tbTotalReviews.Text = stats.TotalReviews.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi lấy thống kê: {ex.Message}");
+                tbAvgRating.Text = "Lỗi";
+                tbTotalReviews.Text = "Lỗi";
+            }
+        }
+
+        // === BƯỚC 2: CẬP NHẬT HÀM CŨ ===
+        private async void LbSearchResults_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lbSearchResults.SelectedItem is ProductSearchResultDto product)
+            {
+                // Gọi hàm helper mới
+                await UpdateProductStats(product.IdSanPham);
+            }
+        }
+
+        // === BƯỚC 3: THÊM HÀM MỚI CHO LISTVIEW ===
+        private async void LvDanhGia_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Lấy đánh giá được chọn từ ListView
+            if (lvDanhGia.SelectedItem is DanhGiaQuanLyDto review)
+            {
+                // Gọi hàm helper mới với IdSanPham từ đánh giá
+                await UpdateProductStats(review.IdSanPham);
+            }
+        }
+
+        // === CÁC HÀM HELPER GỌI API (Tab 2) ===
+
+        private async Task<List<ProductSearchResultDto>?> SearchProductsAsync(string query)
+        {
+            var response = await _httpClient.GetAsync($"api/app/quanlydanhgia/search-products?query={Uri.EscapeDataString(query)}");
+            response.EnsureSuccessStatusCode(); // Sẽ báo lỗi nếu API thất bại
+            return await response.Content.ReadFromJsonAsync<List<ProductSearchResultDto>>();
+        }
+
+        private async Task<ProductStatsDto?> GetProductStatsAsync(int productId)
+        {
+            var response = await _httpClient.GetAsync($"api/app/quanlydanhgia/product-stats?productId={productId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ProductStatsDto>();
+        }
+    }
+
+    // --- CONVERTER (Giữ nguyên) ---
+    public class StatusToButtonStyleConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string trangThai = value as string ?? "";
+            Style? style;
+            if (trangThai == "Hiển thị")
+            {
+                style = Application.Current.TryFindResource("WarningButton") as Style;
+            }
+            else
+            {
+                style = Application.Current.TryFindResource("SecondaryButton") as Style;
+            }
+
+            if (style != null)
+            {
+                Style newStyle = new Style(typeof(Button), style);
+                newStyle.Setters.Add(new Setter(ContentControl.ContentProperty, trangThai == "Hiển thị" ? "Ẩn" : "Hiện"));
+                return newStyle;
+            }
+            return Application.Current.TryFindResource("BaseButton");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    // BƯỚC 1: THAY THẾ 'StatusToButtonStyleConverter' BẰNG CONVERTER NÀY
+    public class StatusToStyleConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string trangThai = value as string ?? "";
+            Style? style;
+            if (trangThai == "Hiển thị")
+            {
+                style = Application.Current.TryFindResource("WarningButton") as Style;
+            }
+            else
+            {
+                style = Application.Current.TryFindResource("SecondaryButton") as Style;
+            }
+            return style ?? Application.Current.TryFindResource("BaseButton");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // BƯỚC 2: THÊM CONVERTER MỚI NÀY VÀO
+    public class StatusToContentConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string trangThai = value as string ?? "";
+            return trangThai == "Hiển thị" ? "Ẩn" : "Hiện";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // --- KẾT THÚC SỬA LỖI ---
+    // --- CONVERTER (Giữ nguyên) ---
+    public class NullOrEmptyToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null)
+                return Visibility.Collapsed;
+            if (value is string str)
+            {
+                return string.IsNullOrWhiteSpace(str) ? Visibility.Collapsed : Visibility.Visible;
+            }
+            return Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 ================================================================================

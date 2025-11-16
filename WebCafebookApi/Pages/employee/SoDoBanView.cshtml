@@ -151,7 +151,7 @@ else
     // --- HÀM RENDER VÀ CẬP NHẬT UI ---
     function renderTables(banList) {
         const $container = $("#table-layout-container");
-        $container.empty(); // Sửa lỗi "dính" tin nhắn
+        $container.empty(); 
 
         if (!banList || banList.length === 0) {
             $container.append('<p class="text-muted text-center w-100 p-5">Khu vực này không có bàn nào.</p>');
@@ -186,6 +186,7 @@ else
                 datBanHtml = `<div class="table-booked-info">${ban.thongTinDatBan}</div>`; 
             }
 
+            // Gắn data-ban-id (Cách này an toàn 100%)
             const cardHtml = `
                 <div class="table-card ${statusClass}" data-ban-id="${ban.idBan}">
                     <div class="table-icon">
@@ -198,8 +199,8 @@ else
             `;
             const $card = $(cardHtml);
             
-            // QUAN TRỌNG: Gắn data-ban-json
-            // Chúng ta vẫn gắn, nhưng sẽ không dựa vào nó 100%
+            // Chúng ta vẫn gắn data-ban-json để dự phòng,
+            // nhưng sẽ ưu tiên dùng allTables.find()
             $card.data('ban-json', ban); 
             $container.append($card);
         });
@@ -351,9 +352,7 @@ else
     }
 
     // --- SỬA LỖI RACE CONDITION (ICON FONT) + HOT RELOAD ---
-    // Bọc toàn bộ code thực thi (gắn sự kiện và render)
-    // trong $(window).on('load') để đảm bảo TẤT CẢ assets (như font icon)
-    // đã tải xong trước khi script chạy.
+    // Bọc toàn bộ code thực thi trong $(window).on('load')
     $(window).on('load', function () {
     
         // 1. Gắn sự kiện (luôn gắn vào các phần tử tĩnh)
@@ -369,22 +368,26 @@ else
             resetPanel();
         });
 
+// =================================================================
+        // --- SỬA LỖI HOT RELOAD VÀ RACE CONDITION (Bản cuối) ---
         // =================================================================
-        // --- SỬA LỖI HOT RELOAD (THAY ĐỔI QUAN TRỌNG NHẤT) ---
-        // =================================================================
-        // Gắn sự kiện click vào container (event delegation)
         $("#table-layout-container").on("click", ".table-card", function () {
             const $card = $(this);
             if ($card.hasClass('dimmed')) return;
 
             // 1. Lấy ID của bàn (luôn luôn đúng)
-            const banId = $card.data('ban-id');
+            const banId = $card.data('ban-id'); 
             
-            // 2. Tìm đối tượng 'ban' đầy đủ từ mảng 'allTables' (rất an toàn)
-            const banData = allTables.find(b => b.idBan == banId); 
+            // 2. Tìm lại (re-find) dữ liệu bàn từ 'khuVucData' GỐC.
+            // Biến 'allTables' đang bị lỗi khi Hot Reload.
+            let banData = null;
+            for (const kv of khuVucData) {
+                // Dùng '==' để so sánh string (từ data-ban-id) và number (từ idBan)
+                banData = kv.bans.find(b => b.idBan == banId);
+                if (banData) break; // Thoát ngay khi tìm thấy
+            }
             
-            // 3. Gọi hàm với dữ liệu 'ban' đã được tìm thấy
-            // Cách này sẽ sống sót qua lỗi Hot Reload
+            // 3. Gọi hàm
             handleTableClick($card, banData); 
         });
         // =================================================================
@@ -440,10 +443,13 @@ else
             startSelectionMode('gop', `Đang Gộp [${currentSelectedBan.soBan}]`);
         });
 
-        // 2. Chạy code render lần đầu
-        // Phải chạy bên trong 'load' để đảm bảo icon đã sẵn sàng
-        renderTables(allTables);
-        resetPanel();
+        // 2. Chạy code render lần đầu *SAU MỘT KHOẢNG TRỄ NHỎ*
+        // Đây là "cú đấm" cuối cùng để diệt lỗi race condition
+        // do Hot Reload gây ra.
+        setTimeout(function() {
+            renderTables(allTables);
+            resetPanel();
+        }, 100); // Trì hoãn 100ms
 
     }); // <-- Kết thúc $(window).on('load')
 </script>

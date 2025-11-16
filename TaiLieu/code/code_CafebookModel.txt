@@ -2565,6 +2565,63 @@ namespace CafebookModel.Model.ModelApp
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelApp\QuanLyDanhGiaDto.cs
+================================================================================
+﻿using System;
+using System.Collections.Generic;
+
+namespace CafebookModel.Model.ModelApp
+{
+    // DTO chính để hiển thị một đánh giá trong ListView của quản lý
+    public class DanhGiaQuanLyDto
+    {
+        public int IdDanhGia { get; set; }
+        public int? IdSanPham { get; set; } // <-- ĐÃ THÊM
+        public string TenKhachHang { get; set; } = string.Empty;
+        public string? TenSanPham { get; set; } // Có thể null nếu là đánh giá chung
+        public int SoSao { get; set; }
+        public string? BinhLuan { get; set; }
+        public string? HinhAnhUrl { get; set; } // API sẽ trả về URL đầy đủ
+        public DateTime NgayTao { get; set; }
+        public string TrangThai { get; set; } = string.Empty; // "Hiển thị" hoặc "Đã ẩn"
+        public PhanHoiQuanLyDto? PhanHoi { get; set; }
+    }
+
+    // DTO cho phản hồi của nhân viên (nếu có)
+    public class PhanHoiQuanLyDto
+    {
+        public string TenNhanVien { get; set; } = string.Empty;
+        public string NoiDung { get; set; } = string.Empty;
+        public DateTime NgayTao { get; set; }
+    }
+
+    // DTO dùng khi Quản lý gửi một phản hồi
+    public class PhanHoiInputDto
+    {
+        public string NoiDung { get; set; } = string.Empty;
+    }
+
+    // DTO để nhận kết quả phân trang từ API
+    public class PaginatedResult<T>
+    {
+        public List<T> Items { get; set; } = new List<T>();
+        public int TotalPages { get; set; }
+        public int CurrentPage { get; set; }
+    }
+    public class ProductSearchResultDto
+    {
+        public int IdSanPham { get; set; }
+        public string TenSanPham { get; set; } = string.Empty;
+    }
+
+    public class ProductStatsDto
+    {
+        public int TotalReviews { get; set; }
+        public double AverageRating { get; set; }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelApp\SachDto.cs
 ================================================================================
 ﻿// Tập tin: CafebookModel/Model/ModelApp/SachDto.cs
@@ -3088,7 +3145,8 @@ namespace CafebookModel.Model.ModelApp.NhanVien
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelApp\NhanVien\GoiMonDto.cs
 ================================================================================
-﻿using System;
+﻿// Tập tin: CafebookModel/Model/ModelApp/NhanVien/GoiMonDto.cs
+using System;
 using System.Collections.Generic;
 
 namespace CafebookModel.Model.ModelApp.NhanVien
@@ -3124,6 +3182,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int SoLuong { get; set; }
         public decimal DonGia { get; set; }
         public decimal ThanhTien { get; set; }
+        public string? GhiChu { get; set; } // <-- NÂNG CẤP
     }
 
     // DTO cho một thẻ Sản Phẩm
@@ -3159,6 +3218,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public int IdHoaDon { get; set; }
         public int IdSanPham { get; set; }
         public int SoLuong { get; set; }
+        public string? GhiChu { get; set; } // <-- NÂNG CẤP
     }
 
     public class UpdateSoLuongRequest
@@ -3190,7 +3250,7 @@ namespace CafebookModel.Model.ModelApp.NhanVien
         public DateTime NgayTao { get; set; }
         public string TenNhanVien { get; set; } = string.Empty;
         public string SoBan { get; set; } = string.Empty;
-        public string? GhiChu { get; set; }
+        public string? GhiChu { get; set; } // Ghi chú chung của HĐ
         public List<ChiTietDto> ChiTiet { get; set; } = new List<ChiTietDto>();
         public decimal TongTienGoc { get; set; }
         public decimal GiamGia { get; set; }
@@ -3847,19 +3907,20 @@ namespace CafebookModel.Model.ModelWeb
         [Required]
         public int idHoaDon { get; set; }
 
-        [Required] // Sửa: Chuyển thành bắt buộc
+        [Required]
         public int idSanPham { get; set; }
 
-        // idSach đã bị xóa
-
-        [Required]
-        [Range(1, 5)]
+        [Required(ErrorMessage = "Vui lòng chọn số sao.")]
+        [Range(1, 5, ErrorMessage = "Vui lòng chọn số sao.")]
         public int SoSao { get; set; }
-        public string? BinhLuan { get; set; }
-        // File ảnh (IFormFile) sẽ được xử lý riêng tại Controller
+
+        // <<< SỬA LỖI TẠI ĐÂY >>>
+        [Required(ErrorMessage = "Vui lòng nhập bình luận của bạn.")]
+        [MinLength(10, ErrorMessage = "Bình luận cần ít nhất 10 ký tự.")]
+        public string BinhLuan { get; set; } = string.Empty; // Xóa '?' để
     }
 
-    // DTO dùng để HIỂN THỊ SP trên trang đánh giá (THÊM MỚI)
+    // DTO dùng để HIỂN THỊ SP trên trang đánh giá
     public class SanPhamChoDanhGiaDto
     {
         public int IdSanPham { get; set; }
@@ -3881,7 +3942,7 @@ namespace CafebookModel.Model.ModelWeb
         public PhanHoiWebDto? PhanHoi { get; set; }
     }
 
-    // DTO dùng để HIỂN THỊ phản hồi của nhân viên
+    // DTO cho Phản Hồi
     public class PhanHoiWebDto
     {
         public string TenNhanVien { get; set; } = "";
@@ -4623,7 +4684,6 @@ namespace CafebookModel.Model.ModelWeb
     {
         public string? HoTen { get; set; }
         public string? VaiTro { get; set; }
-        // SỬA: Đổi từ Base64 sang Url
         public string? AnhDaiDienUrl { get; set; }
         public string? CaHienTai { get; set; }
         public int TongBanDangPhucVu { get; set; }
@@ -4632,9 +4692,109 @@ namespace CafebookModel.Model.ModelWeb
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\QuanLy\GoiMonViewDto.cs
+================================================================================
+﻿// Tập tin: CafebookModel/Model/ModelWeb/QuanLy/GoiMonViewDto.cs
+using System;
+using System.Collections.Generic;
+
+namespace CafebookModel.Model.ModelWeb.QuanLy
+{
+    // DTO chính chứa toàn bộ dữ liệu cho trang GoiMonView
+    public class GoiMonViewDto
+    {
+        public HoaDonInfoDto HoaDonInfo { get; set; } = default!;
+        public List<ChiTietDto> ChiTietItems { get; set; } = default!;
+        public List<SanPhamDto> SanPhams { get; set; } = default!;
+        public List<DanhMucDto> DanhMucs { get; set; } = default!;
+        public List<KhuyenMaiDto> KhuyenMais { get; set; } = default!;
+    }
+
+    // Thông tin cơ bản của hóa đơn
+    public class HoaDonInfoDto
+    {
+        public int IdHoaDon { get; set; }
+        public string SoBan { get; set; } = default!;
+        public string LoaiHoaDon { get; set; } = default!;
+        public decimal TongTienGoc { get; set; }
+        public decimal GiamGia { get; set; }
+        public decimal ThanhTien { get; set; }
+        public int? IdKhuyenMai { get; set; }
+    }
+
+    // DTO cho một dòng trong danh sách chi tiết
+    public class ChiTietDto
+    {
+        public int IdChiTietHoaDon { get; set; }
+        public int IdSanPham { get; set; }
+        public string TenSanPham { get; set; } = default!;
+        public int SoLuong { get; set; }
+        public decimal DonGia { get; set; }
+        public decimal ThanhTien { get; set; }
+        public string? GhiChu { get; set; }
+    }
+
+    // DTO cho một thẻ Sản Phẩm
+    public class SanPhamDto
+    {
+        public int IdSanPham { get; set; }
+        public string TenSanPham { get; set; } = default!;
+        public decimal DonGia { get; set; }
+        public string HinhAnh { get; set; } = default!;
+        public int IdDanhMuc { get; set; }
+    }
+
+    // DTO cho Danh Mục (Sidebar trái)
+    public class DanhMucDto
+    {
+        public int IdDanhMuc { get; set; }
+        public string TenLoaiSP { get; set; } = default!;
+    }
+
+    // DTO cho ComboBox Khuyến mãi
+    public class KhuyenMaiDto
+    {
+        public int IdKhuyenMai { get; set; }
+        public string TenKhuyenMai { get; set; } = default!;
+        public string LoaiGiamGia { get; set; } = default!;
+        public decimal GiaTriGiam { get; set; }
+    }
+
+    // === CÁC DTO DÙNG ĐỂ GỬI YÊU CẦU LÊN API ===
+
+    public class AddItemRequest
+    {
+        public int IdHoaDon { get; set; }
+        public int IdSanPham { get; set; }
+        public int SoLuong { get; set; }
+        public string? GhiChu { get; set; }
+    }
+
+    public class UpdateSoLuongRequest
+    {
+        public int IdChiTietHoaDon { get; set; }
+        public int SoLuongMoi { get; set; }
+    }
+
+    public class ApplyPromotionRequest
+    {
+        public int IdHoaDon { get; set; }
+        public int? IdKhuyenMai { get; set; }
+    }
+
+    // DTO trả về khi thêm món
+    public class AddItemResponseDto
+    {
+        public HoaDonInfoDto updatedHoaDonInfo { get; set; } = default!;
+        public ChiTietDto newItem { get; set; } = default!;
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\QuanLy\SoDoBanDto.cs
 ================================================================================
-﻿using System.Collections.Generic;
+﻿// Tập tin: CafebookModel/Model/ModelWeb/QuanLy/SoDoBanDto.cs
+using System.Collections.Generic;
 
 namespace CafebookModel.Model.ModelWeb.QuanLy
 {
@@ -4646,9 +4806,13 @@ namespace CafebookModel.Model.ModelWeb.QuanLy
         public int IdBan { get; set; }
         public string SoBan { get; set; } = string.Empty;
         public string TrangThai { get; set; } = string.Empty;
-        public string? GhiChu { get; set; } // <-- THÊM MỚI
+        public string? GhiChu { get; set; }
         public int IdKhuVuc { get; set; }
-        public decimal TongTien { get; set; } // Vẫn giữ TongTien (dùng cho WPF, web ẩn đi)
+        public decimal TongTien { get; set; }
+
+        // --- BỔ SUNG MỚI (Từ logic WPF) ---
+        public int? IdHoaDonHienTai { get; set; }
+        public string? ThongTinDatBan { get; set; }
     }
 
     /// <summary>
@@ -4659,6 +4823,45 @@ namespace CafebookModel.Model.ModelWeb.QuanLy
         public int IdKhuVuc { get; set; }
         public string TenKhuVuc { get; set; } = string.Empty;
         public List<BanDto> Bans { get; set; } = new();
+    }
+
+    // --- BỔ SUNG MỚI (DTO cho các hành động) ---
+
+    /// <summary>
+    /// DTO để tạo Hóa đơn / Mở bàn
+    /// </summary>
+    public class CreateOrderRequestDto
+    {
+        public int IdBan { get; set; }
+        public int IdNhanVien { get; set; }
+    }
+
+    /// <summary>
+    /// DTO trả về ID hóa đơn vừa tạo
+    /// </summary>
+    public class CreateOrderResponseDto
+    {
+        public int IdHoaDon { get; set; }
+    }
+
+    /// <summary>
+    /// DTO để báo cáo sự cố
+    /// </summary>
+    public class ReportProblemRequestDto
+    {
+        public int IdBan { get; set; }
+        public int IdNhanVien { get; set; }
+        public string GhiChu { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO để Chuyển bàn hoặc Gộp bàn
+    /// </summary>
+    public class BanActionRequestDto
+    {
+        public int IdHoaDonNguon { get; set; }
+        public int IdBanDich { get; set; } // Dùng cho Chuyển Bàn
+        public int? IdHoaDonDich { get; set; } // Dùng cho Gộp Bàn
     }
 }
 ================================================================================

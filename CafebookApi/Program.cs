@@ -1,4 +1,6 @@
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Program.cs
+using CafebookApi.Data;
+using CafebookApi.Services; // <-- THÊM DÒNG NÀY
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,9 +19,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin() // Cho phép bất kỳ nguồn nào
-                  .AllowAnyMethod() // Cho phép bất kỳ phương thức nào (GET, POST, PUT, v.v.)
-                  .AllowAnyHeader(); // Cho phép bất kỳ header nào
+            policy.AllowAnyOrigin()
+                              .AllowAnyMethod()
+                              .AllowAnyHeader();
         });
 });
 // =====================================
@@ -28,6 +30,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<AiService>(); // <-- THÊM DÒNG NÀY
 builder.Services.AddSwaggerGen(options =>
 {
     // THÊM DÒNG NÀY:

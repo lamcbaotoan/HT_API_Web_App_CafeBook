@@ -66,6 +66,7 @@ namespace CafebookApi.Data
         public DbSet<TrangThaiCheBien> TrangThaiCheBiens { get; set; }
         public virtual DbSet<DanhGia> DanhGias { get; set; }
         public virtual DbSet<PhanHoiDanhGia> PhanHoiDanhGias { get; set; }
+        public virtual DbSet<ThongBaoHoTro> ThongBaoHoTros { get; set; }
 
         // --- Cấu hình Khóa (Fluent API) ---
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -266,6 +267,27 @@ namespace CafebookApi.Data
                 .WithMany(nv => nv.NhatKyHuyMons)
                 .HasForeignKey(n => n.IdNhanVienHuy)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Cấu hình cho ChatLichSu (liên kết với ThongBaoHoTro)
+            modelBuilder.Entity<ChatLichSu>()
+                .HasOne(c => c.ThongBaoHoTro)
+                .WithMany(t => t.ChatLichSus)
+                .HasForeignKey(c => c.IdThongBaoHoTro)
+                .OnDelete(DeleteBehavior.SetNull); // Nếu xóa phiếu hỗ trợ, vẫn giữ lịch sử chat
+
+            // Cấu hình cho ThongBaoHoTro
+            modelBuilder.Entity<ThongBaoHoTro>(e =>
+            {
+                e.HasOne(t => t.KhachHang)
+                 .WithMany() // Không cần navigation ngược từ KhachHang
+                 .HasForeignKey(t => t.IdKhachHang)
+                 .OnDelete(DeleteBehavior.NoAction); // Không cho xóa KH nếu còn phiếu HT
+
+                e.HasOne(t => t.NhanVien)
+                 .WithMany() // Không cần navigation ngược từ NhanVien
+                 .HasForeignKey(t => t.IdNhanVien)
+                 .OnDelete(DeleteBehavior.NoAction); // Không cho xóa NV nếu còn phiếu HT
+            });
 
             // Cấu hình bổ sung (Đã đúng)
             modelBuilder.Entity<Sach>()

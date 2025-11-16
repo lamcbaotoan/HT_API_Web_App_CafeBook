@@ -10,7 +10,6 @@ using System.IO;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-
 namespace CafebookApi.Controllers.Web
 {
     [Route("api/web/trangchu")]
@@ -47,14 +46,13 @@ namespace CafebookApi.Controllers.Web
             // 1. Lấy thông tin chung (từ bảng CaiDat)
             var settings = await _context.CaiDats
                 .Where(c => c.TenCaiDat == "TenQuan" ||
-                            c.TenCaiDat == "GioiThieu" ||
+c.TenCaiDat == "GioiThieu" ||
                             c.TenCaiDat == "BannerImage" ||
-                            c.TenCaiDat == "DiaChi" ||
+c.TenCaiDat == "DiaChi" ||
                             c.TenCaiDat == "SoDienThoai" ||
-                            c.TenCaiDat == "LienHe_Email" ||
-                            c.TenCaiDat == "LienHe_GioMoCua")
+c.TenCaiDat == "LienHe_Email" ||
+c.TenCaiDat == "LienHe_GioMoCua")
                 .ToListAsync();
-
             var thongTinChung = new ThongTinChungDto
             {
                 TenQuan = settings.FirstOrDefault(c => c.TenCaiDat == "TenQuan")?.GiaTri ?? "Cafebook",
@@ -73,25 +71,25 @@ namespace CafebookApi.Controllers.Web
                 .Where(km => km.TrangThai == "Hoạt động" && km.NgayBatDau <= DateTime.Now && km.NgayKetThuc >= DateTime.Now)
                 .OrderBy(km => km.NgayBatDau)
                 .Take(3)
-                .Select(km => new KhuyenMaiDto
-                {
-                    TenKhuyenMai = km.TenChuongTrinh,
-                    MoTa = km.MoTa,
-                    dieuKienApDung = km.DieuKienApDung
-                }).ToListAsync();
+.Select(km => new KhuyenMaiDto
+{
+    TenKhuyenMai = km.TenChuongTrinh,
+    MoTa = km.MoTa,
+    dieuKienApDung = km.DieuKienApDung
+}).ToListAsync();
 
-            // 3. Lấy 5 món nổi bật (Không đổi)
+            // 3. Lấy 5 món nổi bật
             var monNoiBat_Raw = await _context.SanPhams
                 .Where(sp => sp.TrangThaiKinhDoanh == true)
                 .OrderByDescending(sp => sp.IdSanPham)
                 .Take(5)
-                .Select(sp => new
-                {
-                    sp.IdSanPham,
-                    sp.TenSanPham,
-                    sp.GiaBan,
-                    sp.HinhAnh
-                }).ToListAsync();
+.Select(sp => new
+{
+    sp.IdSanPham,
+    sp.TenSanPham,
+    sp.GiaBan,
+    sp.HinhAnh
+}).ToListAsync();
 
             var monNoiBat = monNoiBat_Raw.Select(sp => new SanPhamDto
             {
@@ -101,27 +99,37 @@ namespace CafebookApi.Controllers.Web
                 AnhSanPhamUrl = GetFullImageUrl(sp.HinhAnh)
             }).ToList();
 
-            // 4. Lấy 4 sách nổi bật (SỬA DÙNG N-N)
+            // ======================================
+            // === SỬA LỖI LINQ TẠI ĐÂY ===
+            // ======================================
+
+            // 4. Lấy 4 sách nổi bật
+            // BƯỚC 1: Lấy dữ liệu thô (bao gồm Tác giả)
             var sachNoiBat_Raw = await _context.Sachs
+                .Include(s => s.SachTacGias).ThenInclude(stg => stg.TacGia) // Tải Tác giả
                 .OrderByDescending(s => s.SoLuongHienCo)
                 .Take(4)
-                .Select(s => new
+                .Select(s => new // Chọn các trường cần thiết (vẫn là IQueryable)
                 {
                     s.IdSach,
                     s.TenSach,
-                    // SỬA: Nối chuỗi các tác giả từ bảng N-N
-                    TacGia = string.Join(", ", s.SachTacGias.Select(stg => stg.TacGia.TenTacGia)),
+                    // Lấy CẢ collection Tác giả
+                    TacGias = s.SachTacGias.Select(stg => stg.TacGia.TenTacGia),
                     s.AnhBia
-                }).ToListAsync();
+                }).ToListAsync(); // <-- Chạy SQL tại đây
 
+            // BƯỚC 2: Dùng C# (string.Join) để tạo DTO
             var sachNoiBat = sachNoiBat_Raw.Select(s => new SachDto
             {
                 IdSach = s.IdSach,
                 TieuDe = s.TenSach,
-                // SỬA: Xử lý trường hợp không có tác giả
-                TacGia = string.IsNullOrEmpty(s.TacGia) ? "Không rõ" : s.TacGia,
+                TacGia = string.Join(", ", s.TacGias), // <-- string.Join chạy trong C#
                 AnhBiaUrl = GetFullImageUrl(s.AnhBia)
             }).ToList();
+
+            // ======================================
+            // === KẾT THÚC SỬA LỖI ===
+            // ======================================
 
             // 5. Gộp tất cả vào DTO
             var dto = new TrangChuDto

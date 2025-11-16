@@ -1,10 +1,3 @@
-Rất tuyệt 👏 — bạn đang mở rộng hệ thống **Cafébook** theo hướng **chăm sóc khách hàng thông minh**, kết hợp **AI Chatbot + Nhân viên hỗ trợ trực tiếp**.
-Đây là xu hướng chuẩn trong các hệ thống thương mại hiện đại: AI trả lời nhanh, nhân viên tiếp nhận khi AI không đủ khả năng.
-
-Dưới đây là **bản đặc tả chi tiết chức năng “Chat hỗ trợ AI & Nhân viên”**, dạng mô tả nghiệp vụ chuyên nghiệp — phù hợp để đưa vào báo cáo hoặc triển khai thực tế (Web + API).
-
----
-
 # 🧩 ĐẶC TẢ CHỨC NĂNG: CHAT HỖ TRỢ KIỂU “AI – NHÂN VIÊN”
 
 ---
@@ -255,11 +248,7 @@ FROM ThongBaoHoTro;
 
 ---
 
-Bạn có muốn mình **viết luôn phần SQL tạo bảng + các stored procedure xử lý chat + thông báo** (cho AI và nhân viên) để bạn dán thẳng vào SQL Server và Controller MVC không?
-→ Phần đó sẽ bao gồm:
-
-* `CREATE TABLE ChatLichSu` (có loại AI/Nhân viên)
-* `CREATE TABLE ThongBaoHoTro`
-* `sp_TaoThongBaoHoTro`
-* `sp_LayChatTheoKhachHang`
-* `sp_CapNhatPhanHoiNhanVien`
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml.cs
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\HoTroDto.cs
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\HoTroControllers.cs
