@@ -7,6 +7,7 @@
     <title>@ViewData["Title"] - Quản lý Cafebook</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="employee-body">
@@ -35,14 +36,20 @@
                         Sơ Đồ Bàn
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Hỗ trợ Khách hàng" ? "active" : "")"
+                       asp-page="/Employee/HoTroKhachHangView">
+                        <span class="material-symbols-outlined">support_agent</span>
+                        Hỗ trợ Khách hàng
+                    </a>
+                </li>
             </ul>
         </nav>
 
         <div class="main-content">
             <header class="header-nav shadow-sm">
                 <span class="navbar-text fw-bold" style="color: var(--cf-text);">
-                    <!-- === SỬA LỖI CS8602 (Dòng 44) === -->
-                    <!-- Thêm '?' sau User.Identity để kiểm tra null an toàn -->
                     Xin chào, @(User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name)!
                 </span>
                 <form method="post" asp-page="/employee/DangXuat">

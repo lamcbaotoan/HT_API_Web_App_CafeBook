@@ -193,6 +193,7 @@ Solution 'Project'/
 │   │       ├── ChinhSachController.cs
 │   │       ├── DanhGiaWebController.cs
 │   │       ├── DatBanWebController.cs
+│   │       ├── HoTroControllers.cs
 │   │       ├── KhachHangProfileController.cs
 │   │       ├── KhachHangTaiKhoanController.cs
 │   │       ├── LienHeController.cs
@@ -207,6 +208,8 @@ Solution 'Project'/
 │   │   └── CafebookDbContext.cs
 │   ├── Properties/
 │   │   └── launchSettings.json
+│   ├── Services/
+│   │   └── AiService.cs
 │   ├── wwwroot/
 │   │   └── images/
 │   │       ├── anhdanhgia/
@@ -307,6 +310,7 @@ Solution 'Project'/
 │   │   │   ├── DanhGiaWebDtos.cs
 │   │   │   ├── DatBanWebDto.cs
 │   │   │   ├── GioHangDto.cs
+│   │   │   ├── HoTroDto.cs
 │   │   │   ├── KhachHangDto.cs
 │   │   │   ├── KhachHangProfileDto.cs
 │   │   │   ├── LichSuDatBanDto.cs
@@ -389,6 +393,8 @@ Solution 'Project'/
     │   ├── DatBanView.cshtml.cs
     │   ├── GioHangView.cshtml
     │   ├── GioHangView.cshtml.cs
+    │   ├── HoTroView.cshtml
+    │   ├── HoTroView.cshtml.cs
     │   ├── LienHeView.cshtml
     │   ├── LienHeView.cshtml.cs
     │   ├── ThuVienSachView.cshtml

@@ -1,6 +1,7 @@
 ﻿// Tập tin: CafebookApi/Program.cs
 using CafebookApi.Data;
-using CafebookApi.Services; // <-- THÊM DÒNG NÀY
+using CafebookApi.Services;
+using CafebookApi.Hubs; // <-- Đảm bảo có
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,37 +9,51 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1️⃣ Kết nối SQL Server
+// 1. Kết nối SQL Server
 var connectionString = builder.Configuration.GetConnectionString("CafeBookConnectionString");
 builder.Services.AddDbContext<CafebookDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// === THÊM KHỐI NÀY ĐỂ SỬA LỖI 401 ===
+// 2. CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         policy =>
         {
             policy.AllowAnyOrigin()
-                              .AllowAnyMethod()
-                              .AllowAnyHeader();
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+
+    // Policy cho SignalR (quan trọng)
+    options.AddPolicy("SignalRPolicy",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5156") // <-- THAY BẰNG URL WEB CỦA BẠN (nếu khác)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // <-- Bắt buộc cho SignalR
         });
 });
-// =====================================
 
-// 2️⃣ Cấu hình controller, Swagger
+// 3. Đăng ký dịch vụ
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddScoped<AiService>(); // <-- THÊM DÒNG NÀY
+
+// Đăng ký các dịch vụ của bạn (dưới dạng Scoped là đúng)
+builder.Services.AddScoped<AiService>();
+builder.Services.AddScoped<AiToolService>();
+
+// === THÊM DỊCH VỤ SIGNALR ===
+builder.Services.AddSignalR();
+
 builder.Services.AddSwaggerGen(options =>
 {
-    // THÊM DÒNG NÀY:
-    // Dùng FullName (bao gồm namespace) để phân biệt các DTO trùng tên
-    options.CustomSchemaIds(type => type.FullName); 
+    options.CustomSchemaIds(type => type.FullName);
 });
 
-// 3️⃣ Cấu hình xác thực JWT
+// 4. Cấu hình xác thực JWT (Giữ nguyên)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -53,31 +68,34 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
-        ValidAudience = builder.Configuration["Jwt:Audience"]!,
+        ValidAudience = builder.Configuration["Jwt:Audience"]! ?? builder.Configuration["Jwt:Issuer"]!,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
+
 var app = builder.Build();
 
-// 4️⃣ Swagger (chỉ bật khi dev)
+// 5. Cấu hình Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 5️⃣ Cho phép truy cập file tĩnh (wwwroot)
 app.UseStaticFiles();
-app.UseCors("AllowAll"); // <-- Dòng này bây giờ đã hợp lệ
-
-// 6️⃣ Hỗ trợ HTTPS redirect
-//app.UseHttpsRedirection();
-
 app.UseRouting();
-app.UseAuthentication(); // Phải trước UseAuthorization
+
+// Dùng cả hai policy
+app.UseCors("AllowAll");
+app.UseCors("SignalRPolicy");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-// 7️⃣ Map controllers
 app.MapControllers();
+
+// === MAP (ÁNH XẠ) CHATHUB ===
+//app.MapHub<ChatHub>("/chatHub");
+app.MapHub<ChatHub>("/chathub").RequireCors("SignalRPolicy");
 
 app.Run();

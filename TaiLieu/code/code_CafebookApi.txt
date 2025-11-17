@@ -34,7 +34,10 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\CafebookApi.csproj
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\CafebookApi.csproj.user
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Program.cs
 ================================================================================
-﻿using CafebookApi.Data;
+﻿// Tập tin: CafebookApi/Program.cs
+using CafebookApi.Data;
+using CafebookApi.Services;
+using CafebookApi.Hubs; // <-- Đảm bảo có
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -42,36 +45,51 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1️⃣ Kết nối SQL Server
+// 1. Kết nối SQL Server
 var connectionString = builder.Configuration.GetConnectionString("CafeBookConnectionString");
 builder.Services.AddDbContext<CafebookDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// === THÊM KHỐI NÀY ĐỂ SỬA LỖI 401 ===
+// 2. CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin() // Cho phép bất kỳ nguồn nào
-                  .AllowAnyMethod() // Cho phép bất kỳ phương thức nào (GET, POST, PUT, v.v.)
-                  .AllowAnyHeader(); // Cho phép bất kỳ header nào
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+
+    // Policy cho SignalR (quan trọng)
+    options.AddPolicy("SignalRPolicy",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5156") // <-- THAY BẰNG URL WEB CỦA BẠN (nếu khác)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // <-- Bắt buộc cho SignalR
         });
 });
-// =====================================
 
-// 2️⃣ Cấu hình controller, Swagger
+// 3. Đăng ký dịch vụ
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
+
+// Đăng ký các dịch vụ của bạn (dưới dạng Scoped là đúng)
+builder.Services.AddScoped<AiService>();
+builder.Services.AddScoped<AiToolService>();
+
+// === THÊM DỊCH VỤ SIGNALR ===
+builder.Services.AddSignalR();
+
 builder.Services.AddSwaggerGen(options =>
 {
-    // THÊM DÒNG NÀY:
-    // Dùng FullName (bao gồm namespace) để phân biệt các DTO trùng tên
-    options.CustomSchemaIds(type => type.FullName); 
+    options.CustomSchemaIds(type => type.FullName);
 });
 
-// 3️⃣ Cấu hình xác thực JWT
+// 4. Cấu hình xác thực JWT (Giữ nguyên)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -86,32 +104,34 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"]!,
-        ValidAudience = builder.Configuration["Jwt:Audience"]!,
+        ValidAudience = builder.Configuration["Jwt:Audience"]! ?? builder.Configuration["Jwt:Issuer"]!,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
+
 var app = builder.Build();
 
-// 4️⃣ Swagger (chỉ bật khi dev)
+// 5. Cấu hình Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 5️⃣ Cho phép truy cập file tĩnh (wwwroot)
 app.UseStaticFiles();
-app.UseCors("AllowAll"); // <-- Dòng này bây giờ đã hợp lệ
-
-// 6️⃣ Hỗ trợ HTTPS redirect
-//app.UseHttpsRedirection();
-
 app.UseRouting();
-app.UseAuthentication(); // Phải trước UseAuthorization
+
+// Dùng cả hai policy
+app.UseCors("AllowAll");
+app.UseCors("SignalRPolicy");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-// 7️⃣ Map controllers
 app.MapControllers();
+
+// === MAP (ÁNH XẠ) CHATHUB ===
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();
 ================================================================================
@@ -10829,6 +10849,296 @@ namespace CafebookApi.Controllers.Web
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\HoTroControllers.cs
+================================================================================
+﻿// Tập tin: CafebookApi/Controllers/Web/HoTroController.cs
+using CafebookApi.Data;
+using CafebookApi.Services;
+using CafebookModel.Model.Entities;
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR; // <-- THÊM MỚI
+using CafebookApi.Hubs; // <-- THÊM MỚI
+
+namespace CafebookApi.Controllers.Web
+{
+    [Route("api/web/hotro")]
+    [ApiController]
+    [AllowAnonymous]
+    public class HoTroController : ControllerBase
+    {
+        private readonly CafebookDbContext _context;
+        private readonly AiService _aiService;
+        private readonly AiToolService _aiToolService;
+        private readonly IHubContext<ChatHub> _chatHubContext; // <-- THÊM MỚI
+
+        // CẬP NHẬT CONSTRUCTOR
+        public HoTroController(
+            CafebookDbContext context,
+            AiService aiService,
+            AiToolService aiToolService,
+            IHubContext<ChatHub> chatHubContext) // <-- THÊM MỚI
+        {
+            _context = context;
+            _aiService = aiService;
+            _aiToolService = aiToolService;
+            _chatHubContext = chatHubContext; // <-- THÊM MỚI
+        }
+
+        private int GetCurrentUserId()
+        {
+            var idClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            int.TryParse(idClaim?.Value, out int id);
+            return id;
+        }
+
+        [HttpPost("send")]
+        public async Task<IActionResult> SendMessage([FromBody] SendChatRequestDto request)
+        {
+            var idKhachHang = GetCurrentUserId();
+            string? guestSessionId = (idKhachHang == 0) ? request.GuestSessionId : null;
+
+            if (idKhachHang == 0 && string.IsNullOrEmpty(guestSessionId))
+            {
+                return Unauthorized("Không thể xác định phiên làm việc.");
+            }
+
+            var responseDto = new SendChatResponseDto();
+
+            // 1. Lưu tin nhắn của khách
+            var lichSuKhach = await SaveChatHistoryAsync(idKhachHang, guestSessionId, request.NoiDung, request.NoiDung, "KhachHang", null);
+            responseDto.TinNhanCuaKhach = MapToChatDto(lichSuKhach);
+
+            // 2. Tải lịch sử chat (cho AI)
+            var chatHistory = await GetChatHistoryPayloadAsync(idKhachHang, guestSessionId);
+
+            // 3. Gửi cho AI (Vòng 1)
+            string? aiResponse = await _aiService.GetAnswerAsync(request.NoiDung, (idKhachHang > 0) ? idKhachHang : null, chatHistory);
+
+            string phanHoiCuoiCung;
+            string loaiTinNhanPhanHoi = "AI";
+            ThongBaoHoTro? thongBaoHoTro = null;
+
+            // 4. Phân tích phản hồi của AI
+            if (aiResponse == null)
+            {
+                phanHoiCuoiCung = "Hiện tại trợ lý AI đang bận. Câu hỏi của bạn đã được chuyển đến nhân viên hỗ trợ.";
+                responseDto.DaChuyenNhanVien = true;
+                thongBaoHoTro = await CreateThongBaoHoTro(idKhachHang, guestSessionId, request.NoiDung, "AI Service lỗi");
+
+                // === BẮT ĐẦU SỬA LỖI ===
+                await UpdateChatHistoryWithTicketId(idKhachHang, guestSessionId, thongBaoHoTro.IdThongBao);
+                // === KẾT THÚC SỬA LỖI ===
+            }
+            else if (aiResponse == "[NEEDS_SUPPORT]")
+            {
+                phanHoiCuoiCung = "Câu hỏi của bạn đã được ghi nhận. Chúng tôi sẽ chuyển yêu cầu này đến nhân viên hỗ trợ và phản hồi bạn sớm nhất.";
+                responseDto.DaChuyenNhanVien = true;
+                thongBaoHoTro = await CreateThongBaoHoTro(idKhachHang, guestSessionId, request.NoiDung, "AI phát hiện cần hỗ trợ");
+
+                // === BẮT ĐẦU SỬA LỖI ===
+                await UpdateChatHistoryWithTicketId(idKhachHang, guestSessionId, thongBaoHoTro.IdThongBao);
+                // === KẾT THÚC SỬA LỖI ===
+            }
+            else if (aiResponse.StartsWith("[TOOL_CALL:"))
+            {
+                await SaveChatHistoryAsync(idKhachHang, guestSessionId, request.NoiDung, aiResponse, "AI_ToolCall", null);
+                string toolResult = await ExecuteToolAsync(aiResponse, idKhachHang);
+                var chatHistoryV2 = await GetChatHistoryPayloadAsync(idKhachHang, guestSessionId);
+                string? finalAiResponse = await _aiService.GetAnswerAsync(request.NoiDung, (idKhachHang > 0) ? idKhachHang : null, chatHistoryV2, toolResult);
+                phanHoiCuoiCung = finalAiResponse ?? "Dịch vụ AI đang gặp sự cố khi diễn giải kết quả.";
+            }
+            else
+            {
+                phanHoiCuoiCung = aiResponse;
+            }
+
+            // 5. Lưu phản hồi cuối cùng
+            var lichSuPhanHoi = await SaveChatHistoryAsync(
+                idKhachHang, guestSessionId, request.NoiDung, phanHoiCuoiCung, loaiTinNhanPhanHoi,
+                thongBaoHoTro?.IdThongBao // Gán IdThongBao (nếu có)
+            );
+            responseDto.TinNhanPhanHoi = MapToChatDto(lichSuPhanHoi);
+
+            // 6. Trả về IdThongBao để JS biết và kích hoạt SignalR
+            if (thongBaoHoTro != null)
+            {
+                responseDto.IdThongBaoHoTro = thongBaoHoTro.IdThongBao;
+            }
+
+            return Ok(responseDto);
+        }
+
+        // === HÀM CREATETHONGBAO ĐƯỢC NÂNG CẤP ===
+        private async Task<ThongBaoHoTro> CreateThongBaoHoTro(int? idKhachHang, string? guestSessionId, string noiDungYeuCau, string ghiChu)
+        {
+            int? finalKhachHangId = (idKhachHang.HasValue && idKhachHang > 0) ? idKhachHang : null;
+            var thongBaoHoTro = new ThongBaoHoTro
+            {
+                IdKhachHang = finalKhachHangId,
+                GuestSessionId = guestSessionId,
+                NoiDungYeuCau = noiDungYeuCau,
+                ThoiGianTao = DateTime.Now,
+                TrangThai = "Chờ xử lý",
+                GhiChu = ghiChu
+            };
+            _context.ThongBaoHoTros.Add(thongBaoHoTro);
+            await _context.SaveChangesAsync();
+
+            // Logic tạo ThongBao chung
+            string idHienThi = finalKhachHangId?.ToString() ?? $"KVL ({guestSessionId?.Substring(0, 6)}...)";
+            string noiDungThongBao = $"Người dùng ({idHienThi}) cần hỗ trợ: '{noiDungYeuCau.Substring(0, Math.Min(noiDungYeuCau.Length, 100))}'";
+            var thongBao = new ThongBao
+            {
+                NoiDung = noiDungThongBao,
+                ThoiGianTao = DateTime.Now,
+                LoaiThongBao = "HoTroKhachHang",
+                IdLienQuan = thongBaoHoTro.IdThongBao,
+                DaXem = false
+            };
+            _context.ThongBaos.Add(thongBao);
+            await _context.SaveChangesAsync();
+
+            // === NÂNG CẤP SIGNALR ===
+            // Gửi tín hiệu cho TẤT CẢ nhân viên đang mở trang dashboard
+            await _chatHubContext.Clients.All.SendAsync("ReloadTicketList");
+            // ======================
+
+            return thongBaoHoTro; // Trả về entity để lấy ID
+        }
+
+        // === CÁC HÀM HELPER (Giữ nguyên) ===
+
+        private async Task<ChatLichSu> SaveChatHistoryAsync(int? idKhachHang, string? guestSessionId, string hoi, string traLoi, string loaiTinNhan, int? idThongBao)
+        {
+            var lichSu = new ChatLichSu
+            {
+                IdKhachHang = (idKhachHang > 0) ? idKhachHang : null,
+                GuestSessionId = guestSessionId,
+                NoiDungHoi = hoi,
+                NoiDungTraLoi = traLoi,
+                ThoiGian = DateTime.Now,
+                LoaiChat = "Web_HTTP", // Đánh dấu đây là chat qua HTTP
+                LoaiTinNhan = loaiTinNhan,
+                IdThongBaoHoTro = idThongBao
+            };
+            _context.ChatLichSus.Add(lichSu);
+            await _context.SaveChangesAsync();
+            return lichSu;
+        }
+
+        private async Task<string> ExecuteToolAsync(string toolCall, int? idKhachHang)
+        {
+            try
+            {
+                var toolMatch = Regex.Match(toolCall, @"\[TOOL_CALL: ([\w_]+)(.*)\]");
+                if (!toolMatch.Success) return "[TOOL_ERROR: Định dạng tool call không hợp lệ]";
+                string toolName = toolMatch.Groups[1].Value;
+                string paramString = toolMatch.Groups[2].Value.Trim();
+                Func<string, string, string> getParam = (name, defaultValue) =>
+                {
+                    var match = Regex.Match(paramString, $@"{name}:\s*'([^']*)'");
+                    if (!match.Success) match = Regex.Match(paramString, $@"{name}:\s*([\d]+)");
+                    return match.Success ? match.Groups[1].Value : defaultValue;
+                };
+
+                switch (toolName)
+                {
+                    case "GET_THONG_TIN_CHUNG":
+                        return await _aiToolService.GetThongTinChungAsync();
+                    case "KIEM_TRA_BAN":
+                        int.TryParse(getParam("SoNguoi", "0"), out int soNguoi);
+                        if (soNguoi == 0) return "[TOOL_ERROR: AI quên hỏi số lượng người]";
+                        return await _aiToolService.KiemTraBanTrongAsync(soNguoi);
+                    case "KIEM_TRA_SAN_PHAM":
+                        string tenSP = getParam("TenSanPham", "");
+                        if (string.IsNullOrEmpty(tenSP)) return "[TOOL_ERROR: AI quên hỏi tên sản phẩm]";
+                        return await _aiToolService.KiemTraSanPhamAsync(tenSP);
+                    case "KIEM_TRA_SACH":
+                        string tenSach = getParam("TenSach", "");
+                        if (string.IsNullOrEmpty(tenSach)) return "[TOOL_ERROR: AI quên hỏi tên sách]";
+                        return await _aiToolService.KiemTraSachAsync(tenSach);
+                    case "GET_THONG_TIN_KHACH_HANG":
+                        if (idKhachHang == null || idKhachHang == 0) return "[TOOL_ERROR: AI gọi nhầm tool (Khách chưa đăng nhập)]";
+                        return await _aiToolService.GetThongTinKhachHangAsync(idKhachHang.Value);
+                    default:
+                        return "[TOOL_ERROR: Tên tool không tồn tại]";
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"[TOOL_EXCEPTION: {ex.Message}]";
+            }
+        }
+
+        private async Task<List<dynamic>> GetChatHistoryPayloadAsync(int? idKhachHang, string? guestSessionId)
+        {
+            var query = (idKhachHang > 0)
+                ? _context.ChatLichSus.Where(c => c.IdKhachHang == idKhachHang)
+                : _context.ChatLichSus.Where(c => c.GuestSessionId == guestSessionId);
+
+            var history = await query
+                .OrderByDescending(c => c.ThoiGian)
+                .Take(10)
+                .OrderBy(c => c.ThoiGian)
+                .ToListAsync();
+
+            var payload = new List<dynamic>();
+            foreach (var msg in history)
+            {
+                if (msg.LoaiTinNhan == "KhachHang") { payload.Add(new { role = "user", parts = new[] { new { text = msg.NoiDungTraLoi } } }); }
+                else { payload.Add(new { role = "model", parts = new[] { new { text = msg.NoiDungTraLoi } } }); }
+            }
+            return payload;
+        }
+
+        private ChatMessageDto MapToChatDto(ChatLichSu entity)
+        {
+            return new ChatMessageDto
+            {
+                IdChat = entity.IdChat,
+                NoiDung = entity.NoiDungTraLoi,
+                ThoiGian = entity.ThoiGian,
+                LoaiTinNhan = entity.LoaiTinNhan ?? "AI"
+            };
+        }
+
+        /// <summary>
+        /// Hàm helper để cập nhật các tin nhắn AI (chưa có vé) vào ID vé mới
+        /// </summary>
+        private async Task UpdateChatHistoryWithTicketId(int? idKhachHang, string? guestSessionId, int newTicketId)
+        {
+            // Tìm tất cả tin nhắn của phiên chat này
+            // 1. Cùng IdKhachHang (nếu có) HOẶC cùng GuestSessionId (nếu có)
+            // 2. Và CHƯA được gán vào phiếu nào (IdThongBaoHoTro == null)
+            var messagesToUpdate = _context.ChatLichSus.Where(
+                c => c.IdThongBaoHoTro == null &&
+                ((idKhachHang > 0 && c.IdKhachHang == idKhachHang) ||
+                  (!string.IsNullOrEmpty(guestSessionId) && c.GuestSessionId == guestSessionId))
+            );
+
+            // Dùng ToListAsync để thực thi truy vấn trước khi cập nhật
+            var messagesList = await messagesToUpdate.ToListAsync();
+
+            foreach (var msg in messagesList)
+            {
+                msg.IdThongBaoHoTro = newTicketId;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\KhachHangProfileController.cs
 ================================================================================
 ﻿using CafebookApi.Data;
@@ -12484,7 +12794,6 @@ using System.IO;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-
 namespace CafebookApi.Controllers.Web
 {
     [Route("api/web/trangchu")]
@@ -12521,14 +12830,13 @@ namespace CafebookApi.Controllers.Web
             // 1. Lấy thông tin chung (từ bảng CaiDat)
             var settings = await _context.CaiDats
                 .Where(c => c.TenCaiDat == "TenQuan" ||
-                            c.TenCaiDat == "GioiThieu" ||
+c.TenCaiDat == "GioiThieu" ||
                             c.TenCaiDat == "BannerImage" ||
-                            c.TenCaiDat == "DiaChi" ||
+c.TenCaiDat == "DiaChi" ||
                             c.TenCaiDat == "SoDienThoai" ||
-                            c.TenCaiDat == "LienHe_Email" ||
-                            c.TenCaiDat == "LienHe_GioMoCua")
+c.TenCaiDat == "LienHe_Email" ||
+c.TenCaiDat == "LienHe_GioMoCua")
                 .ToListAsync();
-
             var thongTinChung = new ThongTinChungDto
             {
                 TenQuan = settings.FirstOrDefault(c => c.TenCaiDat == "TenQuan")?.GiaTri ?? "Cafebook",
@@ -12547,25 +12855,25 @@ namespace CafebookApi.Controllers.Web
                 .Where(km => km.TrangThai == "Hoạt động" && km.NgayBatDau <= DateTime.Now && km.NgayKetThuc >= DateTime.Now)
                 .OrderBy(km => km.NgayBatDau)
                 .Take(3)
-                .Select(km => new KhuyenMaiDto
-                {
-                    TenKhuyenMai = km.TenChuongTrinh,
-                    MoTa = km.MoTa,
-                    dieuKienApDung = km.DieuKienApDung
-                }).ToListAsync();
+.Select(km => new KhuyenMaiDto
+{
+    TenKhuyenMai = km.TenChuongTrinh,
+    MoTa = km.MoTa,
+    dieuKienApDung = km.DieuKienApDung
+}).ToListAsync();
 
-            // 3. Lấy 5 món nổi bật (Không đổi)
+            // 3. Lấy 5 món nổi bật
             var monNoiBat_Raw = await _context.SanPhams
                 .Where(sp => sp.TrangThaiKinhDoanh == true)
                 .OrderByDescending(sp => sp.IdSanPham)
                 .Take(5)
-                .Select(sp => new
-                {
-                    sp.IdSanPham,
-                    sp.TenSanPham,
-                    sp.GiaBan,
-                    sp.HinhAnh
-                }).ToListAsync();
+.Select(sp => new
+{
+    sp.IdSanPham,
+    sp.TenSanPham,
+    sp.GiaBan,
+    sp.HinhAnh
+}).ToListAsync();
 
             var monNoiBat = monNoiBat_Raw.Select(sp => new SanPhamDto
             {
@@ -12575,27 +12883,37 @@ namespace CafebookApi.Controllers.Web
                 AnhSanPhamUrl = GetFullImageUrl(sp.HinhAnh)
             }).ToList();
 
-            // 4. Lấy 4 sách nổi bật (SỬA DÙNG N-N)
+            // ======================================
+            // === SỬA LỖI LINQ TẠI ĐÂY ===
+            // ======================================
+
+            // 4. Lấy 4 sách nổi bật
+            // BƯỚC 1: Lấy dữ liệu thô (bao gồm Tác giả)
             var sachNoiBat_Raw = await _context.Sachs
+                .Include(s => s.SachTacGias).ThenInclude(stg => stg.TacGia) // Tải Tác giả
                 .OrderByDescending(s => s.SoLuongHienCo)
                 .Take(4)
-                .Select(s => new
+                .Select(s => new // Chọn các trường cần thiết (vẫn là IQueryable)
                 {
                     s.IdSach,
                     s.TenSach,
-                    // SỬA: Nối chuỗi các tác giả từ bảng N-N
-                    TacGia = string.Join(", ", s.SachTacGias.Select(stg => stg.TacGia.TenTacGia)),
+                    // Lấy CẢ collection Tác giả
+                    TacGias = s.SachTacGias.Select(stg => stg.TacGia.TenTacGia),
                     s.AnhBia
-                }).ToListAsync();
+                }).ToListAsync(); // <-- Chạy SQL tại đây
 
+            // BƯỚC 2: Dùng C# (string.Join) để tạo DTO
             var sachNoiBat = sachNoiBat_Raw.Select(s => new SachDto
             {
                 IdSach = s.IdSach,
                 TieuDe = s.TenSach,
-                // SỬA: Xử lý trường hợp không có tác giả
-                TacGia = string.IsNullOrEmpty(s.TacGia) ? "Không rõ" : s.TacGia,
+                TacGia = string.Join(", ", s.TacGias), // <-- string.Join chạy trong C#
                 AnhBiaUrl = GetFullImageUrl(s.AnhBia)
             }).ToList();
+
+            // ======================================
+            // === KẾT THÚC SỬA LỖI ===
+            // ======================================
 
             // 5. Gộp tất cả vào DTO
             var dto = new TrangChuDto
@@ -13177,6 +13495,140 @@ namespace CafebookApi.Controllers.Web.QuanLy
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\QuanLy\HoTroKhachHangControllers.cs
+================================================================================
+﻿// Tập tin: CafebookApi/Controllers/Web/QuanLy/HoTroKhachHangControllers.cs
+using CafebookApi.Data;
+using CafebookModel.Model.Entities;
+using CafebookModel.Model.ModelWeb;
+using CafebookModel.Model.ModelWeb.QuanLy;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using CafebookApi.Hubs;
+
+namespace CafebookApi.Controllers.Web.QuanLy
+{
+    [Route("api/web/quanly/hotro")]
+    //[ApiController]
+    // [Authorize(Roles = "NhanVien,QuanLy")]
+    public class HoTroKhachHangController : ControllerBase
+    {
+        private readonly CafebookDbContext _context;
+        private readonly IHubContext<ChatHub> _chatHubContext; // <-- BẮT BUỘC CÓ
+
+        // CẬP NHẬT CONSTRUCTOR
+        public HoTroKhachHangController(CafebookDbContext context, IHubContext<ChatHub> chatHubContext)
+        {
+            _context = context;
+            _chatHubContext = chatHubContext; // <-- BẮT BUỘC CÓ
+        }
+
+        private int GetCurrentUserId()
+        {
+            var idClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            int.TryParse(idClaim?.Value, out int id);
+            return id;
+        }
+
+        /// <summary>
+        /// API lấy danh sách tất cả các phiếu hỗ trợ (Giữ nguyên)
+        /// </summary>
+        [HttpGet("tickets")]
+        public async Task<IActionResult> GetTickets()
+        {
+            var tickets = await _context.ThongBaoHoTros
+                .Include(t => t.KhachHang) // Include an toàn
+                .OrderByDescending(t => t.ThoiGianTao)
+                .Select(t => new HoTroKhachHangListDto
+                {
+                    IdThongBao = t.IdThongBao,
+                    TenKhachHang = t.KhachHang != null ? t.KhachHang.HoTen : $"Khách vãng lai ({t.GuestSessionId})", // Sửa lại logic an toàn
+                    NoiDungYeuCau = t.NoiDungYeuCau,
+                    ThoiGianTao = t.ThoiGianTao,
+                    TrangThai = t.TrangThai,
+                    GhiChuTuAI = t.GhiChu
+                })
+                .ToListAsync();
+            return Ok(tickets);
+        }
+
+        /// <summary>
+        /// API lấy chi tiết 1 phiếu hỗ trợ (bao gồm lịch sử chat)
+        /// </summary>
+        [HttpGet("ticket/{id}")]
+        public async Task<IActionResult> GetTicketDetail(int id)
+        {
+            var ticket = await _context.ThongBaoHoTros
+                .Include(t => t.KhachHang)
+                .FirstOrDefaultAsync(t => t.IdThongBao == id);
+
+            if (ticket == null) return NotFound("Không tìm thấy phiếu hỗ trợ.");
+
+            // === LOGIC TRUY VẤN LỊCH SỬ CHAT (ĐÃ SỬA VÀ ĐƠN GIẢN HÓA) ===
+            // 'id' chính là IdThongBaoHoTro.
+            // Chúng ta chỉ cần truy vấn chính xác theo ID vé này.
+            var query = _context.ChatLichSus
+                .Where(c => c.IdThongBaoHoTro == id);
+            // ======================================
+
+            var chatHistory = await query
+                .OrderBy(c => c.ThoiGian)
+                .Select(c => new ChatMessageDto // Tái sử dụng DTO
+                {
+                    IdChat = c.IdChat,
+                    NoiDung = c.NoiDungTraLoi,
+                    ThoiGian = c.ThoiGian,
+                    LoaiTinNhan = c.LoaiTinNhan ?? "AI"
+                })
+                .ToListAsync();
+
+            var dto = new HoTroKhachHangDetailDto
+            {
+                IdThongBao = ticket.IdThongBao,
+                IdKhachHang = ticket.IdKhachHang,
+                GuestSessionId = ticket.GuestSessionId,
+                TenKhachHang = ticket.KhachHang != null ? ticket.KhachHang.HoTen : $"Khách vãng lai ({ticket.GuestSessionId})",
+                NoiDungYeuCau = ticket.NoiDungYeuCau,
+                ThoiGianTao = ticket.ThoiGianTao,
+                TrangThai = ticket.TrangThai,
+                GhiChuTuAI = ticket.GhiChu,
+                LichSuChat = chatHistory // Gán danh sách (đã tải chính xác)
+            };
+
+            return Ok(dto);
+        }
+
+        // === XÓA BỎ [HttpPost("reply")] ===
+        // Logic này đã được chuyển sang ChatHub.SendMessageFromStaff
+
+        /// <summary>
+        /// API để đánh dấu phiếu đã xử lý (đóng ticket)
+        /// </summary>
+        [HttpPost("resolve/{id}")]
+        public async Task<IActionResult> ResolveTicket(int id)
+        {
+            var ticket = await _context.ThongBaoHoTros.FindAsync(id);
+            if (ticket == null) return NotFound("Không tìm thấy phiếu hỗ trợ.");
+
+            ticket.TrangThai = "Đã xử lý";
+            await _context.SaveChangesAsync();
+
+            // Gửi tín hiệu reload
+            await _chatHubContext.Clients.All.SendAsync("ReloadTicketList");
+
+            return Ok();
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\QuanLy\SoDoBanController.cs
 ================================================================================
 ﻿// Tập tin: CafebookApi/Controllers/Web/QuanLy/SoDoBanController.cs
@@ -13554,6 +14006,7 @@ namespace CafebookApi.Data
         public DbSet<TrangThaiCheBien> TrangThaiCheBiens { get; set; }
         public virtual DbSet<DanhGia> DanhGias { get; set; }
         public virtual DbSet<PhanHoiDanhGia> PhanHoiDanhGias { get; set; }
+        public virtual DbSet<ThongBaoHoTro> ThongBaoHoTros { get; set; }
 
         // --- Cấu hình Khóa (Fluent API) ---
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -13755,10 +14208,142 @@ namespace CafebookApi.Data
                 .HasForeignKey(n => n.IdNhanVienHuy)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            // Cấu hình cho ChatLichSu (liên kết với ThongBaoHoTro)
+            modelBuilder.Entity<ChatLichSu>()
+                .HasOne(c => c.ThongBaoHoTro)
+                .WithMany(t => t.ChatLichSus)
+                .HasForeignKey(c => c.IdThongBaoHoTro)
+                .OnDelete(DeleteBehavior.SetNull); // Nếu xóa phiếu hỗ trợ, vẫn giữ lịch sử chat
+
+            // Cấu hình cho ThongBaoHoTro
+            modelBuilder.Entity<ThongBaoHoTro>(e =>
+            {
+                e.HasOne(t => t.KhachHang)
+                 .WithMany() // Không cần navigation ngược từ KhachHang
+                 .HasForeignKey(t => t.IdKhachHang)
+                 .OnDelete(DeleteBehavior.NoAction); // Không cho xóa KH nếu còn phiếu HT
+
+                e.HasOne(t => t.NhanVien)
+                 .WithMany() // Không cần navigation ngược từ NhanVien
+                 .HasForeignKey(t => t.IdNhanVien)
+                 .OnDelete(DeleteBehavior.NoAction); // Không cho xóa NV nếu còn phiếu HT
+            });
+
             // Cấu hình bổ sung (Đã đúng)
             modelBuilder.Entity<Sach>()
                 .Property(s => s.GiaBia)
                 .HasColumnType("decimal(18, 2)");
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Hubs\ChatHub.cs
+================================================================================
+﻿// Tập tin: CafebookApi/Hubs/ChatHub.cs
+using CafebookApi.Data;
+using CafebookModel.Model.Entities;
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
+
+namespace CafebookApi.Hubs
+{
+    //[Authorize]
+    public class ChatHub : Hub
+    {
+        private readonly CafebookDbContext _context;
+
+        // SỬA LỖI: Xóa AiService và AiToolService khỏi constructor
+        // Hub không thể inject dịch vụ Scoped một cách an toàn
+        public ChatHub(CafebookDbContext context)
+        {
+            _context = context;
+        }
+
+        /// <summary>
+        /// Khi client (khách hoặc NV) kết nối, gọi hàm này để tham gia "phòng" chat.
+        /// </summary>
+        public async Task JoinGroup(string groupName)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        }
+
+        /// <summary>
+        /// Khách hàng (HoTroView.cshtml) gửi tin nhắn TRỰC TIẾP cho nhân viên
+        /// (Sau khi AI đã chuyển)
+        /// </summary>
+        public async Task SendMessageFromClient(string groupName, string noiDung, int? idKhachHang, string? guestSessionId, int? idThongBaoHoTro)
+        {
+            // 1. Lưu tin nhắn của khách
+            var msgKhach = await SaveChatHistoryAsync(idKhachHang, guestSessionId, null, noiDung, "KhachHang", idThongBaoHoTro);
+
+            // 2. Gửi tin nhắn này cho TẤT CẢ client trong nhóm
+            await Clients.Group(groupName).SendAsync("ReceiveMessage", MapToChatDto(msgKhach));
+        }
+
+        /// <summary>
+        /// Nhân viên (HoTroKhachHangView.cshtml) gửi tin nhắn
+        /// (Thay thế cho HoTroKhachHangControllers/reply)
+        /// </summary>
+        public async Task SendMessageFromStaff(string groupName, string noiDung, int idThongBao, int? idKhachHang, string? guestSessionId)
+        {
+            int idNhanVien = 1; // Tạm hardcode
+
+            // 1. Lưu tin nhắn của nhân viên
+            var msgNV = await SaveChatHistoryAsync(idKhachHang, guestSessionId, idNhanVien, noiDung, "NhanVien", idThongBao);
+
+            // 2. Cập nhật trạng thái phiếu
+            var ticket = await _context.ThongBaoHoTros.FindAsync(idThongBao);
+            if (ticket != null && ticket.TrangThai != "Đã xử lý")
+            {
+                ticket.TrangThai = "Đã trả lời";
+                ticket.IdNhanVien = idNhanVien;
+                ticket.ThoiGianPhanHoi = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
+
+            // 3. Gửi tin nhắn này cho TẤT CẢ client trong nhóm
+            await Clients.Group(groupName).SendAsync("ReceiveMessage", MapToChatDto(msgNV));
+
+            // 4. Gửi tín hiệu reload danh sách ticket
+            await Clients.All.SendAsync("ReloadTicketList");
+        }
+
+
+        // --- CÁC HÀM HELPER (Tái sử dụng) ---
+
+        private async Task<ChatLichSu> SaveChatHistoryAsync(int? idKhachHang, string? guestSessionId, int? idNhanVien, string traLoi, string loaiTinNhan, int? idThongBao)
+        {
+            var lichSu = new ChatLichSu
+            {
+                IdKhachHang = (idKhachHang > 0) ? idKhachHang : null,
+                GuestSessionId = guestSessionId,
+                IdNhanVien = idNhanVien,
+                NoiDungHoi = "Chat Realtime",
+                NoiDungTraLoi = traLoi,
+                ThoiGian = DateTime.Now,
+                LoaiChat = "Web_SignalR", // Đánh dấu là tin nhắn Realtime
+                LoaiTinNhan = loaiTinNhan,
+                IdThongBaoHoTro = idThongBao
+            };
+            _context.ChatLichSus.Add(lichSu);
+            await _context.SaveChangesAsync();
+            return lichSu;
+        }
+
+        private ChatMessageDto MapToChatDto(ChatLichSu entity)
+        {
+            return new ChatMessageDto
+            {
+                IdChat = entity.IdChat,
+                NoiDung = entity.NoiDungTraLoi,
+                ThoiGian = entity.ThoiGian,
+                LoaiTinNhan = entity.LoaiTinNhan ?? "AI"
+            };
         }
     }
 }
@@ -13796,6 +14381,376 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Properties\launchSettings.json
       }
     }
   }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\AiService.cs
+================================================================================
+﻿// Tập tin: CafebookApi/Services/AiService.cs
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using System.Linq;
+using System;
+using CafebookApi.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CafebookApi.Services
+{
+    public class AiService
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IServiceProvider _serviceProvider;
+
+        public AiService(IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+            _serviceProvider = serviceProvider;
+        }
+
+        private async Task<(string ApiKey, string ApiEndpoint)> GetAiSettingsAsync()
+        {
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<CafebookDbContext>();
+                var settings = await context.CaiDats.AsNoTracking().ToListAsync();
+
+                string apiKey = settings.FirstOrDefault(c => c.TenCaiDat == "AI_Chat_API_Key")?.GiaTri ?? "";
+                string apiEndpoint = settings.FirstOrDefault(c => c.TenCaiDat == "AI_Chat_Endpoint")?.GiaTri ?? "";
+
+                return (apiKey, apiEndpoint);
+            }
+        }
+
+        // ==================================================================
+        // === NÂNG CẤP TRIỆT ĐỂ HÀM GetAnswerAsync VÀ BuildSystemPrompt ===
+        // ==================================================================
+
+        /// <summary>
+        /// Gửi câu hỏi đến AI và nhận câu trả lời (Hàm điều phối nâng cao)
+        /// </summary>
+        /// <param name="userQuestion">Câu hỏi mới của người dùng</param>
+        /// <param name="idKhachHang">ID khách hàng (nếu có)</param>
+        /// <param name="chatHistory">Lịch sử chat (để AI hiểu ngữ cảnh)</param>
+        /// <param name="toolResult">Kết quả từ việc gọi Tool (nếu có)</param>
+        /// <returns>Câu trả lời của AI (có thể là văn bản hoặc mã lệnh)</returns>
+        public async Task<string?> GetAnswerAsync(string userQuestion, int? idKhachHang, List<dynamic> chatHistory, string? toolResult = null)
+        {
+            var (apiKey, apiEndpoint) = await GetAiSettingsAsync();
+            if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
+            {
+                return "[NEEDS_SUPPORT]"; // AI không được cấu hình
+            }
+
+            // 1. Xây dựng System Prompt (Mồi) dựa trên yêu cầu mới
+            string systemPrompt = BuildSystemPrompt(idKhachHang);
+
+            var client = _httpClientFactory.CreateClient();
+            var requestUrl = $"{apiEndpoint}?key={apiKey}";
+
+            // 2. Xây dựng Payload cho Gemini (bao gồm Lịch sử chat)
+            var payloadContents = new List<dynamic>();
+
+            // 2.1. Thêm System Prompt
+            payloadContents.Add(new { role = "user", parts = new[] { new { text = systemPrompt } } });
+            payloadContents.Add(new { role = "model", parts = new[] { new { text = "Đã hiểu. Tôi là trợ lý ảo Cafebook. Tôi đã sẵn sàng." } } });
+
+            // 2.2. Thêm lịch sử chat (nếu có)
+            if (chatHistory != null)
+            {
+                payloadContents.AddRange(chatHistory);
+            }
+
+            // 2.3. Nếu có kết quả từ Tool, thêm vào
+            if (!string.IsNullOrEmpty(toolResult))
+            {
+                // Thêm câu hỏi gốc đã kích hoạt tool (giả định nó là câu cuối trong history)
+                // Thêm phản hồi của AI (là TOOL_CALL - đã được lưu ở Controller)
+                // Thêm kết quả Tool
+                payloadContents.Add(new { role = "user", parts = new[] { new { text = $"[TOOL_RESULT]\n{toolResult}" } } });
+            }
+            else
+            {
+                // 2.4. Nếu không, thêm câu hỏi mới của khách
+                payloadContents.Add(new { role = "user", parts = new[] { new { text = userQuestion } } });
+            }
+
+            var payload = new { contents = payloadContents };
+
+            try
+            {
+                var response = await client.PostAsJsonAsync(requestUrl, payload);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null; // API lỗi
+                }
+
+                var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>();
+                var candidates = jsonResponse.GetProperty("candidates");
+
+                if (candidates.GetArrayLength() > 0)
+                {
+                    var content = candidates[0].GetProperty("content");
+                    var parts = content.GetProperty("parts");
+                    if (parts.GetArrayLength() > 0)
+                    {
+                        string aiText = parts[0].GetProperty("text").GetString() ?? "";
+                        return aiText; // Đây có thể là văn bản hoặc [TOOL_CALL]
+                    }
+                }
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Xây dựng mồi (System Prompt) thông minh theo yêu cầu mới
+        /// </summary>
+        private string BuildSystemPrompt(int? idKhachHang)
+        {
+            // === PHẦN B: PHONG CÁCH GIỌNG ĐIỆU ===
+            string personaPrompt = @"
+# GIỌNG ĐIỆU CỦA BẠN (TRỢ LÝ ẢO CAFEBOOK)
+Bạn là trợ lý ảo của Cafebook, không phải AI của Google.
+- **Phong cách:** Thân thiện, chuyên nghiệp, tự nhiên như người thật, và tinh tế.
+- **Giọng điệu:** Dùng các từ như ""Dạ vâng"", ""mình kiểm tra giúp bạn ngay nha"", ""Bạn yên tâm nhé"".
+- **Mô hình trả lời:** Luôn theo cấu trúc: [Kết quả] -> [Gợi ý] -> [Hỏi hành động tiếp theo].
+- **Ví dụ:** ""Dạ món Trà Đào Cam Sả hiện vẫn còn đầy đủ ạ. Món này vị thanh mát hợp với mùa hè lắm. Bạn muốn mình đặt trước 1 ly cho bạn không?""
+- **Xử lý lỗi (Fallback):** KHÔNG dùng ""Xin lỗi"", ""Rất tiếc"". Thay bằng: ""Thông tin món này hiện mình chưa cập nhật theo thời gian thực, nhưng mình có thể kiểm tra ngay cho bạn nếu bạn muốn.""
+- **Ngữ cảnh:** Luôn đọc kỹ lịch sử chat để trả lời liền mạch. Nếu khách nói ""4 người, 7h"" thì phải hiểu là họ đang trả lời câu hỏi đặt bàn trước đó.
+";
+
+            // === PHẦN A: CHỨC NĂNG (TOOLS) ===
+            string baseTools = @"
+# CÔNG CỤ CỦA BẠN
+Bạn có các công cụ để truy vấn DB. Khi cần thông tin, bạn KHÔNG được tự bịa ra. Bạn PHẢI yêu cầu gọi công cụ bằng cách trả lời ĐÚNG theo định dạng: [TOOL_CALL: TênTool, ThamSo1: GiaTri1, ...]
+
+## CÔNG CỤ CHUNG (LUỒNG 1: KHÁCH VÃNG LAI)
+Bạn được phép dùng các công cụ này cho MỌI khách hàng.
+
+1.  **[TOOL_CALL: GET_THONG_TIN_CHUNG]**
+    - **Mô tả:** Lấy thông tin chung (giờ mở cửa, địa chỉ, wifi).
+    - **Khi nào dùng:** Khi khách hỏi ""Quán mở cửa lúc mấy giờ?"", ""Địa chỉ ở đâu?"", ""Wifi là gì?"".
+    - **Tham số:** Không có.
+
+2.  **[TOOL_CALL: KIEM_TRA_BAN, SoNguoi: <số>]**
+    - **Mô tả:** Kiểm tra bàn trống theo số lượng người.
+    - **Khi nào dùng:** Khi khách hỏi ""Còn bàn 4 người không?"", ""Đặt bàn 10 người"".
+    - **Tham số:** SoNguoi (Bắt buộc).
+    - **Hỏi lại (Smart Question):** Nếu khách chỉ hỏi ""Còn bàn không?"", bạn phải hỏi lại: ""Bạn cho mình xin số lượng người và giờ bạn muốn đến để mình kiểm tra bàn trống nhé?""
+
+3.  **[TOOL_CALL: KIEM_TRA_SAN_PHAM, TenSanPham: '<tên>']**
+    - **Mô tả:** Kiểm tra tình trạng (còn/hết) của 1 món.
+    - **Khi nào dùng:** ""Món trà đào còn không?"", ""cà phê sữa hết rồi hả?"".
+    - **Tham số:** TenSanPham (Bắt buộc).
+
+4.  **[TOOL_CALL: KIEM_TRA_SACH, TenSach: '<tên>']**
+    - **Mô tả:** Kiểm tra sách (còn/hết) trong thư viện.
+    - **Khi nào dùng:** ""Cuốn Đắc Nhân Tâm còn không?"", ""Tìm sách 1984"".
+    - **Tham số:** TenSach (Bắt buộc).
+";
+
+            // === CÔNG CỤ CHO KHÁCH ĐÃ ĐĂNG NHẬP (LUỒNG 2) ===
+            string loggedInTools = @"
+## CÔNG CỤ NÂNG CAO (LUỒNG 2: KHÁCH HÀNG ĐÃ ĐĂNG NHẬP)
+Bạn CHỈ được dùng công cụ này khi `idKhachHang` tồn tại (lớn hơn 0).
+
+5.  **[TOOL_CALL: GET_THONG_TIN_KHACH_HANG]**
+    - **Mô tả:** Lấy thông tin cá nhân (điểm tích lũy, hóa đơn gần nhất, sách đang mượn).
+    - **Khi nào dùng:** ""Tôi còn bao nhiêu điểm?"", ""Xem hóa đơn gần nhất"", ""Kiểm tra sách đang mượn"".
+    - **Tham số:** Không có (API sẽ tự lấy IdKhachHang).
+";
+
+            // === QUY TẮC PHẢN HỒI ===
+            string rules = @"
+# QUY TẮC PHẢN HỒI
+1.  **[NEEDS_SUPPORT]:** Nếu khách hàng báo cáo 'sự cố', 'bị lỗi', 'hỏng', 'than phiền' hoặc yêu cầu 'gặp nhân viên', bạn CHỈ được phép phản hồi duy nhất bằng mã: [NEEDS_SUPPORT]
+2.  **[TOOL_CALL]:** Nếu cần dữ liệu, trả lời bằng [TOOL_CALL:...].
+3.  **[VĂN BẢN]:** Nếu không cần công cụ, trả lời bình thường theo giọng điệu đã định.
+4.  **[XỬ LÝ KẾT QUẢ TOOL]:** Khi nhận được [TOOL_RESULT], bạn KHÔNG được hiển thị mã đó cho khách. Bạn phải dùng giọng điệu của mình để diễn giải kết quả đó một cách tự nhiên.
+";
+
+            if (idKhachHang.HasValue && idKhachHang > 0)
+            {
+                // Đã đăng nhập
+                return personaPrompt + $"# KHÁCH HÀNG HIỆN TẠI\nID Khách hàng: {idKhachHang}\n" + baseTools + loggedInTools + rules;
+            }
+            // Tập tin: AiService.cs
+
+            else
+            {
+                // Khách vãng lai
+                return personaPrompt + "# KHÁCH HÀNG HIỆN TẠI\nKhách vãng lai (Chưa đăng nhập)\n" + baseTools + rules +
+                    "\n# QUY TẮC KHÁCH VÃNG LAI\nNếu khách vãng lai hỏi thông tin cá nhân (điểm, hóa đơn, sách đang mượn), bạn PHẢI trả lời: \"Dạ, để xem thông tin này bạn vui lòng đăng nhập tài khoản giúp mình nhé!\"";
+            }
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\AiToolService.cs
+================================================================================
+﻿// Tập tin: CafebookApi/Services/AiToolService.cs
+using CafebookApi.Data;
+using CafebookModel.Model.Entities;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace CafebookApi.Services
+{
+    /// <summary>
+    /// Dịch vụ này chứa các hàm nghiệp vụ (Tools) mà AI có thể gọi
+    /// để truy vấn cơ sở dữ liệu.
+    /// </summary>
+    public class AiToolService
+    {
+        private readonly CafebookDbContext _context;
+
+        public AiToolService(CafebookDbContext context)
+        {
+            _context = context;
+        }
+
+        // --- CÔNG CỤ CHO LUỒNG 1 (GUEST) ---
+
+        /// <summary>
+        /// (Tool 1) Lấy thông tin chung của quán
+        /// </summary>
+        public async Task<string> GetThongTinChungAsync()
+        {
+            var settings = await _context.CaiDats
+                .AsNoTracking()
+                .Where(c => c.TenCaiDat.StartsWith("LienHe_") || c.TenCaiDat.StartsWith("Wifi_"))
+                .Select(c => new { c.TenCaiDat, c.GiaTri })
+                .ToListAsync();
+
+            var gioMoCua = settings.FirstOrDefault(s => s.TenCaiDat == "LienHe_GioMoCua")?.GiaTri ?? "6:00 - 22:00";
+            var diaChi = settings.FirstOrDefault(s => s.TenCaiDat == "LienHe_DiaChi")?.GiaTri ?? "Chưa cập nhật";
+            var wifi = settings.FirstOrDefault(s => s.TenCaiDat == "Wifi_MatKhau")?.GiaTri ?? "Không có";
+
+            return $"Thông tin quán: Giờ mở cửa: {gioMoCua}. Địa chỉ: {diaChi}. Mật khẩu Wifi: {wifi}.";
+        }
+
+        /// <summary>
+        /// (Tool 2) Kiểm tra tình trạng bàn trống
+        /// </summary>
+        public async Task<string> KiemTraBanTrongAsync(int soNguoi)
+        {
+            var banTrong = await _context.Bans
+                .AsNoTracking()
+                .Where(b => b.TrangThai == "Trống" && b.SoGhe >= soNguoi)
+                .OrderBy(b => b.SoGhe)
+                // Tập tin: AiToolService.cs
+
+                .Select(b => new { b.SoBan, b.SoGhe, TenKhuVuc = b.KhuVuc != null ? b.KhuVuc.TenKhuVuc : "chung" })
+                .Take(5)
+                .ToListAsync();
+
+            if (!banTrong.Any())
+            {
+                return "Rất tiếc, hiện tại các bàn trống không đủ chỗ cho yêu cầu của bạn.";
+            }
+
+            var ketQua = $"Tìm thấy {banTrong.Count} bàn phù hợp: \n";
+            foreach (var ban in banTrong)
+            {
+                ketQua += $"- Bàn {ban.SoBan} ({ban.SoGhe} ghế) tại khu {ban.TenKhuVuc ?? "chung"}\n";
+            }
+            return ketQua;
+        }
+
+        /// <summary>
+        /// (Tool 3) Kiểm tra tình trạng món ăn/thức uống
+        /// </summary>
+        public async Task<string> KiemTraSanPhamAsync(string tenSanPham)
+        {
+            var sanPham = await _context.SanPhams
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.TenSanPham.Contains(tenSanPham));
+
+            if (sanPham == null)
+            {
+                return $"Không tìm thấy sản phẩm nào có tên giống '{tenSanPham}'.";
+            }
+
+            if (sanPham.TrangThaiKinhDoanh == false)
+            {
+                return $"Món '{sanPham.TenSanPham}' hiện đã ngừng kinh doanh.";
+            }
+
+            // Giả định: kiểm tra nguyên liệu (logic phức tạp)
+            // Ở đây chúng ta chỉ kiểm tra trạng thái kinh doanh
+            return $"Món '{sanPham.TenSanPham}' hiện VẪN CÒN HÀNG và đang kinh doanh.";
+        }
+
+        /// <summary>
+        /// (Tool 4) Kiểm tra sách
+        /// </summary>
+        public async Task<string> KiemTraSachAsync(string tenSach)
+        {
+            var sach = await _context.Sachs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.TenSach.Contains(tenSach));
+
+            if (sach == null)
+            {
+                return $"Không tìm thấy sách nào có tên giống '{tenSach}'.";
+            }
+
+            if (sach.SoLuongHienCo > 0)
+            {
+                return $"Sách '{sach.TenSach}' hiện còn {sach.SoLuongHienCo} quyển trên kệ.";
+            }
+            else
+            {
+                return $"Rất tiếc, sách '{sach.TenSach}' hiện đã được mượn hết.";
+            }
+        }
+
+        // --- CÔNG CỤ CHO LUỒNG 2 (KHÁCH HÀNG) ---
+
+        /// <summary>
+        /// (Tool 5) Lấy thông tin khách hàng (điểm, hóa đơn)
+        /// </summary>
+        public async Task<string> GetThongTinKhachHangAsync(int idKhachHang)
+        {
+            var khachHang = await _context.KhachHangs.AsNoTracking()
+                .FirstOrDefaultAsync(k => k.IdKhachHang == idKhachHang);
+
+            if (khachHang == null) return "Lỗi: Không tìm thấy khách hàng.";
+
+            var hoaDonGanNhat = await _context.HoaDons
+                .AsNoTracking()
+                .Where(h => h.IdKhachHang == idKhachHang)
+                .OrderByDescending(h => h.ThoiGianTao)
+                .Select(h => new { h.ThanhTien, h.ThoiGianTao })
+                .FirstOrDefaultAsync();
+
+            var phieuThue = await _context.PhieuThueSachs
+                .AsNoTracking()
+                .Include(p => p.ChiTietPhieuThues)
+                .Where(p => p.IdKhachHang == idKhachHang && p.TrangThai == "Đang mượn")
+                .CountAsync();
+
+            string ketQua = $"Thông tin của bạn (ID: {idKhachHang}): \n" +
+                            $"- Tên: {khachHang.HoTen} \n" +
+                            $"- Điểm tích lũy: {khachHang.DiemTichLuy} điểm. \n" +
+                            $"- Hóa đơn gần nhất: {hoaDonGanNhat?.ThanhTien} lúc {hoaDonGanNhat?.ThoiGianTao}. \n" +
+                            $"- Sách đang mượn: {phieuThue} quyển.";
+
+            return ketQua;
+        }
+    }
 }
 ================================================================================
 

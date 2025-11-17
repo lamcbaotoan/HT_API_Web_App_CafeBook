@@ -989,10 +989,23 @@ namespace CafebookModel.Model.Entities
         [StringLength(50)]
         public string? LoaiChat { get; set; }
 
+        // === CẬP NHẬT (THEO FSD MỚI) ===
+        [StringLength(100)]
+        public string? GuestSessionId { get; set; } // Hỗ trợ khách vãng lai
+
+        [StringLength(20)]
+        public string? LoaiTinNhan { get; set; } // "KhachHang", "AI", "NhanVien"
+
+        public int? IdThongBaoHoTro { get; set; }
+        // === KẾT THÚC CẬP NHẬT ===
+
         [ForeignKey("IdKhachHang")]
         public virtual KhachHang? KhachHang { get; set; }
         [ForeignKey("IdNhanVien")]
         public virtual NhanVien? NhanVien { get; set; }
+
+        [ForeignKey("IdThongBaoHoTro")]
+        public virtual ThongBaoHoTro? ThongBaoHoTro { get; set; }
     }
 
     [Table("DeXuatSanPham")]
@@ -1199,6 +1212,49 @@ namespace CafebookModel.Model.Entities
             // Constructor gán giá trị cho thuộc tính NgayTao ở trên
             this.NgayTao = DateTime.Now;
         }
+    }
+
+    [Table("ThongBaoHoTro")]
+    public class ThongBaoHoTro
+    {
+        [Key]
+        public int IdThongBao { get; set; }
+
+        // ======================================
+        // === SỬA LỖI CS0266 TẠI ĐÂY ===
+        // ======================================
+        // 1. Xóa [Required]
+        // 2. Thêm dấu '?' để cho phép NULL
+        public int? IdKhachHang { get; set; }
+        // ======================================
+
+        [StringLength(100)]
+        public string? GuestSessionId { get; set; } // Hỗ trợ khách vãng lai
+
+        public string? NoiDungYeuCau { get; set; }
+
+        [Required]
+        public DateTime ThoiGianTao { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string TrangThai { get; set; } = string.Empty;
+
+        public int? IdNhanVien { get; set; }
+
+        public DateTime? ThoiGianPhanHoi { get; set; }
+
+        [StringLength(500)]
+        public string? GhiChu { get; set; }
+
+        // Navigation Properties
+        [ForeignKey("IdKhachHang")]
+        public virtual KhachHang? KhachHang { get; set; } // Thêm '?'
+
+        [ForeignKey("IdNhanVien")]
+        public virtual NhanVien? NhanVien { get; set; }
+
+        public virtual ICollection<ChatLichSu> ChatLichSus { get; set; } = new List<ChatLichSu>();
     }
 }
 ================================================================================
@@ -4079,6 +4135,75 @@ namespace CafebookModel.Model.ModelWeb
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\HoTroDto.cs
+================================================================================
+﻿// Tập tin: CafebookModel/Model/ModelWeb/HoTroDto.cs
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization; // <-- THÊM DÒNG NÀY
+
+namespace CafebookModel.Model.ModelWeb
+{
+    /// <summary>
+    /// DTO chính cho trang Hỗ trợ
+    /// </summary>
+    public class HoTroViewDto
+    {
+        public List<ChatMessageDto> LichSuChat { get; set; } = new List<ChatMessageDto>();
+        public int IdKhachHang { get; set; } // Sẽ = 0 nếu là khách vãng lai
+        public string? GuestSessionId { get; set; } // Sẽ có giá trị nếu là khách vãng lai
+        public string TenKhachHang { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO cho một tin nhắn (cả của khách, AI và NV)
+    /// </summary>
+    public class ChatMessageDto
+    {
+        public long IdChat { get; set; }
+        public string NoiDung { get; set; } = string.Empty;
+        public DateTime ThoiGian { get; set; }
+
+        public string LoaiTinNhan { get; set; } = "KhachHang";
+
+        // === SỬA LỖI: Thêm [JsonIgnore] ===
+        // Những thuộc tính này chỉ dùng cho Razor, không dùng cho API
+        [JsonIgnore]
+        public bool IsUser => LoaiTinNhan == "KhachHang";
+        [JsonIgnore]
+        public bool IsBot => LoaiTinNhan == "AI" || LoaiTinNhan == "NhanVien";
+        [JsonIgnore]
+        public string AvatarCssClass => IsBot ? "avatar-bot" : "avatar-user";
+        // === KẾT THÚC SỬA LỖI ===
+    }
+
+    /// <summary>
+    /// DTO khi khách hàng gửi tin nhắn mới
+    /// </summary>
+    public class SendChatRequestDto
+    {
+        [Required(ErrorMessage = "Vui lòng nhập nội dung")]
+        [MaxLength(1000)]
+        public string NoiDung { get; set; } = string.Empty;
+
+        // Thêm trường này để JS gửi lên
+        public string? GuestSessionId { get; set; }
+    }
+
+    /// <summary>
+    /// DTO API trả về (gồm 1 hoặc 2 tin nhắn)
+    /// </summary>
+    public class SendChatResponseDto
+    {
+        public ChatMessageDto TinNhanCuaKhach { get; set; } = null!;
+        public ChatMessageDto? TinNhanPhanHoi { get; set; } // Có thể null nếu AI chuyển tiếp
+        public bool DaChuyenNhanVien { get; set; } = false;
+        public int? IdThongBaoHoTro { get; set; } // Để JS biết khi nào kích hoạt SignalR
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\KhachHangDto.cs
 ================================================================================
 ﻿namespace CafebookModel.Model.ModelWeb
@@ -4787,6 +4912,57 @@ namespace CafebookModel.Model.ModelWeb.QuanLy
     {
         public HoaDonInfoDto updatedHoaDonInfo { get; set; } = default!;
         public ChiTietDto newItem { get; set; } = default!;
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\QuanLy\HoTroKhachHangDto.cs
+================================================================================
+﻿// Tập tin: CafebookModel/Model/ModelWeb/QuanLy/HoTroKhachHangDto.cs
+using CafebookModel.Model.ModelWeb; // Để tái sử dụng ChatMessageDto
+using System;
+using System.Collections.Generic;
+
+namespace CafebookModel.Model.ModelWeb.QuanLy
+{
+    /// <summary>
+    /// DTO cho danh sách phiếu hỗ trợ (dùng cho trang dashboard của nhân viên)
+    /// </summary>
+    public class HoTroKhachHangListDto
+    {
+        public int IdThongBao { get; set; }
+        public string TenKhachHang { get; set; } = string.Empty; // Sẽ là "Khách vãng lai (GuestId)" nếu chưa đăng nhập
+        public string? NoiDungYeuCau { get; set; }
+        public DateTime ThoiGianTao { get; set; }
+        public string TrangThai { get; set; } = string.Empty;
+        public string? GhiChuTuAI { get; set; }
+    }
+
+    /// <summary>
+    /// DTO chi tiết cho một phiếu hỗ trợ (dùng cho trang trả lời)
+    /// </summary>
+    public class HoTroKhachHangDetailDto
+    {
+        public int IdThongBao { get; set; }
+        public string TenKhachHang { get; set; } = string.Empty;
+        public int? IdKhachHang { get; set; }
+        public string? GuestSessionId { get; set; }
+        public string? NoiDungYeuCau { get; set; }
+        public DateTime ThoiGianTao { get; set; }
+        public string TrangThai { get; set; } = string.Empty;
+        public string? GhiChuTuAI { get; set; }
+
+        // Tái sử dụng DTO từ HoTroDto.cs
+        public List<ChatMessageDto> LichSuChat { get; set; } = new List<ChatMessageDto>();
+    }
+
+    /// <summary>
+    /// DTO khi nhân viên gửi phản hồi
+    /// </summary>
+    public class HoTroKhachHangReplyDto
+    {
+        public int IdThongBao { get; set; }
+        public string NoiDungTraLoi { get; set; } = string.Empty;
     }
 }
 ================================================================================

@@ -304,96 +304,165 @@
 </div>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
     <script>
         const apiBaseUrl = '@Model.ApiBaseUrl';
+
         $(document).ready(function () {
             const $chatHistory = $('#chat-history');
             const $chatForm = $('#chatForm');
             const $chatInput = $('#chatMessageInput');
             const $sendButton = $('#sendButton');
-            const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+            // === DỮ LIỆU CHAT TỪ MODEL ===
+            const idKhachHang = parseInt($('#IdKhachHang').val()) || 0;
             const guestSessionId = $('#GuestSessionId').val() || null;
             const jwtToken = $('#JwtToken').val() || null;
-            function scrollToBottom() {
-                $chatHistory.scrollTop($chatHistory[0].scrollHeight);
-            }
+            const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+            const groupName = idKhachHang > 0 ? `khach_${idKhachHang}` : `guest_${guestSessionId}`;
+            let currentIdThongBao = null; // ID phiếu hỗ trợ
+            let isRealtimeMode = false; // Cờ đánh dấu chế độ chat
+            let hubConnection = null; // Đối tượng SignalR
+
+            // === HÀM VẼ UI ===
+            function scrollToBottom() { $chatHistory.scrollTop($chatHistory[0].scrollHeight); }
             scrollToBottom();
-            // === START: HÀM addMessageToUI ĐÃ ĐƯỢC CẬP NHẬT ===
-            // Hàm này được viết lại để khớp với cấu trúc HTML (Avatar + Bubble) mới
-            function addMessageToUI(message, isUser)
-            {
-                const rowClass = isUser ? 'user-row' : 'bot-row';
-                const avatarClass = isUser ? 'avatar-user' : 'avatar-bot';
-                const avatarIcon = isUser ? 'person' : 'support_agent';
-                const bubbleClass = isUser ? 'chat-bubble-user' : 'chat-bubble-bot';
+
+            function addMessageToUI(message, isUser, isStaff = false) {
+                // (isStaff = true nếu là nhân viên)
+                const rowClass = isUser ? 'user-row' : (isStaff ? 'staff-row' : 'bot-row');
+                const avatarClass = isUser ? 'avatar-user' : (isStaff ? 'avatar-staff' : 'avatar-bot');
+                const avatarIcon = isUser ? 'person' : (isStaff ? 'support' : 'support_agent');
+                const bubbleClass = isUser ? 'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
                 const timeAlign = isUser ? 'text-end' : 'text-start';
-                const formattedContent = message.noiDung.replace(/\n/g, '<br />');
-                // Tạo các element
+
+                const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
+                const time = new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
                 const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
                 const $avatar = $('<div></div>').addClass('chat-avatar ' + avatarClass)
                     .html(`<span class="material-symbols-outlined">${avatarIcon}</span>`);
                 const $content = $('<div></div>').addClass('message-content');
                 const $bubble = $('<div></div>').addClass('chat-bubble ' + bubbleClass).html(formattedContent);
-                const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }));
-                // Ghép các element lại
+                const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(time);
+
                 $content.append($bubble).append($time);
                 $row.append($avatar).append($content);
-                // Thêm vào giao diện
+
                 $chatHistory.append($row);
             }
-            // === END: HÀM addMessageToUI ĐÃ ĐƯỢC CẬP NHẬT ===
+
+            // === LOGIC CHAT HYBRID ===
+
             $chatForm.on('submit', async function (e) {
                 e.preventDefault();
                 const messageText = $chatInput.val();
-                if (!messageText.trim()) {
-                    return;
-                }
+                if (!messageText.trim()) return;
+
                 $chatInput.val('').prop('disabled', true);
                 $sendButton.prop('disabled', true);
-                const payload = {
-                    noiDung: messageText,
-                    guestSessionId: guestSessionId
-                };
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': antiForgeryToken
-                };
-                if (jwtToken) {
-                    headers['Authorization'] = 'Bearer ' + jwtToken;
-                }
-                try {
-                    const response = await fetch(`${apiBaseUrl}/api/web/hotro/send`, {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(payload)
-                    });
-                    if (response.status === 401) {
-                        alert('Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-                        window.location.href = '/Account/Login?ReturnUrl=/ho-tro';
-                        return;
+
+                if (isRealtimeMode && hubConnection) {
+                    // --- CHẾ ĐỘ 2: GỬI QUA SIGNALR (Chat với NV) ---
+                    try {
+                        await hubConnection.invoke("SendMessageFromClient",
+                            groupName,
+                            messageText,
+                            idKhachHang,
+                            guestSessionId,
+                            currentIdThongBao
+                        );
+                    } catch (err) {
+                        console.error(err.toString());
+                        alert('Mất kết nối. Không thể gửi tin nhắn.');
+                    } finally {
+                        // Hub sẽ gửi lại tin nhắn (kể cả của mình) qua "ReceiveMessage"
+                        $chatInput.prop('disabled', false).focus();
+                        $sendButton.prop('disabled', false);
                     }
-                    if (!response.ok) {
-                        throw new Error('Lỗi máy chủ: ' + response.statusText);
+                } else {
+                    // --- CHẾ ĐỘ 1: GỬI QUA FETCH (Chat với AI) ---
+                    const payload = { noiDung: messageText, guestSessionId: guestSessionId };
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken
+                    };
+                    if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken; }
+
+                    try {
+                        const response = await fetch(`${apiBaseUrl}/api/web/hotro/send`, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 401) { /* ... (Xử lý 401) ... */ }
+                        if (!response.ok) { throw new Error('Lỗi máy chủ'); }
+
+                        const result = await response.json(); // SendChatResponseDto
+
+                        // Vẽ tin nhắn của khách (result.tinNhanCuaKhach)
+                        addMessageToUI(result.tinNhanCuaKhach, true, false);
+
+                        // Vẽ tin nhắn của AI (result.tinNhanPhanHoi)
+                        if (result.tinNhanPhanHoi) {
+                            setTimeout(() => {
+                                addMessageToUI(result.tinNhanPhanHoi, false, false);
+                                scrollToBottom();
+                            }, 300);
+                        }
+
+                        // === KÍCH HOẠT SIGNALR ===
+                        if (result.idThongBaoHoTro && result.idThongBaoHoTro > 0) {
+                            currentIdThongBao = result.idThongBaoHoTro;
+                            isRealtimeMode = true; // Chuyển chế độ
+                            await startSignalRConnection(); // Bắt đầu kết nối
+                        }
+
+                    } catch (error) {
+                        console.error('Lỗi khi gửi tin nhắn (Fetch):', error);
+                        alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
+                    } finally {
+                        $chatInput.prop('disabled', false).focus();
+                        $sendButton.prop('disabled', false);
+                        scrollToBottom();
                     }
-                    const result = await response.json();
-                    if (result.tinNhanCuaKhach) {
-                        addMessageToUI(result.tinNhanCuaKhach, true);
-                    }
-                    if (result.tinNhanPhanHoi) {
-                        setTimeout(() => {
-                            addMessageToUI(result.tinNhanPhanHoi, false);
-                            scrollToBottom();
-                        }, 500);
-                    }
-                } catch (error) {
-                    console.error('Lỗi khi gửi tin nhắn:', error);
-                    alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
-                } finally {
-                    $chatInput.prop('disabled', false).focus();
-                    $sendButton.prop('disabled', false);
-                    scrollToBottom();
                 }
             });
+
+            // === HÀM KẾT NỐI VÀ LẮNG NGHE SIGNALR ===
+            async function startSignalRConnection() {
+                if (hubConnection) return; // Đã kết nối
+
+                hubConnection = new signalR.HubConnectionBuilder()
+                    .withUrl(apiBaseUrl + "/chatHub")
+                    .build();
+
+                // Lắng nghe tin nhắn TỪ SERVER (của Nhân viên)
+                hubConnection.on("ReceiveMessage", function (message) {
+                    // Chỉ vẽ nếu là tin nhắn của NV (vì tin nhắn của mình đã tự vẽ)
+                    if (message.loaiTinNhan === 'NhanVien') {
+                        addMessageToUI(message, false, true); // (isUser, isStaff)
+                        scrollToBottom();
+                    }
+                    // Nếu tin nhắn của mình được gửi từ Hub (để xác nhận)
+                    else if (message.loaiTinNhan === 'KhachHang') {
+                         addMessageToUI(message, true, false);
+                         scrollToBottom();
+                    }
+                });
+
+                // Bắt đầu kết nối
+                try {
+                    await hubConnection.start();
+                    console.log("SignalR Connected (Client).");
+                    await hubConnection.invoke("JoinGroup", groupName);
+                    console.log(`Joined group (Client): ${groupName}`);
+                } catch (err) {
+                    console.error(err.toString());
+                }
+            }
         });
     </script>
 }

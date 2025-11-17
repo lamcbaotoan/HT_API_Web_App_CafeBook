@@ -11,7 +11,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\appsettings.json
     }
   },
   "AllowedHosts": "*",
-
   "SmtpSettings": {
     "Host": "smtp.gmail.com",
     "Port": 587,
@@ -24,6 +23,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\appsettings.json
 
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\libman.json
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Program.cs
 ================================================================================
 ﻿// Tập tin: WebCafebookApi/Program.cs
@@ -2282,6 +2282,593 @@ namespace WebCafebookApi.Pages
                 }
             }
             return RedirectToPage();
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml
+================================================================================
+﻿@page "/ho-tro"
+@model WebCafebookApi.Pages.HoTroViewModel
+@{
+    ViewData["Title"] = "Trung tâm Hỗ trợ";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <style>
+        /* === CAFEBOOK THEME VARIABLES === */
+        :root {
+            --cf-brown-dark: #4E342E;
+            --cf-brown-light: #A1887F;
+            --cf-terracotta-dark: #E65100; /* Primary accent */
+            --cf-terracotta-light: #FF7043;
+            --cf-beige: #F9F9F9; /* Chat history background */
+            --cf-cream: #FFF8E1;
+            --cf-white: #FFFFFF;
+            --cf-text: #333;
+            --cf-text-light: #757575;
+            --cf-border: #EEEEEE;
+        }
+
+        .page-title-account {
+            color: var(--cf-brown-dark);
+            font-weight: 700;
+        }
+
+        .page-lead-account {
+            color: var(--cf-text-light);
+            font-size: 1.1rem;
+        }
+
+        /* === CHAT WINDOW === */
+        .chat-window-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+        }
+
+        .chat-window {
+            display: flex;
+            flex-direction: column;
+            height: 70vh; /* Tăng chiều cao */
+            max-height: 750px;
+            background-color: var(--cf-white);
+        }
+
+        /* === CHAT HISTORY (Nâng cấp) === */
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem; /* Tăng khoảng cách */
+            background-color: var(--cf-beige);
+        }
+
+            /* Tùy chỉnh thanh cuộn */
+            .chat-history::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .chat-history::-webkit-scrollbar-track {
+                background: var(--cf-beige);
+            }
+
+            .chat-history::-webkit-scrollbar-thumb {
+                background-color: #D1C4E9; /* Màu tím nhạt từ theme Material */
+                border-radius: 20px;
+                border: 2px solid var(--cf-beige);
+            }
+
+                .chat-history::-webkit-scrollbar-thumb:hover {
+                    background-color: #B39DDB;
+                }
+
+        /* === CHAT ROW (Cấu trúc mới với Avatar) === */
+        .chat-message-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @@keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .chat-message-row .message-content {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+        }
+
+        /* === AVATAR === */
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cf-white);
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .avatar-user {
+            background-color: var(--cf-terracotta-dark);
+        }
+
+            .avatar-user .material-symbols-outlined {
+                font-size: 24px;
+            }
+
+        .avatar-bot {
+            background-color: var(--cf-brown-light);
+        }
+
+            .avatar-bot .material-symbols-outlined {
+                font-size: 24px;
+            }
+
+        /* === CHAT BUBBLE (Nâng cấp) === */
+        .chat-bubble {
+            padding: 0.8rem 1.25rem;
+            border-radius: 1.25rem;
+            line-height: 1.6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        /* Bot (AI/Nhân viên) */
+        .bot-row .message-content {
+            align-items: flex-start;
+        }
+
+        .chat-bubble-bot {
+            background-color: var(--cf-white);
+            color: var(--cf-text);
+            border: 1px solid var(--cf-border);
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        /* User (Khách hàng) */
+        .user-row {
+            flex-direction: row-reverse; /* Đảo ngược hàng */
+        }
+
+            .user-row .message-content {
+                align-items: flex-end;
+            }
+
+        .chat-bubble-user {
+            background: linear-gradient(135deg, var(--cf-terracotta-light), var(--cf-terracotta-dark));
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        /* === THỜI GIAN === */
+        .chat-bubble-time {
+            font-size: 0.75rem;
+            color: var(--cf-text-light);
+            margin-top: 6px;
+            padding: 0 0.5rem;
+        }
+
+        /* === INPUT FORM (Material Design) === */
+        .chat-input-form {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--cf-border);
+            background-color: var(--cf-white);
+            gap: 1rem;
+        }
+
+        .chat-input-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        #chatMessageInput {
+            border: none;
+            border-bottom: 2px solid var(--cf-border);
+            border-radius: 0;
+            padding: 0.75rem 0.25rem;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+
+            #chatMessageInput:focus {
+                box-shadow: none;
+                border-color: var(--cf-terracotta-dark);
+            }
+
+            #chatMessageInput::placeholder {
+                color: #BDBDBD;
+            }
+
+        #sendButton {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--cf-terracotta-dark);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+            #sendButton .material-symbols-outlined {
+                color: var(--cf-white);
+                font-size: 28px;
+                transition: transform 0.3s ease;
+            }
+
+            #sendButton:hover {
+                background-color: var(--cf-terracotta-light);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+                transform: translateY(-2px);
+            }
+
+            #sendButton:disabled {
+                background-color: #E0E0E0;
+                box-shadow: none;
+            }
+
+                #sendButton:disabled .material-symbols-outlined {
+                    color: #9E9E9E;
+                }
+    </style>
+}
+
+<div class="container my-5">
+
+    <div class="main-content-card">
+        <h3 class="page-title-account">@ViewData["Title"]</h3>
+        <p class="page-lead-account">Chào @Model.HoTroData.TenKhachHang, bạn cần Cafebook hỗ trợ gì hôm nay?</p>
+
+        <hr class="my-4" />
+
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="chat-window-card">
+                    <div class="chat-window">
+
+                        <div class="chat-history" id="chat-history">
+                            @foreach (var msg in Model.HoTroData.LichSuChat)
+                            {
+                                <div class="chat-message-row @(msg.IsUser ? "user-row" : "bot-row")">
+                                    <div class="chat-avatar @(msg.IsUser ? "avatar-user" : "avatar-bot")">
+                                        <span class="material-symbols-outlined">
+                                            @(msg.IsUser ? "person" : "support_agent")
+                                        </span>
+                                    </div>
+
+                                    <div class="message-content">
+                                        <div class="chat-bubble @(msg.IsUser ? "chat-bubble-user" : "chat-bubble-bot")">
+                                            @Html.Raw(msg.NoiDung.Replace("\n", "<br />"))
+                                        </div>
+                                        <div class="chat-bubble-time @(msg.IsUser ? "text-end" : "text-start")">
+                                            @msg.ThoiGian.ToString("HH:mm")
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <form method="post" id="chatForm" class="chat-input-form" asp-antiforgery="true">
+                            <input type="hidden" id="IdKhachHang" value="@Model.HoTroData.IdKhachHang" />
+                            <input type="hidden" id="GuestSessionId" value="@Model.HoTroData.GuestSessionId" />
+                            <input type="hidden" id="JwtToken" value="@Model.JwtToken" />
+
+                            <div class="chat-input-wrapper">
+                                <input asp-for="Input.NoiDung" id="chatMessageInput" class="form-control" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" />
+                            </div>
+                            <button type="submit" id="sendButton" class="btn">
+                                <span class="material-symbols-outlined">send</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        const apiBaseUrl = '@Model.ApiBaseUrl';
+
+        $(document).ready(function () {
+            const $chatHistory = $('#chat-history');
+            const $chatForm = $('#chatForm');
+            const $chatInput = $('#chatMessageInput');
+            const $sendButton = $('#sendButton');
+
+            // === DỮ LIỆU CHAT TỪ MODEL ===
+            const idKhachHang = parseInt($('#IdKhachHang').val()) || 0;
+            const guestSessionId = $('#GuestSessionId').val() || null;
+            const jwtToken = $('#JwtToken').val() || null;
+            const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+            const groupName = idKhachHang > 0 ? `khach_${idKhachHang}` : `guest_${guestSessionId}`;
+            let currentIdThongBao = null; // ID phiếu hỗ trợ
+            let isRealtimeMode = false; // Cờ đánh dấu chế độ chat
+            let hubConnection = null; // Đối tượng SignalR
+
+            // === HÀM VẼ UI ===
+            function scrollToBottom() { $chatHistory.scrollTop($chatHistory[0].scrollHeight); }
+            scrollToBottom();
+
+            function addMessageToUI(message, isUser, isStaff = false) {
+                // (isStaff = true nếu là nhân viên)
+                const rowClass = isUser ? 'user-row' : (isStaff ? 'staff-row' : 'bot-row');
+                const avatarClass = isUser ? 'avatar-user' : (isStaff ? 'avatar-staff' : 'avatar-bot');
+                const avatarIcon = isUser ? 'person' : (isStaff ? 'support' : 'support_agent');
+                const bubbleClass = isUser ? 'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
+                const timeAlign = isUser ? 'text-end' : 'text-start';
+
+                const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
+                const time = new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+                const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
+                const $avatar = $('<div></div>').addClass('chat-avatar ' + avatarClass)
+                    .html(`<span class="material-symbols-outlined">${avatarIcon}</span>`);
+                const $content = $('<div></div>').addClass('message-content');
+                const $bubble = $('<div></div>').addClass('chat-bubble ' + bubbleClass).html(formattedContent);
+                const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(time);
+
+                $content.append($bubble).append($time);
+                $row.append($avatar).append($content);
+
+                $chatHistory.append($row);
+            }
+
+            // === LOGIC CHAT HYBRID ===
+
+            $chatForm.on('submit', async function (e) {
+                e.preventDefault();
+                const messageText = $chatInput.val();
+                if (!messageText.trim()) return;
+
+                $chatInput.val('').prop('disabled', true);
+                $sendButton.prop('disabled', true);
+
+                if (isRealtimeMode && hubConnection) {
+                    // --- CHẾ ĐỘ 2: GỬI QUA SIGNALR (Chat với NV) ---
+                    try {
+                        await hubConnection.invoke("SendMessageFromClient",
+                            groupName,
+                            messageText,
+                            idKhachHang,
+                            guestSessionId,
+                            currentIdThongBao
+                        );
+                    } catch (err) {
+                        console.error(err.toString());
+                        alert('Mất kết nối. Không thể gửi tin nhắn.');
+                    } finally {
+                        // Hub sẽ gửi lại tin nhắn (kể cả của mình) qua "ReceiveMessage"
+                        $chatInput.prop('disabled', false).focus();
+                        $sendButton.prop('disabled', false);
+                    }
+                } else {
+                    // --- CHẾ ĐỘ 1: GỬI QUA FETCH (Chat với AI) ---
+                    const payload = { noiDung: messageText, guestSessionId: guestSessionId };
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken
+                    };
+                    if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken; }
+
+                    try {
+                        const response = await fetch(`${apiBaseUrl}/api/web/hotro/send`, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 401) { /* ... (Xử lý 401) ... */ }
+                        if (!response.ok) { throw new Error('Lỗi máy chủ'); }
+
+                        const result = await response.json(); // SendChatResponseDto
+
+                        // Vẽ tin nhắn của khách (result.tinNhanCuaKhach)
+                        addMessageToUI(result.tinNhanCuaKhach, true, false);
+
+                        // Vẽ tin nhắn của AI (result.tinNhanPhanHoi)
+                        if (result.tinNhanPhanHoi) {
+                            setTimeout(() => {
+                                addMessageToUI(result.tinNhanPhanHoi, false, false);
+                                scrollToBottom();
+                            }, 300);
+                        }
+
+                        // === KÍCH HOẠT SIGNALR ===
+                        if (result.idThongBaoHoTro && result.idThongBaoHoTro > 0) {
+                            currentIdThongBao = result.idThongBaoHoTro;
+                            isRealtimeMode = true; // Chuyển chế độ
+                            await startSignalRConnection(); // Bắt đầu kết nối
+                        }
+
+                    } catch (error) {
+                        console.error('Lỗi khi gửi tin nhắn (Fetch):', error);
+                        alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
+                    } finally {
+                        $chatInput.prop('disabled', false).focus();
+                        $sendButton.prop('disabled', false);
+                        scrollToBottom();
+                    }
+                }
+            });
+
+            // === HÀM KẾT NỐI VÀ LẮNG NGHE SIGNALR ===
+            async function startSignalRConnection() {
+                if (hubConnection) return; // Đã kết nối
+
+                hubConnection = new signalR.HubConnectionBuilder()
+                    .withUrl(apiBaseUrl + "/chatHub")
+                    .build();
+
+                // Lắng nghe tin nhắn TỪ SERVER (của Nhân viên)
+                hubConnection.on("ReceiveMessage", function (message) {
+                    // Chỉ vẽ nếu là tin nhắn của NV (vì tin nhắn của mình đã tự vẽ)
+                    if (message.loaiTinNhan === 'NhanVien') {
+                        addMessageToUI(message, false, true); // (isUser, isStaff)
+                        scrollToBottom();
+                    }
+                    // Nếu tin nhắn của mình được gửi từ Hub (để xác nhận)
+                    else if (message.loaiTinNhan === 'KhachHang') {
+                         addMessageToUI(message, true, false);
+                         scrollToBottom();
+                    }
+                });
+
+                // Bắt đầu kết nối
+                try {
+                    await hubConnection.start();
+                    console.log("SignalR Connected (Client).");
+                    await hubConnection.invoke("JoinGroup", groupName);
+                    console.log(`Joined group (Client): ${groupName}`);
+                } catch (err) {
+                    console.error(err.toString());
+                }
+            }
+        });
+    </script>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml.cs
+================================================================================
+﻿// Tập tin: WebCafebookApi/Pages/HoTroView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System;
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using System.Net.Http.Headers;
+
+namespace WebCafebookApi.Pages
+{
+    [AllowAnonymous]
+    public class HoTroViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
+
+        public HoTroViewModel(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        {
+            _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
+        }
+
+        public HoTroViewDto HoTroData { get; set; } = new HoTroViewDto();
+        public string ApiBaseUrl { get; set; } = "";
+        public string? JwtToken { get; set; } // Dùng để truyền Token xuống JS
+
+        [BindProperty]
+        public SendChatRequestDto Input { get; set; } = new SendChatRequestDto();
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            ApiBaseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5166";
+            string? guestSessionId = null;
+
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                // 1. ĐÃ ĐĂNG NHẬP
+                var idKhachHang = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var tenKhachHang = User.FindFirstValue(ClaimTypes.GivenName);
+
+                if (string.IsNullOrEmpty(idKhachHang))
+                {
+                    return RedirectToPage("/Account/Login");
+                }
+
+                HoTroData.IdKhachHang = int.Parse(idKhachHang);
+                HoTroData.TenKhachHang = tenKhachHang ?? "Khách hàng";
+
+                // Đọc Token từ Session (VẪN CẦN để gửi tin nhắn)
+                var token = HttpContext.Session.GetString("JwtToken");
+                JwtToken = token; // Lưu token để truyền cho JavaScript
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    return RedirectToPage("/Account/Login", new { ReturnUrl = "/ho-tro" });
+                }
+
+                // ======================================
+                // === SỬA THEO YÊU CẦU MỚI ===
+                // === (Xóa bỏ việc tải lịch sử chat) ===
+                // ======================================
+                // try
+                // {
+                //     var httpClient = _httpClientFactory.CreateClient();
+                //     httpClient.BaseAddress = new Uri(ApiBaseUrl);
+                //     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                //     var lichSu = await httpClient.GetFromJsonAsync<List<ChatMessageDto>>("api/web/hotro/history");
+                //     ...
+                // }
+                // catch ...
+            }
+            else
+            {
+                // 2. KHÁCH VÃNG LAI
+                guestSessionId = HttpContext.Session.GetString("GuestChatSession");
+                if (string.IsNullOrEmpty(guestSessionId))
+                {
+                    guestSessionId = Guid.NewGuid().ToString();
+                    HttpContext.Session.SetString("GuestChatSession", guestSessionId);
+                }
+
+                HoTroData.IdKhachHang = 0;
+                HoTroData.GuestSessionId = guestSessionId;
+                HoTroData.TenKhachHang = "Khách vãng lai";
+            }
+
+            // 3. AI CHÀO TRƯỚC
+            // (Vì cả 2 trường hợp đều không tải lịch sử (Count == 0),
+            // code này sẽ luôn chạy)
+            if (HoTroData.LichSuChat.Count == 0)
+            {
+                HoTroData.LichSuChat.Add(new ChatMessageDto
+                {
+                    IdChat = 0,
+                    LoaiTinNhan = "AI",
+                    NoiDung = "Chào bạn! Tôi là trợ lý ảo của Cafebook. Tôi có thể giúp gì cho bạn?",
+                    ThoiGian = DateTime.Now
+                });
+            }
+
+            return Page();
         }
     }
 }
@@ -5608,6 +6195,72 @@ else
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuThueSachView.cshtml.cs
+================================================================================
+// T?p tin: WebCafebookApi/Pages/Account/LichSuThueSachView.cshtml.cs
+using CafebookModel.Model.ModelWeb;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
+namespace WebCafebookApi.Pages.Account
+{
+    [Authorize(Roles = "KhachHang")]
+    public class LichSuThueSachViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public List<LichSuPhieuThueDto> Rentals { get; set; } = new List<LichSuPhieuThueDto>();
+
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        public LichSuThueSachViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int.TryParse(userIdClaim, out int userId);
+            return userId;
+        }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return Challenge();
+
+            var httpClient = _httpClientFactory.CreateClient();
+            try
+            {
+                var response = await httpClient.GetAsync($"http://localhost:5166/api/web/profile/rental-history/{userId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Rentals = await response.Content.ReadFromJsonAsync<List<LichSuPhieuThueDto>>() ?? new List<LichSuPhieuThueDto>();
+                }
+                else
+                {
+                    ErrorMessage = "Không th? t?i l?ch s? thuê sách.";
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ErrorMessage = $"L?i k?t n?i: {ex.Message}";
+            }
+
+            return Page();
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\QuenMatKhauView.cshtml
 ================================================================================
 ﻿@page "/Account/ForgotPassword"
@@ -8146,6 +8799,721 @@ namespace WebCafebookApi.Pages.employee
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHangView.cshtml
+================================================================================
+﻿@page "/Employee/HoTroKhachHangView"
+@model WebCafebookApi.Pages.employee.HoTroKhachHangViewModel
+@{
+    ViewData["Title"] = "Trung tâm Hỗ trợ";
+    Layout = "_Layout_Employee";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --cf-brown-dark: #4E342E;
+            --cf-brown-light: #A1887F;
+            --cf-terracotta-dark: #E65100;
+            --cf-beige: #F9F9F9;
+            --cf-white: #FFFFFF;
+            --cf-text: #333;
+            --cf-text-light: #757575;
+            --cf-border: #EEEEEE;
+        }
+
+        /* === CÀI ĐẶT CHUNG === */
+        .main-content-card {
+            padding: 0; /* Xóa padding gốc */
+        }
+
+        .support-dashboard-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 380px; /* 3 cột */
+            gap: 0;
+            height: 85vh; /* Chiều cao tối đa */
+            border: 1px solid var(--cf-border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+        }
+
+        /* === CỘT 1: DANH SÁCH PHIẾU === */
+        .ticket-list-wrapper {
+            background-color: var(--cf-white);
+            border-right: 1px solid var(--cf-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* <-- SỬA LỖI 1: Thêm dòng này */
+        }
+
+        .ticket-list-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--cf-border);
+            font-weight: 700;
+            color: var(--cf-brown-dark);
+            flex-shrink: 0; /* Không cho header co lại */
+        }
+
+        .ticket-list {
+            overflow-y: auto; /* Lịch sử chat sẽ cuộn */
+            flex-grow: 1; /* Lấp đầy không gian còn lại */
+        }
+
+        .ticket-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--cf-border);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+            .ticket-item:hover {
+                background-color: var(--cf-beige);
+            }
+
+            .ticket-item.active {
+                background-color: var(--cf-cream);
+                border-right: 3px solid var(--cf-terracotta-dark);
+            }
+
+            .ticket-item strong {
+                display: block;
+                font-size: 0.9rem;
+                color: var(--cf-text);
+            }
+
+            .ticket-item .ticket-preview {
+                font-size: 0.85rem;
+                color: var(--cf-text-light);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .ticket-item .ticket-time {
+                font-size: 0.75rem;
+                color: var(--cf-terracotta-dark);
+            }
+
+        /* === CỘT 2: CHAT === */
+        .chat-column {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--cf-white);
+            border-right: 1px solid var(--cf-border);
+            overflow: hidden; /* <-- SỬA LỖI 2: Thêm dòng này */
+        }
+
+        .chat-history {
+            flex-grow: 1; /* Lấp đầy không gian */
+            overflow-y: auto; /* Chỉ cuộn lịch sử chat */
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            background-color: var(--cf-beige);
+        }
+
+        .chat-message-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cf-white);
+            flex-shrink: 0;
+        }
+
+        .avatar-user {
+            background-color: var(--cf-terracotta-dark);
+        }
+
+        .avatar-bot {
+            background-color: var(--cf-brown-light);
+        }
+
+        .avatar-staff {
+            background-color: #0D47A1;
+        }
+
+        .chat-message-row .message-content {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+        }
+
+        .chat-bubble {
+            padding: 0.8rem 1.25rem;
+            border-radius: 1.25rem;
+            line-height: 1.6;
+        }
+
+        .bot-row .message-content {
+            align-items: flex-start;
+        }
+
+        .chat-bubble-bot {
+            background-color: var(--cf-white);
+            color: var(--cf-text);
+            border: 1px solid var(--cf-border);
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .user-row {
+            flex-direction: row-reverse;
+        }
+
+            .user-row .message-content {
+                align-items: flex-end;
+            }
+
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #FF7043, #E65100);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .staff-row .message-content {
+            align-items: flex-start;
+        }
+
+        .chat-bubble-staff {
+            background-color: #E3F2FD;
+            color: #0D47A1;
+            border: 1px solid #BBDEFB;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .chat-bubble-time {
+            font-size: 0.75rem;
+            color: var(--cf-text-light);
+            margin-top: 6px;
+            padding: 0 0.5rem;
+        }
+
+        .chat-input-form {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--cf-border);
+            background-color: var(--cf-white);
+            gap: 1rem;
+            flex-shrink: 0; /* Không cho form co lại */
+        }
+
+        .chat-input-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        #chatMessageInput {
+            border: none;
+            border-bottom: 2px solid var(--cf-border);
+            border-radius: 0;
+            padding: 0.75rem 0.25rem;
+            font-size: 1.1rem;
+            width: 100%;
+        }
+
+            #chatMessageInput:focus {
+                box-shadow: none;
+                border-color: var(--cf-terracotta-dark);
+            }
+
+        #sendButton {
+            background-color: var(--cf-terracotta-dark);
+            border: none;
+            color: white;
+        }
+
+        /* === CỘT 3: TÓM TẮT === */
+        .summary-column {
+            background-color: var(--cf-white);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* <-- SỬA LỖI 3: Thêm dòng này */
+        }
+
+        .summary-card {
+            border: none;
+            border-radius: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .summary-card .card-header {
+                background-color: var(--cf-brown-dark);
+                color: white;
+                font-weight: 700;
+                border-radius: 0;
+                border-bottom: none;
+                flex-shrink: 0; /* Không cho header co lại */
+            }
+
+            .summary-card .card-body {
+                padding: 1.5rem;
+                overflow-y: auto; /* Chỉ cuộn phần body */
+                flex-grow: 1; /* Lấp đầy không gian còn lại */
+            }
+
+                .summary-card .card-body p {
+                    margin-bottom: 1rem;
+                }
+
+                    .summary-card .card-body p strong {
+                        color: var(--cf-text);
+                        display: block;
+                        font-size: 0.9rem;
+                        margin-bottom: 4px;
+                    }
+
+                .summary-card .card-body span,
+                .summary-card .card-body .request-content {
+                    font-size: 1rem;
+                }
+
+                .summary-card .card-body .request-content {
+                    background-color: var(--cf-beige);
+                    padding: 10px;
+                    border-radius: 8px;
+                    font-style: italic;
+                    color: var(--cf-text-light);
+                    white-space: pre-wrap;
+                }
+
+        /* Trạng thái trống/chờ */
+        .empty-state {
+            display: flex;
+            flex-direction: column; /* Sửa: Cho icon và text xếp chồng */
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--cf-text-light);
+            text-align: center;
+        }
+    </style>
+}
+
+@* (Phần HTML và JavaScript còn lại giữ nguyên, không cần thay đổi) *@
+
+<div class="support-dashboard-grid">
+
+    <div class="ticket-list-wrapper">
+        <div class="ticket-list-header">
+            Danh sách Phiếu Hỗ Trợ
+        </div>
+        <div class="ticket-list" id="ticket-list-container">
+            <div class="empty-state p-3">Đang tải danh sách...</div>
+        </div>
+    </div>
+
+    <div class="chat-column" id="chat-column">
+        <div class="chat-history" id="chat-history">
+            <div class="empty-state">
+                <span class="material-symbols-outlined fs-1">arrow_back</span>
+                <p>Vui lòng chọn một phiếu hỗ trợ từ danh sách bên trái.</p>
+            </div>
+        </div>
+        <form method="post" id="chatForm" class="chat-input-form" asp-antiforgery="true">
+            <input type="hidden" id="JwtToken" value="@Model.JwtToken" />
+
+            <div class="chat-input-wrapper">
+                <input id="chatMessageInput" class="form-control" placeholder="Nhân viên nhập phản hồi..." autocomplete="off" disabled />
+            </div>
+            <button type="submit" id="sendButton" class="btn" disabled>
+                <span class="material-symbols-outlined">send</span>
+            </button>
+            <button type="button" id="resolveButton" class="btn btn-success" disabled>
+                Đã xử lý
+            </button>
+        </form>
+    </div>
+
+    <div class="summary-column" id="summary-column">
+        <div class="summary-card card">
+            <div class="card-header">
+                Thông tin Phiếu Hỗ Trợ
+            </div>
+            <div class="card-body" id="summary-card-content">
+                <div class="empty-state">
+                    <p>Chưa chọn phiếu.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+                const apiBaseUrl = '@Model.ApiBaseUrl';
+        $(document).ready(function () {
+                    // === Lấy các đối tượng DOM ===
+                    const $ticketListContainer = $('#ticket-list-container');
+                    const $chatHistory = $('#chat-history');
+                    const $summaryCardContent = $('#summary-card-content');
+
+                    const $chatForm = $('#chatForm');
+                    const $chatInput = $('#chatMessageInput');
+
+                const $sendButton = $('#sendButton');
+                    const $resolveButton = $('#resolveButton'); // Nút "Đã xử lý"
+
+                    const jwtToken = $('#JwtToken').val() || null;
+                    const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+                    let currentTicketId = null; // ID của phiếu đang được chọn
+                    let currentGroupName =
+        null; // "Phòng" chat đang xem
+                    let currentTicketData = null; // DTO chi tiết của phiếu
+
+                    // === HÀM TRUY CẬP API (HTTP VẪN DÙNG ĐỂ TẢI DANH SÁCH/CHI TIẾT) ===
+                    const headers = {
+                        'Content-Type': 'application/json',
+
+        'RequestVerificationToken': antiForgeryToken
+                    };
+
+                    // === SỬA LỖI TẠI ĐÂY ===
+                    // Bỏ comment dòng này để gửi Token xác thực
+        if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken; }
+                    // === KẾT THÚC SỬA LỖI ===
+
+                    // 1. Tải danh sách phiếu (Cột 1)
+                    async function loadTicketList() {
+                        try {
+                            const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/tickets`, {
+
+        method: 'GET',
+                                headers: headers
+                            });
+        if (!response.ok) throw new Error('Failed to load tickets');
+
+                            const tickets = await response.json();
+                            renderTicketList(tickets);
+        } catch (error) {
+                            console.error('Lỗi tải danh sách phiếu:', error);
+        $ticketListContainer.html('<div class="empty-state p-3">Lỗi tải danh sách.</div>');
+                        }
+                    }
+
+                    // 2. Tải chi tiết phiếu (Cột 2 & 3)
+                    async function loadTicketDetail(id) {
+                        if (!id || id === currentTicketId) return;
+        // Reset
+                        currentTicketId = id;
+        currentGroupName = null;
+                        currentTicketData = null;
+
+                        $('.ticket-item').removeClass('active');
+                        $(`.ticket-item[data-id="${id}"]`).addClass('active');
+
+                        $chatInput.prop('disabled', true);
+                        $sendButton.prop('disabled', true);
+                        $resolveButton.prop('disabled', true);
+        try {
+                            $chatHistory.html('<div class="empty-state">Đang tải chi tiết...</div>');
+        $summaryCardContent.html('<div class="empty-state">Đang tải...</div>');
+
+                            // 2.1. Vẫn dùng Fetch để lấy lịch sử cũ và thông tin
+                            const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/ticket/${id}`, {
+                                method: 'GET',
+                                headers: headers
+
+                  });
+                            if (!response.ok) throw new Error('Failed to load ticket detail');
+        const ticketData = await response.json();
+                            currentTicketData = ticketData; // Lưu data
+
+                            renderChatHistory(ticketData.lichSuChat);
+        renderSummary(ticketData);
+
+                            // 2.2. TÍNH TOÁN GROUPNAME VÀ THAM GIA PHÒNG (SIGNALR)
+                            const { idKhachHang, guestSessionId } = ticketData;
+        const groupName = idKhachHang > 0 ? `khach_${idKhachHang}` : `guest_${guestSessionId}`;
+        if (groupName) {
+                                currentGroupName = groupName;
+        await hubConnection.invoke("JoinGroup", currentGroupName);
+                                console.log(`Joined group: ${currentGroupName}`);
+
+                                // Kích hoạt form sau khi đã tham gia phòng
+                                $chatInput.prop('disabled', false);
+        $sendButton.prop('disabled', false);
+                                $resolveButton.prop('disabled', false);
+                            } else {
+                                throw new Error("Không thể xác định groupName cho phiếu này.");
+        }
+
+                        } catch (error) {
+                            console.error('Lỗi tải chi tiết phiếu:', error);
+        $chatHistory.html('<div class="empty-state">Lỗi tải chi tiết.</div>');
+                        }
+                    }
+
+                    // === HÀM RENDER HTML (Giữ nguyên) ===
+                    function renderTicketList(tickets) {
+                        if (tickets.length === 0) {
+
+                   $ticketListContainer.html('<div class="empty-state p-3">Không có phiếu nào.</div>');
+                            return;
+        }
+                        $ticketListContainer.empty();
+        tickets.forEach(ticket => {
+                            const time = new Date(ticket.thoiGianTao).toLocaleString('vi-VN');
+                            const statusClass = ticket.trangThai === 'Chờ xử lý' ? 'text-danger' : 'text-success';
+                            const ticketHtml = `
+
+            <div class="ticket-item" data-id="${ticket.idThongBao}">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>${ticket.tenKhachHang}</strong>
+
+        <span class="ticket-time ${statusClass}">${ticket.trangThai}</span>
+                                    </div>
+                                    <div class="ticket-preview">${ticket.noiDungYeuCau || '...'}</div>
+                                    <small>${time}</small>
+
+                     </div>
+                            `;
+                            $ticketListContainer.append(ticketHtml);
+                        });
+        }
+                    function renderSummary(data) {
+                        const summaryHtml = `
+                            <p><strong>Khách hàng:</strong> <span>${data.tenKhachHang}</span></p>
+                            <p><strong>Phiếu số:</strong> <span>#${data.idThongBao}</span></p>
+                            <p><strong>Trạng thái:</strong> <span
+        class="badge bg-warning text-dark fs-6">${data.trangThai}</span></p>
+                            <p><strong>Thời gian tạo:</strong> <span>${new Date(data.thoiGianTao).toLocaleString('vi-VN')}</span></p>
+                            <hr />
+                            <p><strong>Yêu cầu gốc của khách:</strong> <div class="request-content">${data.noiDungYeuCau ||
+        '(Không có)'}</div></p>
+                            <p><strong>Ghi chú (AI):</strong> <div class="request-content" style="border: 1px dashed var(--cf-terracotta-dark); color: var(--cf-text)">${data.ghiChuTuAI ||
+        '(Không có)'}</div></p>
+                        `;
+                        $summaryCardContent.html(summaryHtml);
+        }
+                    function renderChatHistory(messages) {
+                        $chatHistory.empty();
+        // === SỬA LỖI CRASH (KIỂM TRA NULL) ===
+                        if (!messages || messages.length === 0) {
+                            $chatHistory.html('<div class="empty-state">Chưa có lịch sử chat.</div>');
+        return;
+                        }
+                        // ===================================
+
+                        messages.forEach(msg => {
+                            addMessageToUI(msg);
+
+            });
+                        scrollToBottom();
+                    }
+                    function addMessageToUI(message) {
+                        const isUser = message.loaiTinNhan === 'KhachHang';
+        const isStaff = message.loaiTinNhan === 'NhanVien';
+
+                        const rowClass = isUser ? 'user-row' : (isStaff ? 'staff-row' : 'bot-row');
+        const avatarClass = isUser ? 'avatar-user' : (isStaff ? 'avatar-staff' : 'avatar-bot');
+                        const avatarIcon = isUser ?
+        'person' : (isStaff ? 'support' : 'support_agent');
+                        const bubbleClass = isUser ? 'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
+        const timeAlign = isUser ? 'text-end' : 'text-start';
+
+                        const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
+        const time = new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+                        const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
+        const $avatar = $('<div></div>').addClass('chat-avatar ' + avatarClass)
+                            .html(`<span class="material-symbols-outlined">${avatarIcon}</span>`);
+        const $content = $('<div></div>').addClass('message-content');
+                        const $bubble = $('<div></div>').addClass('chat-bubble ' + bubbleClass).html(formattedContent);
+                        const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(time);
+
+                        $content.append($bubble).append($time);
+                        $row.append($avatar).append($content);
+        $chatHistory.append($row);
+                    }
+                    function scrollToBottom() {
+                        $chatHistory.scrollTop($chatHistory[0].scrollHeight);
+        }
+
+                    // === LOGIC SIGNALR MỚI ===
+
+                    // 1. Tạo kết nối
+                    const hubConnection = new signalR.HubConnectionBuilder()
+                        .withUrl(apiBaseUrl + "/chatHub")
+                        .build();
+        // 2. Lắng nghe tin nhắn TỪ SERVER
+                    hubConnection.on("ReceiveMessage", function (message) {
+                        // Chỉ vẽ lên UI nếu tin nhắn thuộc về phiếu đang xem
+                        if (currentTicketData &&
+                            ( (currentTicketData.idKhachHang && message.idKhachHang == currentTicketData.idKhachHang) ||
+
+                        (currentTicketData.guestSessionId && message.guestSessionId == currentTicketData.guestSessionId) )
+                           )
+                        {
+                            addMessageToUI(message);
+                            scrollToBottom();
+
+                    }
+                    });
+        // Lắng nghe tín hiệu reload chung
+                    hubConnection.on("ReloadTicketList", function () {
+                        loadTicketList();
+                    });
+        // 3. Bắt đầu kết nối
+                    async function startConnection() {
+                        try {
+                            await hubConnection.start();
+        console.log("SignalR Connected (Staff).");
+                        } catch (err) {
+                            console.error(err.toString());
+        alert("Không thể kết nối đến máy chủ chat.");
+                        }
+                    }
+
+                    // === XỬ LÝ SỰ KIỆN (ĐÃ CẬP NHẬT) ===
+
+                    // 1. Bấm vào phiếu trong danh sách
+                    $ticketListContainer.on('click', '.ticket-item', function () {
+                        const id = $(this).data('id');
+
+                   loadTicketDetail(id);
+                    });
+        // 2. Gửi tin nhắn (SignalR)
+                    $chatForm.on('submit', async function (e) {
+                        e.preventDefault();
+                        if (!currentTicketId || !currentGroupName || !currentTicketData) {
+                            alert("Vui lòng chọn phiếu hỗ trợ hợp lệ trước.");
+
+               return;
+                        }
+
+                        const messageText = $chatInput.val();
+                        if (!messageText.trim()) { return; }
+
+                        $chatInput.val('').prop('disabled', true);
+                        $sendButton.prop('disabled', true);
+
+
+                    try {
+                            // Gửi tin nhắn LÊN HUB
+                            await hubConnection.invoke("SendMessageFromStaff",
+                                currentGroupName,
+
+               messageText,
+                                currentTicketId,
+                                currentTicketData.idKhachHang,
+                                currentTicketData.guestSessionId
+                            );
+
+                       } catch (err) {
+                            console.error(err.toString());
+        alert('Không thể gửi phản hồi.');
+                        } finally {
+                            $chatInput.prop('disabled', false).focus();
+        $sendButton.prop('disabled', false);
+                            // Không gọi addMessageToUI, Hub sẽ lo
+                        }
+                    });
+        // 3. Bấm nút "Đã xử lý" (Vẫn dùng Fetch, vì đây là hành động API riêng)
+                    $resolveButton.on('click', async function () {
+                        // (Giữ nguyên logic fetch của $resolveButton)
+                        if (!currentTicketId) return;
+                        if (!confirm("Bạn có chắc muốn đóng phiếu hỗ trợ này?")) return;
+
+
+                      $resolveButton.prop('disabled', true).text("Đang xử lý...");
+                        try {
+                            const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/resolve/${currentTicketId}`, {
+                                method: 'POST',
+
+                headers: headers
+                            });
+                            if (response.ok) {
+                                alert("Đã đóng phiếu thành công!");
+
+           loadTicketList(); // Tải lại danh sách
+                                $chatHistory.html('<div class="empty-state">Phiếu đã đóng. Vui lòng chọn phiếu khác.</div>');
+                                $summaryCardContent.html('<div class="empty-state">Phiếu đã đóng.</div>');
+        $chatInput.prop('disabled', true);
+                                $sendButton.prop('disabled', true);
+                                $resolveButton.prop('disabled', true);
+                                currentTicketId = null;
+                                currentGroupName = null;
+                                currentTicketData = null;
+        } else {
+                                alert("Không thể đóng phiếu.");
+        }
+                        } catch (error) {
+                            console.error('Lỗi khi đóng phiếu:', error);
+        } finally {
+                            $resolveButton.prop('disabled', false).text("Đã xử lý");
+        }
+                    });
+        // === KHỞI CHẠY ===
+                    startConnection();
+        // Bắt đầu kết nối SignalR
+                    loadTicketList();
+        // Tải danh sách phiếu
+                });
+    </script>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHangView.cshtml.cs
+================================================================================
+﻿// Tập tin: WebCafebookApi/Pages/employee/HoTroKhachHangView.cshtml.cs
+using CafebookModel.Model.ModelWeb.QuanLy;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Configuration;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Http;
+
+namespace WebCafebookApi.Pages.employee
+{
+    // [Authorize(Roles = "NhanVien,QuanLy")]
+    public class HoTroKhachHangViewModel : PageModel
+    {
+        private readonly IConfiguration _configuration;
+
+        // Xóa IHttpClientFactory vì JS sẽ gọi trực tiếp
+        public HoTroKhachHangViewModel(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        // Xóa [BindProperty] Id và TicketData, JS sẽ quản lý
+
+        public string ApiBaseUrl { get; set; } = "";
+        public string? JwtToken { get; set; } // Token của nhân viên
+
+        public void OnGet()
+        {
+            // Trang này giờ chỉ cần tải, không cần nạp dữ liệu cụ thể
+            ApiBaseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:5166";
+
+            // Giả định token của nhân viên được lưu trong session
+            JwtToken = HttpContext.Session.GetString("JwtToken");
+
+            // Không cần gọi API ở đây nữa
+        }
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\SoDoBanView.cshtml
 ================================================================================
 ﻿@page "/Employee/SoDoBan"
@@ -9032,6 +10400,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\_Layout_Empl
     <title>@ViewData["Title"] - Quản lý Cafebook</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="employee-body">
@@ -9060,14 +10429,20 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\_Layout_Empl
                         Sơ Đồ Bàn
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Hỗ trợ Khách hàng" ? "active" : "")"
+                       asp-page="/Employee/HoTroKhachHangView">
+                        <span class="material-symbols-outlined">support_agent</span>
+                        Hỗ trợ Khách hàng
+                    </a>
+                </li>
             </ul>
         </nav>
 
         <div class="main-content">
             <header class="header-nav shadow-sm">
                 <span class="navbar-text fw-bold" style="color: var(--cf-text);">
-                    <!-- === SỬA LỖI CS8602 (Dòng 44) === -->
-                    <!-- Thêm '?' sau User.Identity để kiểm tra null an toàn -->
                     Xin chào, @(User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name)!
                 </span>
                 <form method="post" asp-page="/employee/DangXuat">
@@ -9126,6 +10501,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Shared\_Layout.cshtml
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -9156,6 +10532,9 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Shared\_Layout.cshtml
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-page="/LienHeView">Liên Hệ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-page="/HoTroView">Hỗ Trợ</a>
                         </li>
                     </ul>
 
@@ -9494,3 +10873,194 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validati
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.js
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\jquery.validate.unobtrusive.min.js
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\jquery-validation-unobtrusive\LICENSE.txt
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\package.json
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\README.md
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\browser\signalr.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\browser\signalr.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\browser\signalr.min.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\browser\signalr.min.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\AbortController.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\AbortController.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\browser-index.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\browser-index.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\DefaultHttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\DefaultHttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\DefaultReconnectPolicy.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\DefaultReconnectPolicy.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Errors.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Errors.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\FetchHttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\FetchHttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HandshakeProtocol.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HandshakeProtocol.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HeaderNames.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HeaderNames.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HttpConnection.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HttpConnection.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HubConnection.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HubConnection.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HubConnectionBuilder.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\HubConnectionBuilder.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IConnection.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IConnection.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IHttpConnectionOptions.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IHttpConnectionOptions.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IHubProtocol.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IHubProtocol.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\ILogger.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\ILogger.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\index.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\index.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IRetryPolicy.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\IRetryPolicy.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\ITransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\ITransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\JsonHubProtocol.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\JsonHubProtocol.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Loggers.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Loggers.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\LongPollingTransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\LongPollingTransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Polyfills.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Polyfills.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\ServerSentEventsTransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\ServerSentEventsTransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Stream.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Stream.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Subject.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Subject.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\TextMessageFormat.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\TextMessageFormat.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Utils.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\Utils.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\WebSocketTransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\WebSocketTransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\XhrHttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\cjs\XhrHttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\AbortController.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\AbortController.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\AbortController.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\browser-index.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\browser-index.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\browser-index.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\DefaultHttpClient.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\DefaultHttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\DefaultHttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\DefaultReconnectPolicy.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\DefaultReconnectPolicy.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\DefaultReconnectPolicy.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Errors.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Errors.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Errors.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\FetchHttpClient.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\FetchHttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\FetchHttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HandshakeProtocol.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HandshakeProtocol.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HandshakeProtocol.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HeaderNames.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HeaderNames.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HeaderNames.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HttpClient.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HttpConnection.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HttpConnection.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HttpConnection.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HubConnection.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HubConnection.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HubConnection.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HubConnectionBuilder.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HubConnectionBuilder.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\HubConnectionBuilder.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IConnection.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IConnection.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IConnection.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IHttpConnectionOptions.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IHttpConnectionOptions.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IHttpConnectionOptions.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IHubProtocol.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IHubProtocol.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IHubProtocol.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ILogger.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ILogger.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ILogger.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\index.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\index.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\index.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IRetryPolicy.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IRetryPolicy.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\IRetryPolicy.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ITransport.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ITransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ITransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\JsonHubProtocol.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\JsonHubProtocol.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\JsonHubProtocol.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Loggers.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Loggers.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Loggers.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\LongPollingTransport.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\LongPollingTransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\LongPollingTransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Polyfills.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Polyfills.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Polyfills.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ServerSentEventsTransport.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ServerSentEventsTransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\ServerSentEventsTransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Stream.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Stream.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Stream.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Subject.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Subject.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Subject.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\TextMessageFormat.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\TextMessageFormat.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\TextMessageFormat.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Utils.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Utils.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\Utils.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\WebSocketTransport.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\WebSocketTransport.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\WebSocketTransport.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\XhrHttpClient.d.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\XhrHttpClient.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\esm\XhrHttpClient.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\webworker\signalr.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\webworker\signalr.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\webworker\signalr.min.js
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\dist\webworker\signalr.min.js.map
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\AbortController.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\browser-index.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\DefaultHttpClient.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\DefaultReconnectPolicy.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\Errors.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\FetchHttpClient.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\HandshakeProtocol.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\HeaderNames.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\HttpClient.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\HttpConnection.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\HubConnection.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\HubConnectionBuilder.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\IConnection.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\IHttpConnectionOptions.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\IHubProtocol.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\ILogger.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\index.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\IRetryPolicy.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\ITransport.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\JsonHubProtocol.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\Loggers.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\LongPollingTransport.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\Polyfills.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\ServerSentEventsTransport.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\Stream.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\Subject.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\TextMessageFormat.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\third-party-notices.txt
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\Utils.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\WebSocketTransport.ts
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\wwwroot\lib\microsoft\signalr\src\XhrHttpClient.ts

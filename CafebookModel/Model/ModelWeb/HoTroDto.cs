@@ -60,5 +60,6 @@ namespace CafebookModel.Model.ModelWeb
         public ChatMessageDto TinNhanCuaKhach { get; set; } = null!;
         public ChatMessageDto? TinNhanPhanHoi { get; set; } // Có thể null nếu AI chuyển tiếp
         public bool DaChuyenNhanVien { get; set; } = false;
+        public int? IdThongBaoHoTro { get; set; } // Để JS biết khi nào kích hoạt SignalR
     }
 }

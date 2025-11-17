@@ -252,3 +252,5 @@ e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml.cs
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\HoTroDto.cs
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\HoTroControllers.cs
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\AiService.cs
+e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\ChatHub.cs
