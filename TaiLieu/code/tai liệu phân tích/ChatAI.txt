@@ -254,3 +254,6 @@ e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\HoTroDto.cs
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Controllers\Web\HoTroControllers.cs
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\AiService.cs
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\ChatHub.cs
+
+- hiện tại khách hàng đã nhận được tin nhắn theo thời gian thực, nhưng nhân viên thì nó chưa cập nhật tin nhắn theo thời gian thực.
+- khi khách hàng chat với nhân viên thì dừng AI và hiện nút chat với nhân viên khách hàng- nếu có yêu cầu khách hàng mới hiện lên trên cùng Danh sách Phiếu Hỗ Trợ và thêm 1 chấm đỏ

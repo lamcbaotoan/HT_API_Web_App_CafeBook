@@ -100,7 +100,8 @@ namespace CafebookApi.Hubs
                 IdChat = entity.IdChat,
                 NoiDung = entity.NoiDungTraLoi,
                 ThoiGian = entity.ThoiGian,
-                LoaiTinNhan = entity.LoaiTinNhan ?? "AI"
+                LoaiTinNhan = entity.LoaiTinNhan ?? "AI",
+                IdThongBaoHoTro = entity.IdThongBaoHoTro
             };
         }
     }

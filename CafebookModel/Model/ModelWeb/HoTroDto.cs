@@ -27,7 +27,7 @@ namespace CafebookModel.Model.ModelWeb
         public DateTime ThoiGian { get; set; }
 
         public string LoaiTinNhan { get; set; } = "KhachHang";
-
+        public int? IdThongBaoHoTro { get; set; }
         // === SỬA LỖI: Thêm [JsonIgnore] ===
         // Những thuộc tính này chỉ dùng cho Razor, không dùng cho API
         [JsonIgnore]

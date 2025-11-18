@@ -548,19 +548,30 @@
                         .withUrl(apiBaseUrl + "/chatHub")
                         .build();
         // 2. Lắng nghe tin nhắn TỪ SERVER
-                    hubConnection.on("ReceiveMessage", function (message) {
-                        // Chỉ vẽ lên UI nếu tin nhắn thuộc về phiếu đang xem
-                        if (currentTicketData &&
-                            ( (currentTicketData.idKhachHang && message.idKhachHang == currentTicketData.idKhachHang) ||
+        // 2. Lắng nghe tin nhắn TỪ SERVER
+                        hubConnection.on("ReceiveMessage", function (message) { // 'message' là ChatMessageDto
 
-                        (currentTicketData.guestSessionId && message.guestSessionId == currentTicketData.guestSessionId) )
-                           )
-                        {
-                            addMessageToUI(message);
-                            scrollToBottom();
+                            // =========================================================
+                            // === SỬA LỖI 1 (Bước 3): SỬA LẠI ĐIỀU KIỆN LỌC TIN NHẮN ===
+                            // =========================================================
+                            // Lỗi cũ: Dùng message.idKhachHang (không tồn tại)
+                            // Sửa lỗi: Dùng 'message.idThongBaoHoTro' (đã thêm ở Bước 1 & 2)
+                            // và so sánh với 'currentTicketId' (là IdThongBao đang xem)
 
-                    }
-                    });
+                            // Lỗi cũ của bạn:
+                            // if (currentTicketData &&
+                            //     ( (currentTicketData.idKhachHang && message.idKhachHang == currentTicketData.idKhachHang) ||
+                            //       (currentTicketData.guestSessionId && message.guestSessionId == currentTicketData.guestSessionId) )
+                            //    )
+
+                            // SỬA THÀNH:
+                            if (currentTicketId && message.idThongBaoHoTro == currentTicketId)
+                            {
+                                addMessageToUI(message);
+                                scrollToBottom();
+                            }
+                            // =========================================================
+                        });
         // Lắng nghe tín hiệu reload chung
                     hubConnection.on("ReloadTicketList", function () {
                         loadTicketList();
