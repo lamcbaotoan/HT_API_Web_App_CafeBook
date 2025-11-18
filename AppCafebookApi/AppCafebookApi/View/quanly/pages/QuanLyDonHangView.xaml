@@ -143,6 +143,16 @@
                         Width="140">
                     <TextBlock Text="Quản lý Phụ thu" VerticalAlignment="Center"/>
                 </Button>
+                <Button x:Name="btnNavigate_Shipper" 
+                        Margin="5,5,5,5" 
+                        Style="{StaticResource PrimaryButton}" 
+                        Background="#FF9800" 
+                        Click="BtnNavigate_Shipper_Click" 
+                        Width="140">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Quản lý ĐVVC" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </WrapPanel>
         </Border>
         <Grid Grid.Row="1" Margin="15">

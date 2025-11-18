@@ -141,5 +141,6 @@ namespace CafebookModel.Model.ModelWeb
         public decimal GiamGia { get; set; } // (GiamGia + Diem)
         public decimal ThanhTien { get; set; }
         public string PhuongThucThanhToan { get; set; } = string.Empty;
+        public string? AnhXacNhanGiaoHangUrl { get; set; }
     }
 }

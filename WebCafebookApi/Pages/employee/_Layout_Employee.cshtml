@@ -44,6 +44,22 @@
                         Hỗ trợ Khách hàng
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Quản lý Giao hàng" ? "active" : "")"
+                       asp-page="/Employee/QuanLyGiaoHangView">
+                        <span class="material-symbols-outlined">support_agent</span>
+                        Quản lý Giao hàng
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Ứng dụng Shipper" ? "active" : "")"
+                       asp-page="/Employee/ShipperGiaoHangView">
+                        <span class="material-symbols-outlined">two_wheeler</span>
+                        Ứng dụng Shipper
+                    </a>
+                </li>
             </ul>
         </nav>
 

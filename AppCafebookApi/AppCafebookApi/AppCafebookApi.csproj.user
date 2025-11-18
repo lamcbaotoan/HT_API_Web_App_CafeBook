@@ -128,6 +128,9 @@
     <Compile Update="View\quanly\pages\QuanLyLuongView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\quanly\pages\QuanLyNguoiGiaoHangView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\quanly\pages\QuanLyNguyenLieuView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

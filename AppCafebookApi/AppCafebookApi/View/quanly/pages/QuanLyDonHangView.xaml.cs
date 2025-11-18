@@ -280,5 +280,10 @@ namespace AppCafebookApi.View.quanly.pages
             this.NavigationService?.Navigate(new QuanLyPhuThuView());
         }
         // ### KẾT THÚC THÊM MỚI ###
+        // Thêm vào class QuanLyDonHangView
+        private void BtnNavigate_Shipper_Click(object sender, RoutedEventArgs e)
+        {
+            this.NavigationService?.Navigate(new QuanLyNguoiGiaoHangView());
+        }
     }
 }

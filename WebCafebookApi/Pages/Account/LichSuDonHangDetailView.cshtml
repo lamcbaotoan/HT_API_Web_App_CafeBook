@@ -213,14 +213,23 @@
                     padding-top: 1rem;
                     margin-top: 0.5rem;
                 }
+        /* Thêm style cho ảnh trong modal */
+        #deliveryProofImage {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
     </style>
 }
 
+<div class="mb-3">
+    <a asp-page="/Account/LichSuDonHangView" class="text-decoration-none text-secondary fw-bold">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
+        Quay lại danh sách đơn hàng
+    </a>
+</div>
+
 <h3 class="page-title-account">@ViewData["Title"]</h3>
-<p class="page-lead-account">Theo dõi chi tiết đơn hàng giao tận nơi của bạn.</p>
-
-<hr class="my-4" />
-
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
     <div class="alert alert-danger">@Model.ErrorMessage</div>
@@ -228,7 +237,6 @@
 else if (Model.OrderDetails != null)
 {
     var order = Model.OrderDetails;
-
     <div class="card order-card">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center">
@@ -238,28 +246,35 @@ else if (Model.OrderDetails != null)
                 </div>
                 <div class="text-end">
                     <h5 class="mb-0 text-uppercase" style="color: var(--cf-orange);">@order.TrangThaiGiaoHang</h5>
+                    
+                    @if (!string.IsNullOrEmpty(order.AnhXacNhanGiaoHangUrl) && order.TrangThaiGiaoHang == "Hoàn thành")
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-success mt-2" data-bs-toggle="modal" data-bs-target="#imageModal">
+                            <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: text-bottom;">image</span>
+                            Xem ảnh giao hàng
+                        </button>
+                    }
                 </div>
             </div>
 
             <hr />
-
             <ul class="progress-tracker">
                 @{
                     bool cxn = order.TrangThaiGiaoHang == "Chờ xác nhận";
                     bool clh = order.TrangThaiGiaoHang == "Chờ lấy hàng";
                     bool dg = order.TrangThaiGiaoHang == "Đang giao";
                     bool ht = order.TrangThaiGiaoHang == "Hoàn thành";
-                    bool dh = order.TrangThaiGiaoHang == "Đã Hủy";
+                    bool dh = order.TrangThaiGiaoHang == "Đã Hủy"; // Sửa "Đã Hủy" cho khớp API
                 }
                 <li class="progress-step @(cxn || clh || dg || ht ? "completed" : "") @(cxn ? "active" : "")">
                     <span class="icon"><span class="material-symbols-outlined">receipt_long</span></span>
                     <span class="text">Đã Đặt</span>
                 </li>
-                <li class="progress-step @(clh || dg || ht ? "completed" : "") @(clh ? "active" : "")">
+                 <li class="progress-step @(clh || dg || ht ? "completed" : "") @(clh ? "active" : "")">
                     <span class="icon"><span class="material-symbols-outlined">inventory_2</span></span>
                     <span class="text">Chờ Lấy Hàng</span>
                 </li>
-                <li class="progress-step @(dg || ht ? "completed" : "") @(dg ? "active" : "")">
+                 <li class="progress-step @(dg || ht ? "completed" : "") @(dg ? "active" : "")">
                     <span class="icon"><span class="material-symbols-outlined">local_shipping</span></span>
                     <span class="text">Đang Giao</span>
                 </li>
@@ -268,11 +283,12 @@ else if (Model.OrderDetails != null)
                     <span class="text">Hoàn Thành</span>
                 </li>
             </ul>
+
         </div>
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-5">
+         <div class="col-lg-5">
             <div class="card order-card h-100">
                 <div class="card-body p-4">
                     <h5 class="mb-3">Địa Chỉ Nhận Hàng</h5>
@@ -289,10 +305,10 @@ else if (Model.OrderDetails != null)
                     <ul class="timeline">
                         @foreach (var tracking in order.TrackingEvents)
                         {
-                            <li class="timeline-item @(tracking.IsCurrent ? "active" : "")">
+                          <li class="timeline-item @(tracking.IsCurrent ? "active" : "")">
                                 <div class="timeline-icon">
                                     <span class="material-symbols-outlined">@(tracking.Status == "Đơn hàng đã đặt" ? "receipt_long" : (tracking.Status == "Giao hàng thành công" ? "task_alt" : "local_shipping"))</span>
-                                </div>
+                               </div>
                                 <div class="timeline-content">
                                     <span class="status">@tracking.Status</span>
                                     <p class="description mb-0">@tracking.Description</p>
@@ -305,18 +321,18 @@ else if (Model.OrderDetails != null)
             </div>
         </div>
     </div>
-
+    
     <div class="row g-4">
-        <div class="col-lg-8">
+         <div class="col-lg-8">
             <div class="card order-card">
-                <div class="order-card-header">
+                 <div class="order-card-header">
                     <span class="shop-name">
                         <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">storefront</span>
                         Cafebook
                     </span>
                 </div>
                 <div class="order-items-container">
-                    @foreach (var item in order.Items)
+                     @foreach (var item in order.Items)
                     {
                         var imgUrl = item.HinhAnhUrl ?? "/images/default-food-icon.png";
                         <div class="order-item">
@@ -327,26 +343,26 @@ else if (Model.OrderDetails != null)
                                 <h6>@item.TenSanPham</h6>
                                 <div class="qty">x @item.SoLuong</div>
 
-                                @if (order.TrangThaiGiaoHang == "Hoàn thành")
+                                 @if (order.TrangThaiGiaoHang == "Hoàn thành")
                                 {
                                     bool daDanhGiaSP = await Model.KiemTraDaDanhGia(order.IdHoaDon, item.IdSanPham, null);
-                                    if (daDanhGiaSP)
+                                     if (daDanhGiaSP)
                                     {
                                         <span class="text-success mt-2 d-block" style="font-size: 0.9rem;">
-                                            <span class="material-symbols-outlined" style="vertical-align: bottom; font-size: 1.1rem;">check_circle</span>
+                                           <span class="material-symbols-outlined" style="vertical-align: bottom; font-size: 1.1rem;">check_circle</span>
                                             Đã đánh giá
                                         </span>
-                                    }
+                                       }
                                     else
                                     {
                                         <a asp-page="./DanhGiaView"
                                            asp-route-idHoaDon="@order.IdHoaDon"
                                            asp-route-idSanPham="@item.IdSanPham"
                                            class="btn btn-sm btn-outline-primary mt-2">
-                                            Viết đánh giá
+                                             Viết đánh giá
                                         </a>
                                     }
-                                }
+                                 }
                             </div>
                             <div class="order-item-price">
                                 @item.DonGia.ToString("N0") đ
@@ -355,8 +371,8 @@ else if (Model.OrderDetails != null)
                     }
                 </div>
             </div>
-        </div>
-        <div class="col-lg-4">
+         </div>
+          <div class="col-lg-4">
             <div class="card order-card">
                 <div class="card-body p-4">
                     <h5 class="mb-3">Tổng cộng</h5>
@@ -368,7 +384,7 @@ else if (Model.OrderDetails != null)
                         <li>
                             <span>Giảm giá</span>
                             <span class="text-danger">-@order.GiamGia.ToString("N0") đ</span>
-                        </li>
+                         </li>
                         <li class="total">
                             <span>Thành tiền</span>
                             <span>@order.ThanhTien.ToString("N0") đ</span>
@@ -383,6 +399,23 @@ else if (Model.OrderDetails != null)
             </div>
         </div>
     </div>
+
+    @if (!string.IsNullOrEmpty(order.AnhXacNhanGiaoHangUrl))
+    {
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="imageModalLabel">Ảnh xác nhận giao hàng</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center bg-light p-4">
+                        <img src="@order.AnhXacNhanGiaoHangUrl" id="deliveryProofImage" alt="Ảnh giao hàng" class="img-fluid" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 else
 {

@@ -336,6 +336,17 @@ namespace CafebookApi.Controllers.Web
                 if (lastEvent != null) lastEvent.IsCurrent = true;
             }
 
+            string? anhGiaoHangUrl = null;
+            if (!string.IsNullOrEmpty(hoaDon.GhiChu) && hoaDon.GhiChu.Contains("Ảnh xác nhận:"))
+            {
+                // Cấu trúc ghi chú: "... | Ảnh xác nhận: /images/anhgiaohang/..."
+                var parts = hoaDon.GhiChu.Split(new[] { "Ảnh xác nhận:" }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 1)
+                {
+                    string rawPath = parts.Last().Trim();
+                    anhGiaoHangUrl = GetFullImageUrl(rawPath);
+                }
+            }
 
             var dto = new DonHangChiTietWebDto
             {
@@ -364,7 +375,8 @@ namespace CafebookApi.Controllers.Web
                 TongTienHang = hoaDon.TongTienGoc,
                 GiamGia = hoaDon.GiamGia, // Gộp cả KM + Điểm
                 ThanhTien = hoaDon.ThanhTien,
-                PhuongThucThanhToan = hoaDon.PhuongThucThanhToan ?? "N/A"
+                PhuongThucThanhToan = hoaDon.PhuongThucThanhToan ?? "N/A",
+                AnhXacNhanGiaoHangUrl = anhGiaoHangUrl
             };
 
             return Ok(dto);
