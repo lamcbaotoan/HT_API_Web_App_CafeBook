@@ -7,11 +7,7 @@ namespace CafebookModel.Model.ModelApi
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-        /// <summary>
-        /// THÊM DÒNG NÀY:
-        /// </summary>
         public string? Token { get; set; } // Thêm thuộc tính để chứa JWT
-        // Dùng một trong hai
         public KhachHangDto? KhachHangData { get; set; }
         public NhanVienDto? NhanVienData { get; set; } // Tận dụng NhanVienDto từ WPF
     }

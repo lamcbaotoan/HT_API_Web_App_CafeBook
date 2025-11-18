@@ -5,17 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions; // Thêm
 using System.Threading.Tasks;
 
 namespace CafebookApi.Services
 {
-    /// <summary>
-    /// Dịch vụ này chứa các hàm nghiệp vụ (Tools) mà AI có thể gọi
-    /// để truy vấn cơ sở dữ liệu.
-    /// </summary>
     public class AiToolService
     {
         private readonly CafebookDbContext _context;
+        private const int SlotDurationHours = 2; // Yêu cầu 2 giờ
 
         public AiToolService(CafebookDbContext context)
         {
@@ -27,7 +25,7 @@ namespace CafebookApi.Services
         /// <summary>
         /// (Tool 1) Lấy thông tin chung của quán
         /// </summary>
-        public async Task<string> GetThongTinChungAsync()
+        public async Task<object> GetThongTinChungAsync()
         {
             var settings = await _context.CaiDats
                 .AsNoTracking()
@@ -39,41 +37,36 @@ namespace CafebookApi.Services
             var diaChi = settings.FirstOrDefault(s => s.TenCaiDat == "LienHe_DiaChi")?.GiaTri ?? "Chưa cập nhật";
             var wifi = settings.FirstOrDefault(s => s.TenCaiDat == "Wifi_MatKhau")?.GiaTri ?? "Không có";
 
-            return $"Thông tin quán: Giờ mở cửa: {gioMoCua}. Địa chỉ: {diaChi}. Mật khẩu Wifi: {wifi}.";
+            return new { GioMoCua = gioMoCua, DiaChi = diaChi, Wifi = wifi };
         }
 
         /// <summary>
         /// (Tool 2) Kiểm tra tình trạng bàn trống
         /// </summary>
-        public async Task<string> KiemTraBanTrongAsync(int soNguoi)
+        public async Task<object> KiemTraBanTrongAsync(int soNguoi)
         {
             var banTrong = await _context.Bans
                 .AsNoTracking()
                 .Where(b => b.TrangThai == "Trống" && b.SoGhe >= soNguoi)
                 .OrderBy(b => b.SoGhe)
-                // Tập tin: AiToolService.cs
-
-                .Select(b => new { b.SoBan, b.SoGhe, TenKhuVuc = b.KhuVuc != null ? b.KhuVuc.TenKhuVuc : "chung" })
+                .Select(b => new
+                {
+                    IdBan = b.IdBan,
+                    SoBan = b.SoBan,
+                    SoGhe = b.SoGhe,
+                    TenKhuVuc = b.KhuVuc != null ? b.KhuVuc.TenKhuVuc : "chung"
+                })
                 .Take(5)
                 .ToListAsync();
 
-            if (!banTrong.Any())
-            {
-                return "Rất tiếc, hiện tại các bàn trống không đủ chỗ cho yêu cầu của bạn.";
-            }
-
-            var ketQua = $"Tìm thấy {banTrong.Count} bàn phù hợp: \n";
-            foreach (var ban in banTrong)
-            {
-                ketQua += $"- Bàn {ban.SoBan} ({ban.SoGhe} ghế) tại khu {ban.TenKhuVuc ?? "chung"}\n";
-            }
-            return ketQua;
+            // Sửa lỗi API 400: Bọc mảng vào một object
+            return new { banTimThay = banTrong };
         }
 
         /// <summary>
-        /// (Tool 3) Kiểm tra tình trạng món ăn/thức uống
+        /// (Tool 3) Kiểm tra tình trạng món ăn (Kiểm tra tồn kho nguyên liệu)
         /// </summary>
-        public async Task<string> KiemTraSanPhamAsync(string tenSanPham)
+        public async Task<object> KiemTraSanPhamAsync(string tenSanPham)
         {
             var sanPham = await _context.SanPhams
                 .AsNoTracking()
@@ -81,23 +74,57 @@ namespace CafebookApi.Services
 
             if (sanPham == null)
             {
-                return $"Không tìm thấy sản phẩm nào có tên giống '{tenSanPham}'.";
+                return new { TrangThai = "NotFound", TenTimKiem = tenSanPham };
             }
 
             if (sanPham.TrangThaiKinhDoanh == false)
             {
-                return $"Món '{sanPham.TenSanPham}' hiện đã ngừng kinh doanh.";
+                return new { TrangThai = "NgungKinhDoanh", TenSanPham = sanPham.TenSanPham };
             }
 
-            // Giả định: kiểm tra nguyên liệu (logic phức tạp)
-            // Ở đây chúng ta chỉ kiểm tra trạng thái kinh doanh
-            return $"Món '{sanPham.TenSanPham}' hiện VẪN CÒN HÀNG và đang kinh doanh.";
+            // (Logic kiểm kho nâng cao đã thêm ở bước trước)
+            var dinhLuongList = await _context.DinhLuongs
+                .AsNoTracking()
+                .Include(d => d.NguyenLieu)
+                .Include(d => d.DonViSuDung)
+                .Where(d => d.IdSanPham == sanPham.IdSanPham)
+                .ToListAsync();
+
+            if (!dinhLuongList.Any())
+            {
+                return new { TrangThai = "ConHang", TenSanPham = sanPham.TenSanPham, GiaBan = sanPham.GiaBan, GhiChu = "Sản phẩm không cần định lượng" };
+            }
+
+            var nguyenLieuHetHang = new List<string>();
+            foreach (var item in dinhLuongList)
+            {
+                if (item.NguyenLieu == null || item.DonViSuDung == null) continue;
+                decimal luongCanDungDaQuyDoi = item.SoLuongSuDung * item.DonViSuDung.GiaTriQuyDoi;
+                if (item.NguyenLieu.TonKho < luongCanDungDaQuyDoi)
+                {
+                    nguyenLieuHetHang.Add(item.NguyenLieu.TenNguyenLieu);
+                }
+            }
+
+            if (nguyenLieuHetHang.Any())
+            {
+                return new
+                {
+                    TrangThai = "TamHetHang",
+                    TenSanPham = sanPham.TenSanPham,
+                    GiaBan = sanPham.GiaBan,
+                    GhiChu = $"Tạm hết hàng do thiếu: {string.Join(", ", nguyenLieuHetHang)}"
+                };
+            }
+
+            return new { TrangThai = "ConHang", TenSanPham = sanPham.TenSanPham, GiaBan = sanPham.GiaBan };
         }
+
 
         /// <summary>
         /// (Tool 4) Kiểm tra sách
         /// </summary>
-        public async Task<string> KiemTraSachAsync(string tenSach)
+        public async Task<object> KiemTraSachAsync(string tenSach)
         {
             var sach = await _context.Sachs
                 .AsNoTracking()
@@ -105,51 +132,262 @@ namespace CafebookApi.Services
 
             if (sach == null)
             {
-                return $"Không tìm thấy sách nào có tên giống '{tenSach}'.";
+                return new { TrangThai = "NotFound", TenTimKiem = tenSach };
             }
 
             if (sach.SoLuongHienCo > 0)
             {
-                return $"Sách '{sach.TenSach}' hiện còn {sach.SoLuongHienCo} quyển trên kệ.";
+                // Trả về ID Sách để dùng cho tool gợi ý
+                return new { TrangThai = "ConHang", IdSach = sach.IdSach, TenSach = sach.TenSach, SoLuongHienCo = sach.SoLuongHienCo, ViTri = sach.ViTri };
             }
             else
             {
-                return $"Rất tiếc, sách '{sach.TenSach}' hiện đã được mượn hết.";
+                return new { TrangThai = "HetHang", IdSach = sach.IdSach, TenSach = sach.TenSach };
             }
         }
 
-        // --- CÔNG CỤ CHO LUỒNG 2 (KHÁCH HÀNG) ---
+        // === NÂNG CẤP MỚI: CÁC TOOL CHO KHÁCH ĐÃ ĐĂNG NHẬP ===
 
         /// <summary>
-        /// (Tool 5) Lấy thông tin khách hàng (điểm, hóa đơn)
+        /// (Tool 5) Lấy tổng quan tài khoản (thay thế GetThongTinKhachHangAsync)
+        /// Gộp 6 yêu cầu: Điểm, Tổng chi, Tổng hóa đơn, Lịch sử (3 loại)
         /// </summary>
-        public async Task<string> GetThongTinKhachHangAsync(int idKhachHang)
+        public async Task<object> GetTongQuanTaiKhoanAsync(int idKhachHang)
         {
             var khachHang = await _context.KhachHangs.AsNoTracking()
                 .FirstOrDefaultAsync(k => k.IdKhachHang == idKhachHang);
+            if (khachHang == null) return new { TrangThai = "NotFound" };
 
-            if (khachHang == null) return "Lỗi: Không tìm thấy khách hàng.";
-
-            var hoaDonGanNhat = await _context.HoaDons
+            // Lấy lịch sử (3 loại)
+            var hoaDons = await _context.HoaDons
                 .AsNoTracking()
-                .Where(h => h.IdKhachHang == idKhachHang)
+                .Where(h => h.IdKhachHang == idKhachHang && h.TrangThai == "Đã thanh toán")
                 .OrderByDescending(h => h.ThoiGianTao)
-                .Select(h => new { h.ThanhTien, h.ThoiGianTao })
+                .ToListAsync(); // Lấy hết để tính Sum
+
+            var donHangGiaoGanNhat = hoaDons
+                .Where(h => h.LoaiHoaDon == "Giao hàng")
+                .FirstOrDefault(); // Lấy đơn giao hàng gần nhất
+
+            var phieuThueGanNhat = await _context.PhieuThueSachs
+                .AsNoTracking()
+                .Where(p => p.IdKhachHang == idKhachHang)
+                .OrderByDescending(p => p.NgayThue)
+                .Select(p => new { p.IdPhieuThueSach, p.NgayThue, p.TrangThai, p.TongTienCoc })
                 .FirstOrDefaultAsync();
 
-            var phieuThue = await _context.PhieuThueSachs
+            var datBanGanNhat = await _context.PhieuDatBans
                 .AsNoTracking()
-                .Include(p => p.ChiTietPhieuThues)
-                .Where(p => p.IdKhachHang == idKhachHang && p.TrangThai == "Đang mượn")
-                .CountAsync();
+                .Include(p => p.Ban)
+                .Where(p => p.IdKhachHang == idKhachHang)
+                .OrderByDescending(p => p.ThoiGianDat)
+                .Select(p => new { p.IdPhieuDatBan, p.Ban.SoBan, p.ThoiGianDat, p.TrangThai })
+                .FirstOrDefaultAsync();
 
-            string ketQua = $"Thông tin của bạn (ID: {idKhachHang}): \n" +
-                            $"- Tên: {khachHang.HoTen} \n" +
-                            $"- Điểm tích lũy: {khachHang.DiemTichLuy} điểm. \n" +
-                            $"- Hóa đơn gần nhất: {hoaDonGanNhat?.ThanhTien} lúc {hoaDonGanNhat?.ThoiGianTao}. \n" +
-                            $"- Sách đang mượn: {phieuThue} quyển.";
+            return new
+            {
+                TrangThai = "Found",
+                // Thông tin cá nhân
+                HoTen = khachHang.HoTen,
+                SoDienThoai = khachHang.SoDienThoai,
+                Email = khachHang.Email,
+                // Tổng quan (6 yêu cầu)
+                DiemTichLuy = khachHang.DiemTichLuy,
+                TongSoHoaDon = hoaDons.Count,
+                TongChiTieu = hoaDons.Sum(h => h.ThanhTien),
+                // Lịch sử gần nhất
+                DonHangGanNhat = donHangGiaoGanNhat != null ? new { donHangGiaoGanNhat.IdHoaDon, donHangGiaoGanNhat.ThoiGianTao, donHangGiaoGanNhat.TrangThaiGiaoHang, donHangGiaoGanNhat.ThanhTien } : null,
+                PhieuThueGanNhat = phieuThueGanNhat,
+                DatBanGanNhat = datBanGanNhat
+            };
+        }
 
-            return ketQua;
+
+        /// <summary>
+        /// (Tool 6) Ghi phiếu đặt bàn vào CSDL
+        /// </summary>
+        public async Task<object> DatBanThucSuAsync(int idBan, int soNguoi, DateTime thoiGianDat, string hoTen, string soDienThoai, string email, string? ghiChu)
+        {
+            // 1. Kiểm tra lại thời gian (logic C# này là chuẩn)
+            var openingHours = await GetAndParseOpeningHours();
+            if (thoiGianDat < DateTime.Now.AddMinutes(10))
+            {
+                return new { TrangThai = "Error", Message = $"Giờ đặt quá gần. Vui lòng chọn thời gian sau {DateTime.Now.AddMinutes(10):HH:mm}." };
+            }
+            if (!IsTimeValid(thoiGianDat, openingHours))
+            {
+                return new { TrangThai = "Error", Message = $"Giờ đặt ({thoiGianDat:HH:mm}) nằm ngoài giờ mở cửa ({openingHours.Open:hh\\:mm} - {openingHours.Close:hh\\:mm})." };
+            }
+
+            // 2. Kiểm tra xung đột
+            bool isConflict = await _context.PhieuDatBans.AnyAsync(p =>
+                p.IdBan == idBan &&
+                (p.TrangThai == "Đã xác nhận" || p.TrangThai == "Chờ xác nhận" || p.TrangThai == "Khách đã đến") &&
+                thoiGianDat < p.ThoiGianDat.AddHours(SlotDurationHours) &&
+                p.ThoiGianDat < thoiGianDat.AddHours(SlotDurationHours)
+            );
+
+            if (isConflict)
+            {
+                return new { TrangThai = "Error", Message = "Rất tiếc, bàn này vừa có người đặt vào khung giờ bạn chọn. Vui lòng chọn bàn khác." };
+            }
+
+            // 3. Tìm hoặc Tạo Khách Hàng
+            var khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.SoDienThoai == soDienThoai);
+            if (khachHang == null)
+            {
+                khachHang = new KhachHang
+                {
+                    HoTen = hoTen,
+                    SoDienThoai = soDienThoai,
+                    Email = email,
+                    NgayTao = DateTime.Now,
+                    DiemTichLuy = 0,
+                    BiKhoa = false,
+                    TenDangNhap = soDienThoai,
+                    MatKhau = Guid.NewGuid().ToString("N")[..8],
+                    TaiKhoanTam = true
+                };
+                _context.KhachHangs.Add(khachHang);
+                await _context.SaveChangesAsync();
+            }
+
+            // 4. Tạo phiếu đặt bàn
+            var phieuMoi = new PhieuDatBan
+            {
+                IdBan = idBan,
+                IdKhachHang = khachHang.IdKhachHang,
+                HoTenKhach = hoTen,
+                SdtKhach = soDienThoai,
+                ThoiGianDat = thoiGianDat,
+                SoLuongKhach = soNguoi,
+                GhiChu = ghiChu,
+                TrangThai = "Chờ xác nhận"
+            };
+            _context.PhieuDatBans.Add(phieuMoi);
+
+            // 5. Tạo thông báo cho nhân viên
+            var banInfo = await _context.Bans.FindAsync(idBan);
+            var thongBao = new ThongBao
+            {
+                NoiDung = $"[AI] Đơn đặt bàn mới: {hoTen} - Bàn {banInfo?.SoBan} lúc {thoiGianDat:HH:mm dd/MM}",
+                LoaiThongBao = "DatBan",
+                IdLienQuan = phieuMoi.IdPhieuDatBan,
+                ThoiGianTao = DateTime.Now,
+                DaXem = false
+            };
+            _context.ThongBaos.Add(thongBao);
+
+            await _context.SaveChangesAsync();
+
+            return new { TrangThai = "Success", IdPhieuDatBan = phieuMoi.IdPhieuDatBan, TenBan = banInfo?.SoBan, HoTen = hoTen, ThoiGian = thoiGianDat };
+        }
+
+        /// <summary>
+        /// (Tool 7) Gợi ý sách dựa trên BẢNG ĐỀ XUẤT (ngẫu nhiên)
+        /// </summary>
+        public async Task<object> GetGoiYSachNgauNhienAsync()
+        {
+            var suggestions = await _context.DeXuatSachs
+                .Include(d => d.SachDeXuat)
+                .GroupBy(d => d.SachDeXuat)
+                .OrderByDescending(g => g.Count())
+                .Select(g => new
+                {
+                    IdSach = g.Key.IdSach,
+                    TenSach = g.Key.TenSach,
+                })
+                .Take(3) // Lấy 3 cuốn
+                .ToListAsync();
+
+            if (!suggestions.Any())
+            {
+                return new { TrangThai = "Error", Message = "Không tìm thấy gợi ý nào." };
+            }
+
+            return new { TrangThai = "Success", GoiY = suggestions };
+        }
+
+        /// <summary>
+        /// (Tool 8) Theo dõi chi tiết 1 đơn hàng
+        /// </summary>
+        public async Task<object> TheoDoiDonHangAsync(int idHoaDon, int idKhachHang)
+        {
+            var hoaDon = await _context.HoaDons
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.IdHoaDon == idHoaDon && h.IdKhachHang == idKhachHang);
+
+            if (hoaDon == null)
+            {
+                return new { TrangThai = "NotFound", Message = "Không tìm thấy đơn hàng hoặc bạn không có quyền xem." };
+            }
+
+            // Logic mô phỏng tracking (copy từ KhachHangProfileController)
+            var trackingEvents = new List<object>();
+            string currentStatus = hoaDon.TrangThaiGiaoHang ?? "Chờ xác nhận";
+
+            // Helper để thêm event và đánh dấu IsCurrent
+            void AddEvent(DateTime time, string status, string desc, bool isCurrent = false)
+            {
+                trackingEvents.Add(new { Timestamp = time, Status = status, Description = desc, IsCurrent = isCurrent });
+            }
+
+            AddEvent(hoaDon.ThoiGianTao, "Đơn hàng đã đặt", "Đơn hàng của bạn đã được đặt thành công.", currentStatus == "Chờ xác nhận");
+
+            if (currentStatus == "Đang chuẩn bị" || currentStatus == "Đang giao" || currentStatus == "Hoàn thành")
+            {
+                AddEvent(hoaDon.ThoiGianTao.AddMinutes(15), "Đơn hàng được xác nhận", "Shop đang chuẩn bị hàng.", currentStatus == "Đang chuẩn bị");
+            }
+            if (currentStatus == "Đang giao" || currentStatus == "Hoàn thành")
+            {
+                AddEvent(hoaDon.ThoiGianTao.AddMinutes(45), "Đã giao cho ĐVVC", "Đơn hàng đã được bàn giao cho đơn vị vận chuyển.", currentStatus == "Đang giao");
+            }
+            if (currentStatus == "Hoàn thành")
+            {
+                AddEvent(hoaDon.ThoiGianThanhToan ?? hoaDon.ThoiGianTao.AddHours(2), "Giao hàng thành công", "Đơn hàng đã được giao đến bạn.", true);
+            }
+
+            return new
+            {
+                TrangThai = "Found",
+                IdHoaDon = hoaDon.IdHoaDon,
+                TrangThaiHienTai = currentStatus,
+                TrackingEvents = trackingEvents // Đã được sắp xếp khi thêm
+            };
+        }
+
+
+        // === HELPER (Copy từ DatBanWebController.cs) ===
+        private class OpeningHours
+        {
+            public TimeSpan Open { get; set; } = new TimeSpan(6, 0, 0);
+            public TimeSpan Close { get; set; } = new TimeSpan(23, 0, 0);
+        }
+
+        private async Task<OpeningHours> GetAndParseOpeningHours()
+        {
+            var setting = await _context.CaiDats
+                .FirstOrDefaultAsync(cd => cd.TenCaiDat == "LienHe_GioMoCua");
+            string settingValue = (setting != null && !string.IsNullOrEmpty(setting.GiaTri)) ? setting.GiaTri : "06:00 - 23:00";
+
+            var hours = new OpeningHours();
+            try
+            {
+                var match = Regex.Match(settingValue, @"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})");
+                if (match.Success)
+                {
+                    if (TimeSpan.TryParse(match.Groups[1].Value, out TimeSpan open)) hours.Open = open;
+                    if (TimeSpan.TryParse(match.Groups[2].Value, out TimeSpan close)) hours.Close = close;
+                }
+            }
+            catch { }
+            return hours;
+        }
+
+        private bool IsTimeValid(DateTime thoiGianDat, OpeningHours hours)
+        {
+            var timeOfDay = thoiGianDat.TimeOfDay;
+            return timeOfDay >= hours.Open && timeOfDay < hours.Close;
         }
     }
 }
