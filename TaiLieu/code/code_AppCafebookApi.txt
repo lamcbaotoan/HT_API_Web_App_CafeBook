@@ -9,23 +9,20 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotI
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\SemanticSymbols.db-shm
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.0.923.20550\SemanticSymbols.db-wal
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\CodeChunks.db
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\CodeChunks.db-shm
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\CodeChunks.db-wal
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\SemanticSymbols.db
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\SemanticSymbols.db-shm
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi\CopilotIndices\18.3.95.3864\SemanticSymbols.db-wal
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\config\applicationhost.config
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\copilot-chat\0986bd90\sessions\2e962a96-ebeb-4440-b29d-ce75a4a6de55
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\DesignTimeBuild\.dtbcache.v2
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\0eb86ccf-c385-4061-beba-9da0ffcb019d.vsidx
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\1d425937-deae-48b9-9f08-097773c7c1e1.vsidx
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\352d60ec-909a-4a21-bbe8-e7818bf742a4.vsidx
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\9ee24fe0-ccba-42ee-9324-c6773c2819d2.vsidx
-E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\d978dd7d-cd96-4418-aefb-5db97d989ecf.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\1ba01844-8d80-403a-8015-85c412028932.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\4a10a784-c2e5-46cb-b7e7-1b97aa7cc077.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\9c1e7700-a3e9-4d76-bab7-525e87b7f426.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\b2197e34-94f0-4b4b-857e-41b23f2285f5.vsidx
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\FileContentIndex\ec94fba2-e166-4f81-896a-17d576f7e36d.vsidx
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\.futdcache.v2
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\.suo
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\DocumentLayout.backup.json
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\DocumentLayout.json
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\fileList.bin
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\AppCafebookApi.slnx\v18\HierarchyCache.v1.txt
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\ProjectEvaluation\appcafebookapi.metadata.v10.bin
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\.vs\ProjectEvaluation\appcafebookapi.projects.v10.bin
@@ -8472,10 +8469,9 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:AppCafebookApi.View.nhanvien.pages"
       mc:Ignorable="d" 
       d:DesignHeight="720" d:DesignWidth="1150"
-      Title="GiaoHangView"
+      Title="Quản lý Giao Hàng"
       FontFamily="Segoe UI" Background="#FFF8E1" Loaded="Page_Loaded">
 
     <Page.Resources>
@@ -8485,28 +8481,36 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
         <SolidColorBrush x:Key="GreenBrush" Color="#388E3C"/>
         <SolidColorBrush x:Key="RedBrush" Color="#D32F2F"/>
         <SolidColorBrush x:Key="BlueBrush" Color="#1976D2"/>
-        <SolidColorBrush x:Key="OrangeBrush" Color="#F57C00"/>
+
         <CollectionViewSource x:Key="ShippersSource" />
-        <Style TargetType="ComboBox" x:Key="DataGridComboBoxStyle">
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-        <Style TargetType="TextBlock" x:Key="DataGridTextBlockStyle">
-            <Setter Property="Padding" Value="5,2"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-        <Style x:Key="DataGridButton" TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+
+        <Style x:Key="DataGridButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="White"/>
         </Style>
-        <Style x:Key="ActionButton_ChoXacNhan" TargetType="Button" BasedOn="{StaticResource DataGridButton}">
+
+        <Style x:Key="BtnChuyenBepStyle" TargetType="Button" BasedOn="{StaticResource DataGridButton}">
+            <Setter Property="Background" Value="{StaticResource GreenBrush}"/>
             <Setter Property="Visibility" Value="Collapsed"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Chờ xác nhận">
                     <Setter Property="Visibility" Value="Visible"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="BtnHoanThanhStyle" TargetType="Button" BasedOn="{StaticResource DataGridButton}">
+            <Setter Property="Background" Value="{StaticResource BlueBrush}"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Đang giao">
                     <Setter Property="Visibility" Value="Visible"/>
                 </DataTrigger>
             </Style.Triggers>
@@ -8535,12 +8539,24 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
             </Grid.ColumnDefinitions>
 
             <TextBox x:Name="txtSearch" Grid.Column="0" Padding="8" VerticalContentAlignment="Center"
-                     Text="" ToolTip="Tìm theo Tên, SĐT khách hoặc Mã HĐ..."
+                     Text="" Tag="Tìm theo Tên, SĐT khách hoặc Mã HĐ..."
                      TextChanged="TxtSearch_TextChanged"/>
 
+            <TextBlock IsHitTestVisible="False" Text="Tìm theo Tên, SĐT khách hoặc Mã HĐ..." VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,0,0" Foreground="Gray">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=txtSearch}" Value="">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
             <ComboBox x:Name="cmbStatusFilter" Grid.Column="1" Margin="10,0,0,0" Padding="8,7" VerticalContentAlignment="Center"
-                      SelectedIndex="1"
-                      SelectionChanged="CmbStatusFilter_SelectionChanged">
+                      SelectedIndex="1" SelectionChanged="CmbStatusFilter_SelectionChanged">
                 <ComboBoxItem Content="Tất cả"/>
                 <ComboBoxItem Content="Chờ xác nhận"/>
                 <ComboBoxItem Content="Đang chuẩn bị"/>
@@ -8549,39 +8565,67 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 <ComboBoxItem Content="Hoàn thành"/>
                 <ComboBoxItem Content="Đã Hủy"/>
             </ComboBox>
-
         </Grid>
 
         <DataGrid Grid.Row="2" x:Name="dgGiaoHang" AutoGenerateColumns="False" CanUserAddRows="False"
-                  BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1">
+                  BorderBrush="{StaticResource BorderGrayBrush}" BorderThickness="1" RowHeight="80">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="HĐ #" Binding="{Binding IdHoaDon}" IsReadOnly="True" FontWeight="SemiBold"/>
-                <DataGridTextColumn Header="Thời gian" Binding="{Binding ThoiGianTao, StringFormat=dd/MM HH:mm}" IsReadOnly="True"/>
-                <DataGridTemplateColumn Header="Khách hàng" MinWidth="180" IsReadOnly="True">
+                <DataGridTextColumn Header="HĐ #" Binding="{Binding IdHoaDon}" IsReadOnly="True" FontWeight="SemiBold" Width="60"/>
+                <DataGridTextColumn Header="Thời gian" Binding="{Binding ThoiGianTao, StringFormat=dd/MM HH:mm}" IsReadOnly="True" Width="100"/>
+
+                <DataGridTemplateColumn Header="Khách hàng" Width="2*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="5">
-                                <TextBlock Text="{Binding TenKhachHang}" FontWeight="SemiBold"/>
+                            <StackPanel Margin="5" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding TenKhachHang}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="{Binding SoDienThoaiGiaoHang}" Foreground="{StaticResource TextGrayBrush}" FontSize="11"/>
-                                <TextBlock Text="{Binding DiaChiGiaoHang}" TextWrapping="Wrap" FontSize="11"/>
+                                <TextBlock Text="{Binding DiaChiGiaoHang}" TextWrapping="Wrap" FontSize="11" MaxHeight="35" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Tổng tiền" Binding="{Binding ThanhTien, StringFormat=N0}" IsReadOnly="True" FontWeight="SemiBold"/>
-                <DataGridTextColumn Header="Thanh toán" Binding="{Binding TrangThaiThanhToan}" IsReadOnly="True"/>
 
-                <DataGridTextColumn Header="Trạng thái Giao hàng" Binding="{Binding TrangThaiGiaoHang, FallbackValue='Chờ xác nhận'}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Tổng tiền" Binding="{Binding ThanhTien, StringFormat=N0}" IsReadOnly="True" FontWeight="SemiBold" Width="100"/>
+                <DataGridTextColumn Header="Thanh toán" Binding="{Binding TrangThaiThanhToan}" IsReadOnly="True" Width="110"/>
 
-                <DataGridTemplateColumn Header="Người giao hàng" MinWidth="130">
+                <DataGridTemplateColumn Header="Trạng thái" Width="130">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ComboBox Style="{StaticResource DataGridComboBoxStyle}"
-                                      ItemsSource="{Binding Source={StaticResource ShippersSource}}"
+                            <Border CornerRadius="4" Padding="8,4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#EEE"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Hoàn thành">
+                                                <Setter Property="Background" Value="#C8E6C9"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Đang giao">
+                                                <Setter Property="Background" Value="#BBDEFB"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Chờ xác nhận">
+                                                <Setter Property="Background" Value="#FFF9C4"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TrangThaiGiaoHang}" Value="Đã hủy">
+                                                <Setter Property="Background" Value="#FFCDD2"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding TrangThaiGiaoHang, FallbackValue='Chờ xác nhận'}" FontWeight="SemiBold"/>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Người giao hàng" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding Source={StaticResource ShippersSource}}"
                                       SelectedValue="{Binding IdNguoiGiaoHang, UpdateSourceTrigger=PropertyChanged}"
                                       DisplayMemberPath="TenNguoiGiaoHang"
                                       SelectedValuePath="IdNguoiGiaoHang"
-                                      SelectionChanged="CmbNguoiGiaoHang_SelectionChanged"/>
+                                      SelectionChanged="CmbNguoiGiaoHang_SelectionChanged"
+                                      VerticalAlignment="Center" Margin="5"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -8589,35 +8633,23 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
                 <DataGridTemplateColumn Header="Hành động" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button x:Name="btnChuyenCheBien" 
-                                        Content="Chuyển Bếp"
-                                        Style="{StaticResource ActionButton_ChoXacNhan}"
-                                        Background="{StaticResource GreenBrush}"
-                                        Foreground="White"
-                                        Click="BtnChuyenCheBien_Click"
-                                        Tag="{Binding IdHoaDon}"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Button x:Name="btnChuyenCheBien" Content="Chuyển Bếp"
+                                        Style="{StaticResource BtnChuyenBepStyle}"
+                                        Click="BtnChuyenCheBien_Click" Tag="{Binding IdHoaDon}"/>
 
-                                <Button x:Name="btnHuyDon" 
-                                        Content="Hủy"
-                                        Style="{StaticResource ActionButton_ChoXacNhan}"
-                                        Background="{StaticResource RedBrush}"
-                                        Foreground="White"
-                                        Click="BtnHuyDon_Click"
-                                        Tag="{Binding IdHoaDon}"/>
+                                <Button x:Name="btnHoanThanh" Content="Hoàn tất"
+                                        Style="{StaticResource BtnHoanThanhStyle}"
+                                        Click="BtnHoanThanh_Click" Tag="{Binding IdHoaDon}"/>
+
+                                <Button Content="In" Padding="10,5" Margin="2"
+                                        Style="{StaticResource DataGridButton}" Background="{StaticResource BlueBrush}"
+                                        Click="BtnInPhieu_Click" Tag="{Binding IdHoaDon}"/>
+
+                                <Button Content="Hủy" Padding="10,5" Margin="2"
+                                        Style="{StaticResource DataGridButton}" Background="{StaticResource RedBrush}"
+                                        Click="BtnHuyDon_Click" Tag="{Binding IdHoaDon}"/>
                             </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Width="Auto">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button x:Name="btnInPhieu" Content="In Phiếu" Padding="8,4" Margin="5"
-                                    Style="{StaticResource DataGridButton}"
-                                    Background="{StaticResource BlueBrush}"
-                                    Click="BtnInPhieu_Click"
-                                    Tag="{Binding IdHoaDon}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -8630,8 +8662,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvie
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\nhanvien\pages\GiaoHangView.xaml.cs
 ================================================================================
-﻿// Tệp: AppCafebookApi/View/nhanvien/pages/GiaoHangView.xaml.cs
-using AppCafebookApi.Services;
+﻿using AppCafebookApi.Services;
 using AppCafebookApi.View.common;
 using AppCafebookApi.View.Common;
 using CafebookModel.Model.ModelApp.NhanVien;
@@ -8641,32 +8672,28 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Collections.Generic; // THÊM
-using System.Net.Http; // THÊM
-using System.Windows.Threading; // THÊM cho Timer
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Windows.Threading; // Quan trọng cho Timer
 
 namespace AppCafebookApi.View.nhanvien.pages
 {
     public partial class GiaoHangView : Page
     {
         private bool _isLoading = false;
-
-        // =======================================
-        // === THÊM TIMER CHO LIVE SEARCH (YÊU CẦU 2) ===
-        // =======================================
         private DispatcherTimer _searchTimer;
 
         public GiaoHangView()
         {
             InitializeComponent();
 
-            // Khởi tạo timer
+            // Cấu hình Timer cho Live Search
             _searchTimer = new DispatcherTimer();
-            _searchTimer.Interval = TimeSpan.FromMilliseconds(500); // Chờ 500ms sau khi gõ
+            _searchTimer.Interval = TimeSpan.FromMilliseconds(500); // Chờ 0.5s
             _searchTimer.Tick += async (s, e) =>
             {
-                _searchTimer.Stop(); // Dừng timer
-                await LoadDataAsync(); // Gọi API
+                _searchTimer.Stop();
+                await LoadDataAsync();
             };
         }
 
@@ -8677,89 +8704,85 @@ namespace AppCafebookApi.View.nhanvien.pages
 
         private async Task LoadDataAsync()
         {
-            if (_isLoading) return; // Chặn gọi API chồng chéo
+            if (_isLoading) return;
             _isLoading = true;
 
             try
             {
-                // LẤY DỮ LIỆU TỪ BỘ LỌC
                 string searchQuery = txtSearch.Text;
                 string statusQuery = (cmbStatusFilter.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Chờ xác nhận";
 
-                // Xử lý nếu lỡ tay gõ vào ô tìm kiếm
-                if (searchQuery == "Tìm theo Tên, SĐT khách hoặc Mã HĐ...")
-                {
-                    searchQuery = "";
-                }
+                // Xử lý placeholder của TextBox (nếu có)
+                if (searchQuery.Contains("Tìm theo")) searchQuery = "";
 
-                // Xây dựng query string
                 var queryParams = new List<string>();
                 if (!string.IsNullOrWhiteSpace(searchQuery))
                 {
                     queryParams.Add($"search={Uri.EscapeDataString(searchQuery)}");
                 }
+
+                // Nếu chọn "Tất cả", gửi tham số status=Tất cả lên API
+                // API backend đã được cập nhật để xử lý "Tất cả" và "Đã Hủy"
                 if (statusQuery != "Tất cả")
                 {
                     queryParams.Add($"status={Uri.EscapeDataString(statusQuery)}");
                 }
+                else
+                {
+                    queryParams.Add("status=Tất cả");
+                }
+
                 string queryString = string.Join("&", queryParams);
 
+                // Gọi API đã được nâng cấp (LoadGiaoHangData)
                 var response = await ApiClient.Instance.GetFromJsonAsync<GiaoHangViewDto>($"api/app/nhanvien/giaohang/load?{queryString}");
 
                 if (response != null)
                 {
                     dgGiaoHang.ItemsSource = response.DonGiaoHang;
+
+                    // Cập nhật nguồn dữ liệu cho ComboBox Shipper trong DataGrid
                     var shippersSource = (CollectionViewSource)this.FindResource("ShippersSource");
                     shippersSource.Source = response.NguoiGiaoHangSanSang;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi tải dữ liệu giao hàng: {ex.Message}", "Lỗi API");
+                MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            _isLoading = false;
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!this.IsLoaded) return;
+            _searchTimer.Stop();
+            _searchTimer.Start(); // Reset timer mỗi khi gõ
+        }
+
+        private async void CmbStatusFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!this.IsLoaded) return;
+            _searchTimer.Stop(); // Dừng tìm kiếm đang chờ
+            await LoadDataAsync();
         }
 
         private async void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
-            // SỬA: Reset về "Chờ xác nhận"
             txtSearch.Text = "";
-            cmbStatusFilter.SelectedIndex = 1; // 0 = Tất cả, 1 = Chờ xác nhận
+            cmbStatusFilter.SelectedIndex = 1; // Reset về "Chờ xác nhận"
             await LoadDataAsync();
         }
 
-        // =======================================
-        // === SỬA/THÊM CÁC HÀM SỰ KIỆN (YÊU CẦU 2) ===
-        // =======================================
-
-        // XÓA: BtnFilter_Click(object sender, RoutedEventArgs e)
-
-        // THÊM: TxtSearch_TextChanged
-        private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            // Không gọi API ngay, chỉ reset timer
-            if (_isLoading) return;
-            _searchTimer.Stop();
-            _searchTimer.Start();
-        }
-
-        // THÊM: CmbStatusFilter_SelectionChanged
-        private async void CmbStatusFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Gọi API ngay khi đổi filter
-            if (_isLoading || !this.IsLoaded) return;
-            _searchTimer.Stop(); // Hủy tìm kiếm nếu đang gõ
-            await LoadDataAsync();
-        }
-
-        // =======================================
-        // === CÁC HÀM CÒN LẠI (GIỮ NGUYÊN) ===
-        // =======================================
+        // --- CÁC HÀM XỬ LÝ HÀNH ĐỘNG ---
 
         private async void BtnConfirmAll_Click(object sender, RoutedEventArgs e)
         {
-            var confirm = MessageBox.Show("Bạn có chắc chắn muốn chuyển TẤT CẢ đơn 'Chờ xác nhận' sang Bếp không?",
-                                          "Xác nhận hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var confirm = MessageBox.Show("Xác nhận chuyển TẤT CẢ đơn 'Chờ xác nhận' sang Bếp?",
+                "Xác nhận hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirm == MessageBoxResult.No) return;
 
             try
@@ -8767,17 +8790,20 @@ namespace AppCafebookApi.View.nhanvien.pages
                 var response = await ApiClient.Instance.PostAsync("api/app/nhanvien/giaohang/confirm-all-pending", null);
                 if (response.IsSuccessStatusCode)
                 {
-                    MessageBox.Show("Đã chuyển tất cả đơn sang Bếp thành công.", "Hoàn tất", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Chuyển sang tab "Đang chuẩn bị" để xem kết quả
+                    cmbStatusFilter.SelectedIndex = 2;
                     await LoadDataAsync();
                 }
                 else
                 {
-                    MessageBox.Show(await response.Content.ReadAsStringAsync(), "Lỗi API");
+                    string err = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show($"Lỗi: {err}", "Lỗi API", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi API");
+                MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -8785,16 +8811,11 @@ namespace AppCafebookApi.View.nhanvien.pages
         {
             if (sender is Button btn && btn.Tag is int idHoaDon)
             {
-                var confirm = MessageBox.Show($"Bạn có muốn đẩy đơn hàng #{idHoaDon} sang Bếp/Bar để chuẩn bị không?",
-                                             "Xác nhận gửi bếp", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var confirm = MessageBox.Show($"Chuyển đơn #{idHoaDon} sang Bếp?", "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (confirm == MessageBoxResult.No) return;
 
-                var requestDto = new GiaoHangUpdateRequestDto
-                {
-                    TrangThaiGiaoHang = "Đang chuẩn bị",
-                    IdNguoiGiaoHang = (btn.DataContext as GiaoHangItemDto)?.IdNguoiGiaoHang
-                };
-                await UpdateGiaoHangAsync(idHoaDon, requestDto);
+                var dto = new GiaoHangUpdateRequestDto { TrangThaiGiaoHang = "Đang chuẩn bị" };
+                await UpdateOrderAsync(idHoaDon, dto);
             }
         }
 
@@ -8802,16 +8823,11 @@ namespace AppCafebookApi.View.nhanvien.pages
         {
             if (sender is Button btn && btn.Tag is int idHoaDon)
             {
-                var confirm = MessageBox.Show($"Bạn có chắc chắn muốn HỦY đơn hàng #{idHoaDon} không? Hành động này không thể hoàn tác.",
-                                             "Xác nhận Hủy đơn", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var confirm = MessageBox.Show($"HỦY đơn #{idHoaDon}? Hành động này không thể hoàn tác.", "Cảnh báo", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (confirm == MessageBoxResult.No) return;
 
-                var requestDto = new GiaoHangUpdateRequestDto
-                {
-                    TrangThaiGiaoHang = "Hủy",
-                    IdNguoiGiaoHang = (btn.DataContext as GiaoHangItemDto)?.IdNguoiGiaoHang
-                };
-                await UpdateGiaoHangAsync(idHoaDon, requestDto);
+                var dto = new GiaoHangUpdateRequestDto { TrangThaiGiaoHang = "Hủy" };
+                await UpdateOrderAsync(idHoaDon, dto);
             }
         }
 
@@ -8820,49 +8836,59 @@ namespace AppCafebookApi.View.nhanvien.pages
             if (_isLoading) return;
 
             var comboBox = sender as ComboBox;
-            var selectedItem = (comboBox?.DataContext) as GiaoHangItemDto;
-            var newShipperId = (int?)comboBox?.SelectedValue;
+            var item = comboBox?.DataContext as GiaoHangItemDto;
 
-            if (selectedItem == null) return;
+            // Chỉ xử lý khi người dùng chọn thủ công (không phải do binding ban đầu)
+            if (item == null || !comboBox.IsDropDownOpen) return;
 
-            var requestDto = new GiaoHangUpdateRequestDto
+            var newShipperId = (int?)comboBox.SelectedValue;
+
+            // Tự động chuyển trạng thái sang "Đang giao" nếu đang là "Chờ lấy hàng"
+            string newStatus = item.TrangThaiGiaoHang;
+            if (item.TrangThaiGiaoHang == "Chờ lấy hàng" && newShipperId.HasValue)
             {
-                TrangThaiGiaoHang = selectedItem.TrangThaiGiaoHang,
+                newStatus = "Đang giao";
+            }
+
+            var dto = new GiaoHangUpdateRequestDto
+            {
+                TrangThaiGiaoHang = newStatus,
                 IdNguoiGiaoHang = newShipperId
             };
 
-            await UpdateGiaoHangAsync(selectedItem.IdHoaDon, requestDto);
+            await UpdateOrderAsync(item.IdHoaDon, dto);
+        }
 
-            if (newShipperId.HasValue && string.IsNullOrEmpty(selectedItem.TrangThaiGiaoHang))
+        // Nút "Hoàn thành" (Dành cho trường hợp Shipper không dùng Web App)
+        // Bạn có thể thêm nút này vào XAML nếu muốn App WPF cũng hoàn thành được đơn
+        private async void BtnHoanThanh_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int idHoaDon)
             {
-                await LoadDataAsync();
+                var confirm = MessageBox.Show($"Xác nhận đơn #{idHoaDon} đã giao thành công?", "Hoàn tất", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (confirm == MessageBoxResult.No) return;
+
+                var dto = new GiaoHangUpdateRequestDto { TrangThaiGiaoHang = "Hoàn thành" };
+                await UpdateOrderAsync(idHoaDon, dto);
             }
         }
 
-        private async Task UpdateGiaoHangAsync(int idHoaDon, GiaoHangUpdateRequestDto dto)
+        private async Task UpdateOrderAsync(int idHoaDon, GiaoHangUpdateRequestDto dto)
         {
             try
             {
                 var response = await ApiClient.Instance.PostAsJsonAsync($"api/app/nhanvien/giaohang/update/{idHoaDon}", dto);
-
                 if (!response.IsSuccessStatusCode)
                 {
-                    string error = await response.Content.ReadAsStringAsync();
-                    MessageBox.Show($"Lỗi cập nhật: {error}", "Lỗi API");
-                    await LoadDataAsync();
+                    string err = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show($"Cập nhật thất bại: {err}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-
-                if (dto.TrangThaiGiaoHang == "Hoàn thành" ||
-                    dto.TrangThaiGiaoHang == "Đang chuẩn bị" ||
-                    dto.TrangThaiGiaoHang == "Hủy")
-                {
-                    await LoadDataAsync();
-                }
+                // Tải lại dữ liệu để cập nhật UI
+                await LoadDataAsync();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi API");
-                await LoadDataAsync();
+                MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -8873,7 +8899,6 @@ namespace AppCafebookApi.View.nhanvien.pages
                 try
                 {
                     var printData = await ApiClient.Instance.GetFromJsonAsync<PhieuGoiMonPrintDto>($"api/app/nhanvien/giaohang/print-data/{idHoaDon}");
-
                     if (printData != null)
                     {
                         var printWindow = new AppCafebookApi.View.Common.PhieuGiaoHangPreviewWindow(printData);
@@ -8882,7 +8907,7 @@ namespace AppCafebookApi.View.nhanvien.pages
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Lỗi lấy dữ liệu in: {ex.Message}");
+                    MessageBox.Show($"Lỗi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -18154,6 +18179,16 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\
                         Width="140">
                     <TextBlock Text="Quản lý Phụ thu" VerticalAlignment="Center"/>
                 </Button>
+                <Button x:Name="btnNavigate_Shipper" 
+                        Margin="5,5,5,5" 
+                        Style="{StaticResource PrimaryButton}" 
+                        Background="#FF9800" 
+                        Click="BtnNavigate_Shipper_Click" 
+                        Width="140">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Quản lý ĐVVC" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </WrapPanel>
         </Border>
         <Grid Grid.Row="1" Margin="15">
@@ -18549,6 +18584,11 @@ namespace AppCafebookApi.View.quanly.pages
             this.NavigationService?.Navigate(new QuanLyPhuThuView());
         }
         // ### KẾT THÚC THÊM MỚI ###
+        // Thêm vào class QuanLyDonHangView
+        private void BtnNavigate_Shipper_Click(object sender, RoutedEventArgs e)
+        {
+            this.NavigationService?.Navigate(new QuanLyNguoiGiaoHangView());
+        }
     }
 }
 ================================================================================
@@ -23507,6 +23547,242 @@ namespace AppCafebookApi.View.quanly.pages
         private void BtnGoToPhatLuong_Click(object sender, RoutedEventArgs e)
         {
             this.NavigationService.Navigate(new QuanLyPhatLuongView());
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\pages\QuanLyNguoiGiaoHangView.xaml
+================================================================================
+﻿<Page x:Class="AppCafebookApi.View.quanly.pages.QuanLyNguoiGiaoHangView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      mc:Ignorable="d" 
+      d:DesignHeight="600" d:DesignWidth="900"
+      Title="QuanLyNguoiGiaoHangView" FontFamily="Segoe UI" Background="White" Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="PrimaryBrownBrush" Color="#6F4E37"/>
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Background" Value="#6F4E37"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" Margin="0,0,20,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                <TextBlock Text="Danh sách Đơn vị Vận chuyển" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBrownBrush}" VerticalAlignment="Center"/>
+                <Button Content="Làm mới" HorizontalAlignment="Right" Click="BtnRefresh_Click"/>
+            </DockPanel>
+
+            <DataGrid Grid.Row="1" x:Name="dgShipper" AutoGenerateColumns="False" CanUserAddRows="False"
+                      SelectionMode="Single" SelectionChanged="DgShipper_SelectionChanged" 
+                      BorderBrush="#E0E0E0" BorderThickness="1">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding IdNguoiGiaoHang}" Width="50" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Tên Đơn Vị / Shipper" Binding="{Binding TenNguoiGiaoHang}" Width="*" IsReadOnly="True" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="SĐT" Binding="{Binding SoDienThoai}" Width="120" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding TrangThai}" Width="100" IsReadOnly="True"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <Border Grid.Column="1" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="5" Padding="15" Background="#FAFAFA">
+            <StackPanel>
+                <TextBlock Text="Thông tin chi tiết" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" Foreground="{StaticResource PrimaryBrownBrush}"/>
+
+                <TextBlock Text="Tên Đơn vị / Shipper:" FontWeight="SemiBold"/>
+                <TextBox x:Name="txtTen" Margin="0,5,0,10" Padding="5"/>
+
+                <TextBlock Text="Số điện thoại:" FontWeight="SemiBold"/>
+                <TextBox x:Name="txtSdt" Margin="0,5,0,10" Padding="5"/>
+
+                <TextBlock Text="Trạng thái:" FontWeight="SemiBold"/>
+                <ComboBox x:Name="cmbTrangThai" Margin="0,5,0,20" Padding="5">
+                    <ComboBoxItem Content="Sẵn sàng" IsSelected="True"/>
+                    <ComboBoxItem Content="Tạm ngưng"/>
+                </ComboBox>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                    <Button x:Name="btnAdd" Content="Thêm" Click="BtnAdd_Click" Background="#4CAF50"/>
+                    <Button x:Name="btnEdit" Content="Lưu Sửa" Click="BtnEdit_Click" Background="#2196F3" IsEnabled="False"/>
+                    <Button x:Name="btnDelete" Content="Xóa" Click="BtnDelete_Click" Background="#F44336" IsEnabled="False"/>
+                </StackPanel>
+
+                <Button Content="Hủy chọn" Click="BtnClear_Click" Background="#9E9E9E" Margin="0,10,0,0" HorizontalAlignment="Center" Width="100"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\AppCafebookApi\AppCafebookApi\View\quanly\pages\QuanLyNguoiGiaoHangView.xaml.cs
+================================================================================
+﻿using AppCafebookApi.Services;
+using CafebookModel.Model.ModelApp;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Windows;
+using System.Windows.Controls;
+
+namespace AppCafebookApi.View.quanly.pages
+{
+    public partial class QuanLyNguoiGiaoHangView : Page
+    {
+        private int _selectedId = 0;
+
+        public QuanLyNguoiGiaoHangView()
+        {
+            InitializeComponent();
+        }
+
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            await LoadDataAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadDataAsync()
+        {
+            try
+            {
+                var list = await ApiClient.Instance.GetFromJsonAsync<List<NguoiGiaoHangCrudDto>>("api/app/nguoigiaohang/all");
+                dgShipper.ItemsSource = list;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}");
+            }
+        }
+
+        private void DgShipper_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dgShipper.SelectedItem is NguoiGiaoHangCrudDto item)
+            {
+                _selectedId = item.IdNguoiGiaoHang;
+                txtTen.Text = item.TenNguoiGiaoHang;
+                txtSdt.Text = item.SoDienThoai;
+                cmbTrangThai.Text = item.TrangThai;
+
+                btnAdd.IsEnabled = false;
+                btnEdit.IsEnabled = true;
+                btnDelete.IsEnabled = true;
+            }
+        }
+
+        private void ClearForm()
+        {
+            _selectedId = 0;
+            txtTen.Text = "";
+            txtSdt.Text = "";
+            cmbTrangThai.SelectedIndex = 0;
+            dgShipper.SelectedItem = null;
+
+            btnAdd.IsEnabled = true;
+            btnEdit.IsEnabled = false;
+            btnDelete.IsEnabled = false;
+        }
+
+        private void BtnClear_Click(object sender, RoutedEventArgs e) => ClearForm();
+        private async void BtnRefresh_Click(object sender, RoutedEventArgs e) => await LoadDataAsync();
+
+        private async void BtnAdd_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtTen.Text)) return;
+
+            var dto = new NguoiGiaoHangCrudDto
+            {
+                TenNguoiGiaoHang = txtTen.Text,
+                SoDienThoai = txtSdt.Text,
+                TrangThai = cmbTrangThai.Text
+            };
+
+            try
+            {
+                var response = await ApiClient.Instance.PostAsJsonAsync("api/app/nguoigiaohang", dto);
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Thêm thành công!");
+                    await LoadDataAsync();
+                    ClearForm();
+                }
+                else
+                {
+                    MessageBox.Show("Lỗi: " + await response.Content.ReadAsStringAsync());
+                }
+            }
+            catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
+        }
+
+        private async void BtnEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedId == 0) return;
+
+            var dto = new NguoiGiaoHangCrudDto
+            {
+                IdNguoiGiaoHang = _selectedId,
+                TenNguoiGiaoHang = txtTen.Text,
+                SoDienThoai = txtSdt.Text,
+                TrangThai = cmbTrangThai.Text
+            };
+
+            try
+            {
+                var response = await ApiClient.Instance.PutAsJsonAsync($"api/app/nguoigiaohang/{_selectedId}", dto);
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Cập nhật thành công!");
+                    await LoadDataAsync();
+                    ClearForm();
+                }
+                else { MessageBox.Show("Lỗi: " + await response.Content.ReadAsStringAsync()); }
+            }
+            catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
+        }
+
+        private async void BtnDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedId == 0) return;
+            if (MessageBox.Show("Bạn có chắc muốn xóa?", "Xác nhận", MessageBoxButton.YesNo) == MessageBoxResult.No) return;
+
+            try
+            {
+                var response = await ApiClient.Instance.DeleteAsync($"api/app/nguoigiaohang/{_selectedId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Xóa thành công!");
+                    await LoadDataAsync();
+                    ClearForm();
+                }
+                else { MessageBox.Show("Lỗi: " + await response.Content.ReadAsStringAsync()); }
+            }
+            catch (Exception ex) { MessageBox.Show("Lỗi: " + ex.Message); }
         }
     }
 }

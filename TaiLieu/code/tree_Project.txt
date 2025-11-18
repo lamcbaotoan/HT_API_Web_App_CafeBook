@@ -103,6 +103,8 @@ Solution 'Project'/
 │   │   │   │   │   ├── QuanLyLichLamViecView.xaml.cs
 │   │   │   │   │   ├── QuanLyLuongView.xaml
 │   │   │   │   │   ├── QuanLyLuongView.xaml.cs
+│   │   │   │   │   ├── QuanLyNguoiGiaoHangView.xaml
+│   │   │   │   │   ├── QuanLyNguoiGiaoHangView.xaml.cs
 │   │   │   │   │   ├── QuanLyNguyenLieuView.xaml
 │   │   │   │   │   ├── QuanLyNguyenLieuView.xaml.cs
 │   │   │   │   │   ├── QuanLyNhaCungCapView.xaml
@@ -174,6 +176,7 @@ Solution 'Project'/
 │   │   │   ├── KhuyenMaiController.cs
 │   │   │   ├── LichLamViecController.cs
 │   │   │   ├── LuongController.cs
+│   │   │   ├── NguoiGiaoHangController.cs
 │   │   │   ├── NguyenLieuController.cs
 │   │   │   ├── NhanVienController.cs
 │   │   │   ├── PhanQuyenController.cs
@@ -188,7 +191,9 @@ Solution 'Project'/
 │   │   │   └── VaiTroController.cs
 │   │   └── Web/
 │   │       ├── QuanLy/
+│   │       │   ├── GiaoHangControllers.cs
 │   │       │   ├── GoiMonViewController.cs
+│   │       │   ├── HoTroKhachHangControllers.cs
 │   │       │   └── SoDoBanController.cs
 │   │       ├── ChinhSachController.cs
 │   │       ├── DanhGiaWebController.cs
@@ -206,16 +211,32 @@ Solution 'Project'/
 │   │       └── WebQuanLyController.cs
 │   ├── Data/
 │   │   └── CafebookDbContext.cs
+│   ├── Hubs/
+│   │   └── ChatHub.cs
 │   ├── Properties/
 │   │   └── launchSettings.json
 │   ├── Services/
-│   │   └── AiService.cs
+│   │   ├── AiService.cs
+│   │   └── AiToolService.cs
 │   ├── wwwroot/
 │   │   └── images/
 │   │       ├── anhdanhgia/
 │   │       │   ├── monan/
+│   │       │   │   ├── 4fba898a-d939-411e-be2d-ffb382f664ee_0a8b1082-85ad-4335-bd06-cfb2932f82ac.jpg
+│   │       │   │   ├── 83190add-6396-46f9-8b54-bbf9696cd24a_2627a18c-bed0-4220-8296-83304ed1aa2d.jpg
+│   │       │   │   ├── 930c1e5e-504e-44b5-b70e-9b4b4aebe86d_Snaptik.app_743508611668594202416 (1).jpg
+│   │       │   │   ├── b67bb340-2b49-41bb-a8cd-a0b62e66efae_fe3b281f-3ed7-4007-9d3a-956f788a29b2.jpg
+│   │       │   │   ├── c777ed73-a3bb-4673-acf0-80de5d39e630_7a1664cc-ae46-402a-8ca0-01c34464e325.jpg
 │   │       │   │   └── f1c3b7b3-1909-4562-a9b6-60cde117124e_2627a18c-bed0-4220-8296-83304ed1aa2d.jpg
 │   │       │   └── sach/
+│   │       ├── anhgiaohang/
+│   │       │   ├── GH_100_20251118153056.jpg
+│   │       │   ├── GH_101_20251118160554.png
+│   │       │   ├── GH_115_20251118153014.jpg
+│   │       │   ├── GH_116_20251118153007.jpg
+│   │       │   ├── GH_125_20251118161601.jpg
+│   │       │   ├── GH_126_20251118162330.jpg
+│   │       │   └── GH_127_20251118164407.jpg
 │   │       ├── avatars/
 │   │       │   ├── avatarKH/
 │   │       │   │   ├── 1_khach-vang-lai.jpg
@@ -295,6 +316,7 @@ Solution 'Project'/
 │   │   │   ├── KhachHangDto.cs
 │   │   │   ├── KhoDto.cs
 │   │   │   ├── KhuyenMaiDto.cs
+│   │   │   ├── NguoiGiaoHangDto.cs
 │   │   │   ├── NhanSuDto.cs
 │   │   │   ├── PhatLuongDtos.cs
 │   │   │   ├── QuanLyDanhGiaDto.cs
@@ -303,7 +325,9 @@ Solution 'Project'/
 │   │   │   └── ThongBaoDto.cs
 │   │   ├── ModelWeb/
 │   │   │   ├── QuanLy/
+│   │   │   │   ├── GiaoHangDto.cs
 │   │   │   │   ├── GoiMonViewDto.cs
+│   │   │   │   ├── HoTroKhachHangDto.cs
 │   │   │   │   └── SoDoBanDto.cs
 │   │   │   ├── ChinhSachDto.cs
 │   │   │   ├── DangKyRequestModel.cs
@@ -377,12 +401,20 @@ Solution 'Project'/
     │   │   ├── DangXuat.cshtml.cs
     │   │   ├── GoiMonView.cshtml
     │   │   ├── GoiMonView.cshtml.cs
+    │   │   ├── HoTroKhachHangView.cshtml
+    │   │   ├── HoTroKhachHangView.cshtml.cs
+    │   │   ├── QuanLyGiaoHangView.cshtml
+    │   │   ├── QuanLyGiaoHangView.cshtml.cs
+    │   │   ├── ShipperGiaoHangView.cshtml
+    │   │   ├── ShipperGiaoHangView.cshtml.cs
     │   │   ├── SoDoBanView.cshtml
     │   │   ├── SoDoBanView.cshtml.cs
     │   │   ├── WebQuanLyView.cshtml
     │   │   ├── WebQuanLyView.cshtml.cs
     │   │   ├── _Layout_Employee.cshtml
     │   │   └── _ViewStart.cshtml
+    │   ├── AccessDenied.cshtml
+    │   ├── AccessDenied.cshtml.cs
     │   ├── ChiTietSachView.cshtml
     │   ├── ChiTietSachView.cshtml.cs
     │   ├── ChiTietSanPhamView.cshtml
@@ -439,13 +471,20 @@ Solution 'Project'/
     │   │   │   │   ├── jquery.validate.js
     │   │   │   │   └── jquery.validate.min.js
     │   │   │   └── LICENSE.md
-    │   │   └── jquery-validation-unobtrusive/
-    │   │       ├── LICENSE.txt
-    │   │       ├── jquery.validate.unobtrusive.js
-    │   │       └── jquery.validate.unobtrusive.min.js
+    │   │   ├── jquery-validation-unobtrusive/
+    │   │   │   ├── LICENSE.txt
+    │   │   │   ├── jquery.validate.unobtrusive.js
+    │   │   │   └── jquery.validate.unobtrusive.min.js
+    │   │   └── microsoft/
+    │   │       └── signalr/
+    │   │           ├── dist/
+    │   │           ├── src/
+    │   │           ├── README.md
+    │   │           └── package.json
     │   └── favicon.ico
     ├── Program.cs
     ├── WebCafebookApi.csproj
     ├── WebCafebookApi.csproj.user
     ├── appsettings.Development.json
-    └── appsettings.json
+    ├── appsettings.json
+    └── libman.json

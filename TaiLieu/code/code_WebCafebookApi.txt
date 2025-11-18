@@ -101,6 +101,39 @@ app.Run();
 
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\WebCafebookApi.csproj
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\WebCafebookApi.csproj.user
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\AccessDenied.cshtml
+================================================================================
+﻿@page
+@{
+    ViewData["Title"] = "Từ chối truy cập";
+    Layout = "_Layout_Employee";
+}
+
+<div class="container text-center mt-5">
+    <h1 class="text-danger display-1 fw-bold">403</h1>
+    <h2 class="mb-3">Truy cập bị từ chối</h2>
+    <p class="lead text-muted">Xin lỗi, bạn không có quyền truy cập vào trang này.</p>
+    <a href="/Employee/WebQuanLyView" class="btn btn-primary mt-3">Quay lại Trang chủ</a>
+</div>
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\AccessDenied.cshtml.cs
+================================================================================
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace WebCafebookApi.Pages
+{
+    public class AccessDeniedModel : PageModel
+    {
+        public void OnGet()
+        {
+        }
+    }
+}
+
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\ChinhSachView.cshtml
 ================================================================================
 ﻿@page "/Privacy"
@@ -2594,167 +2627,228 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\HoTroView.cshtml
 
 </div>
 @section Scripts {
+
     <partial name="_ValidationScriptsPartial" />
     <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
     <script>
-        const apiBaseUrl = '@Model.ApiBaseUrl';
-
+                const apiBaseUrl = '@Model.ApiBaseUrl';
         $(document).ready(function () {
-            const $chatHistory = $('#chat-history');
-            const $chatForm = $('#chatForm');
-            const $chatInput = $('#chatMessageInput');
-            const $sendButton = $('#sendButton');
+                    const $chatHistory = $('#chat-history');
+                    const $chatForm = $('#chatForm');
+                    const $chatInput = $('#chatMessageInput');
+                    const $sendButton = $('#sendButton');
 
-            // === DỮ LIỆU CHAT TỪ MODEL ===
-            const idKhachHang = parseInt($('#IdKhachHang').val()) || 0;
-            const guestSessionId = $('#GuestSessionId').val() || null;
-            const jwtToken = $('#JwtToken').val() || null;
-            const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+                    // === DỮ LIỆU CHAT TỪ MODEL ===
+                    const idKhachHang = parseInt($('#IdKhachHang').val()) || 0;
 
-            const groupName = idKhachHang > 0 ? `khach_${idKhachHang}` : `guest_${guestSessionId}`;
-            let currentIdThongBao = null; // ID phiếu hỗ trợ
-            let isRealtimeMode = false; // Cờ đánh dấu chế độ chat
-            let hubConnection = null; // Đối tượng SignalR
+                  const guestSessionId = $('#GuestSessionId').val() || null;
+                    const jwtToken = $('#JwtToken').val() || null;
+                    const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
 
-            // === HÀM VẼ UI ===
-            function scrollToBottom() { $chatHistory.scrollTop($chatHistory[0].scrollHeight); }
-            scrollToBottom();
+                    const groupName = idKhachHang > 0 ? `khach_${idKhachHang}` : `guest_${guestSessionId}`;
 
-            function addMessageToUI(message, isUser, isStaff = false) {
-                // (isStaff = true nếu là nhân viên)
-                const rowClass = isUser ? 'user-row' : (isStaff ? 'staff-row' : 'bot-row');
-                const avatarClass = isUser ? 'avatar-user' : (isStaff ? 'avatar-staff' : 'avatar-bot');
-                const avatarIcon = isUser ? 'person' : (isStaff ? 'support' : 'support_agent');
-                const bubbleClass = isUser ? 'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
-                const timeAlign = isUser ? 'text-end' : 'text-start';
+                    // === NÂNG CẤP: KHAI BÁO BIẾN LƯU TRỮ ===
+                    const storageKey = `chat_history_${groupName}`;
+                    let currentIdThongBao = null; // ID phiếu hỗ trợ
 
-                const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
-                const time = new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        let isRealtimeMode = false; // Cờ đánh dấu chế độ chat
+                    let hubConnection = null; // Đối tượng SignalR
 
-                const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
-                const $avatar = $('<div></div>').addClass('chat-avatar ' + avatarClass)
-                    .html(`<span class="material-symbols-outlined">${avatarIcon}</span>`);
-                const $content = $('<div></div>').addClass('message-content');
-                const $bubble = $('<div></div>').addClass('chat-bubble ' + bubbleClass).html(formattedContent);
-                const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(time);
-
-                $content.append($bubble).append($time);
-                $row.append($avatar).append($content);
-
-                $chatHistory.append($row);
-            }
-
-            // === LOGIC CHAT HYBRID ===
-
-            $chatForm.on('submit', async function (e) {
-                e.preventDefault();
-                const messageText = $chatInput.val();
-                if (!messageText.trim()) return;
-
-                $chatInput.val('').prop('disabled', true);
-                $sendButton.prop('disabled', true);
-
-                if (isRealtimeMode && hubConnection) {
-                    // --- CHẾ ĐỘ 2: GỬI QUA SIGNALR (Chat với NV) ---
-                    try {
-                        await hubConnection.invoke("SendMessageFromClient",
-                            groupName,
-                            messageText,
-                            idKhachHang,
-                            guestSessionId,
-                            currentIdThongBao
-                        );
-                    } catch (err) {
-                        console.error(err.toString());
-                        alert('Mất kết nối. Không thể gửi tin nhắn.');
-                    } finally {
-                        // Hub sẽ gửi lại tin nhắn (kể cả của mình) qua "ReceiveMessage"
-                        $chatInput.prop('disabled', false).focus();
-                        $sendButton.prop('disabled', false);
+                    // === NÂNG CẤP: CÁC HÀM LƯU TRỮ SESSION ===
+                    function getHistoryFromSession() {
+                        try {
+                            return JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+                        } catch (e) {
+                            return [];
+                        }
                     }
-                } else {
-                    // --- CHẾ ĐỘ 1: GỬI QUA FETCH (Chat với AI) ---
-                    const payload = { noiDung: messageText, guestSessionId: guestSessionId };
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': antiForgeryToken
-                    };
-                    if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken; }
 
-                    try {
-                        const response = await fetch(`${apiBaseUrl}/api/web/hotro/send`, {
-                            method: 'POST',
-                            headers: headers,
-                            body: JSON.stringify(payload)
-                        });
+                    function saveHistoryToSession(history) {
+                        sessionStorage.setItem(storageKey, JSON.stringify(history));
+                    }
 
-                        if (response.status === 401) { /* ... (Xử lý 401) ... */ }
-                        if (!response.ok) { throw new Error('Lỗi máy chủ'); }
+                    function saveMessageToHistory(message) {
+                        const history = getHistoryFromSession();
+                        // Tránh lưu trùng lặp tin nhắn chào
+                        if (message.idChat === 0 && history.length > 0) {
+                            return;
+                        }
+                        history.push(message);
+                        saveHistoryToSession(history);
+                    }
 
-                        const result = await response.json(); // SendChatResponseDto
+                    // === HÀM VẼ UI (Đã đổi tên) ===
+                    function drawMessage(message, isUser, isStaff = false) {
+                        // (isStaff = true nếu là nhân viên)
+                        const rowClass = isUser ?
+        'user-row' : (isStaff ? 'staff-row' : 'bot-row');
+                        const avatarClass = isUser ? 'avatar-user' : (isStaff ? 'avatar-staff' : 'avatar-bot');
+        const avatarIcon = isUser ? 'person' : (isStaff ? 'support' : 'support_agent');
+                        const bubbleClass = isUser ?
+        'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
+                        const timeAlign = isUser ? 'text-end' : 'text-start';
+        const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
+                        const time = new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
+                        const $avatar = $('<div></div>').addClass('chat-avatar ' + avatarClass)
+                            .html(`<span class="material-symbols-outlined">${avatarIcon}</span>`);
+        const $content = $('<div></div>').addClass('message-content');
+                        const $bubble = $('<div></div>').addClass('chat-bubble ' + bubbleClass).html(formattedContent);
+                        const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(time);
 
-                        // Vẽ tin nhắn của khách (result.tinNhanCuaKhach)
-                        addMessageToUI(result.tinNhanCuaKhach, true, false);
+                        $content.append($bubble).append($time);
+                        $row.append($avatar).append($content);
+        $chatHistory.append($row);
+                    }
 
-                        // Vẽ tin nhắn của AI (result.tinNhanPhanHoi)
-                        if (result.tinNhanPhanHoi) {
-                            setTimeout(() => {
-                                addMessageToUI(result.tinNhanPhanHoi, false, false);
+                    // === NÂNG CẤP: HÀM TẢI LỊCH SỬ CHAT KHI VÀO TRANG ===
+                    function loadChatHistory() {
+                        const history = getHistoryFromSession();
+
+                        // Lấy tin nhắn chào mặc định từ server (nếu có)
+                        const serverWelcomeMessage = @Html.Raw(Json.Serialize(Model.HoTroData.LichSuChat.FirstOrDefault()));
+
+                        if (history.length === 0 && serverWelcomeMessage) {
+                            // Nếu session rỗng, lưu tin nhắn chào của server vào
+                            saveMessageToHistory(serverWelcomeMessage);
+                            // (Không cần vẽ vì server đã vẽ rồi)
+                        }
+                        else if (history.length > 0) {
+                            // Nếu session có, xóa tin nhắn server vẽ và vẽ lại toàn bộ
+                            $chatHistory.html(''); // Xóa tin nhắn "Chào bạn" do server render
+                            history.forEach(msg => {
+                                const isUser = msg.loaiTinNhan === 'KhachHang';
+                                const isStaff = msg.loaiTinNhan === 'NhanVien';
+                                drawMessage(msg, isUser, isStaff);
+                            });
+                        }
+                    }
+
+                    function scrollToBottom() { $chatHistory.scrollTop($chatHistory[0].scrollHeight);
+        }
+
+                    // === CHẠY HÀM TẢI LỊCH SỬ ===
+                    loadChatHistory();
+                    scrollToBottom();
+
+
+                    // === LOGIC CHAT HYBRID (Đã cập nhật) ===
+
+                    $chatForm.on('submit', async function (e) {
+                        e.preventDefault();
+                        const messageText = $chatInput.val();
+                        if (!messageText.trim()) return;
+
+
+           $chatInput.val('').prop('disabled', true);
+                        $sendButton.prop('disabled', true);
+
+                        if (isRealtimeMode && hubConnection) {
+                            // --- CHẾ ĐỘ 2: GỬI QUA SIGNALR (Chat với NV) ---
+                            try {
+
+                         await hubConnection.invoke("SendMessageFromClient",
+                                    groupName,
+                                    messageText,
+
+          idKhachHang,
+                                    guestSessionId,
+                                    currentIdThongBao
+                                );
+
+          } catch (err) {
+                                console.error(err.toString());
+                                alert('Mất kết nối. Không thể gửi tin nhắn.');
+        } finally {
+                                $chatInput.prop('disabled', false).focus();
+        $sendButton.prop('disabled', false);
+                            }
+                        } else {
+                            // --- CHẾ ĐỘ 1: GỬI QUA FETCH (Chat với AI) ---
+                            const payload = { noiDung: messageText, guestSessionId: guestSessionId };
+        const headers = {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': antiForgeryToken
+                            };
+        if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken; }
+
+                            try {
+                                const response = await fetch(`${apiBaseUrl}/api/web/hotro/send`, {
+                                    method: 'POST',
+
+                        headers: headers,
+                                    body: JSON.stringify(payload)
+                                });
+        if (response.status === 401) { /* ... (Xử lý 401) ... */ }
+                                if (!response.ok) { throw new Error('Lỗi máy chủ');
+        }
+
+                                const result = await response.json();
+        // SendChatResponseDto
+
+                                // NÂNG CẤP: Vẽ và Lưu tin nhắn của khách
+                                drawMessage(result.tinNhanCuaKhach, true, false);
+                                saveMessageToHistory(result.tinNhanCuaKhach);
+
+                                // NÂNG CẤP: Vẽ và Lưu tin nhắn của AI
+                                if (result.tinNhanPhanHoi) {
+                                    setTimeout(() => {
+                                        drawMessage(result.tinNhanPhanHoi, false, false);
+                                        saveMessageToHistory(result.tinNhanPhanHoi);
+
+                                    scrollToBottom();
+                                    }, 300);
+        }
+
+                                // === KÍCH HOẠT SIGNALR ===
+                                if (result.idThongBaoHoTro && result.idThongBaoHoTro > 0) {
+                                    currentIdThongBao = result.idThongBaoHoTro;
+        isRealtimeMode = true; // Chuyển chế độ
+                                    await startSignalRConnection();
+        // Bắt đầu kết nối
+                                }
+
+                            } catch (error) {
+                                console.error('Lỗi khi gửi tin nhắn (Fetch):', error);
+        alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
+                            } finally {
+                                $chatInput.prop('disabled', false).focus();
+        $sendButton.prop('disabled', false);
                                 scrollToBottom();
-                            }, 300);
+                            }
                         }
+                    });
+        // === HÀM KẾT NỐI VÀ LẮNG NGHE SIGNALR (Đã cập nhật) ===
+                    async function startSignalRConnection() {
+                        if (hubConnection) return;
+        // Đã kết nối
 
-                        // === KÍCH HOẠT SIGNALR ===
-                        if (result.idThongBaoHoTro && result.idThongBaoHoTro > 0) {
-                            currentIdThongBao = result.idThongBaoHoTro;
-                            isRealtimeMode = true; // Chuyển chế độ
-                            await startSignalRConnection(); // Bắt đầu kết nối
-                        }
+                        hubConnection = new signalR.HubConnectionBuilder()
+                            .withUrl(apiBaseUrl + "/chatHub")
+                            .build();
+        // Lắng nghe tin nhắn TỪ SERVER (của Nhân viên HOẶC của chính mình)
+                        hubConnection.on("ReceiveMessage", function (message) {
 
-                    } catch (error) {
-                        console.error('Lỗi khi gửi tin nhắn (Fetch):', error);
-                        alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
-                    } finally {
-                        $chatInput.prop('disabled', false).focus();
-                        $sendButton.prop('disabled', false);
-                        scrollToBottom();
-                    }
-                }
-            });
+                            const isUser = message.loaiTinNhan === 'KhachHang';
+                            const isStaff = message.loaiTinNhan === 'NhanVien';
 
-            // === HÀM KẾT NỐI VÀ LẮNG NGHE SIGNALR ===
-            async function startSignalRConnection() {
-                if (hubConnection) return; // Đã kết nối
+                            // NÂNG CẤP: Vẽ và Lưu
+                            drawMessage(message, isUser, isStaff);
+                            saveMessageToHistory(message);
+                            scrollToBottom();
+              });
 
-                hubConnection = new signalR.HubConnectionBuilder()
-                    .withUrl(apiBaseUrl + "/chatHub")
-                    .build();
-
-                // Lắng nghe tin nhắn TỪ SERVER (của Nhân viên)
-                hubConnection.on("ReceiveMessage", function (message) {
-                    // Chỉ vẽ nếu là tin nhắn của NV (vì tin nhắn của mình đã tự vẽ)
-                    if (message.loaiTinNhan === 'NhanVien') {
-                        addMessageToUI(message, false, true); // (isUser, isStaff)
-                        scrollToBottom();
-                    }
-                    // Nếu tin nhắn của mình được gửi từ Hub (để xác nhận)
-                    else if (message.loaiTinNhan === 'KhachHang') {
-                         addMessageToUI(message, true, false);
-                         scrollToBottom();
+                        // Bắt đầu kết nối
+                        try {
+                            await hubConnection.start();
+        console.log("SignalR Connected (Client).");
+                            await hubConnection.invoke("JoinGroup", groupName);
+                            console.log(`Joined group (Client): ${groupName}`);
+        } catch (err) {
+                            console.error(err.toString());
+        }
                     }
                 });
-
-                // Bắt đầu kết nối
-                try {
-                    await hubConnection.start();
-                    console.log("SignalR Connected (Client).");
-                    await hubConnection.invoke("JoinGroup", groupName);
-                    console.log(`Joined group (Client): ${groupName}`);
-                } catch (err) {
-                    console.error(err.toString());
-                }
-            }
-        });
     </script>
 }
 ================================================================================
@@ -5471,14 +5565,23 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHang
                     padding-top: 1rem;
                     margin-top: 0.5rem;
                 }
+        /* Thêm style cho ảnh trong modal */
+        #deliveryProofImage {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
     </style>
 }
 
+<div class="mb-3">
+    <a asp-page="/Account/LichSuDonHangView" class="text-decoration-none text-secondary fw-bold">
+        <span class="material-symbols-outlined" style="vertical-align: middle;">arrow_back</span>
+        Quay lại danh sách đơn hàng
+    </a>
+</div>
+
 <h3 class="page-title-account">@ViewData["Title"]</h3>
-<p class="page-lead-account">Theo dõi chi tiết đơn hàng giao tận nơi của bạn.</p>
-
-<hr class="my-4" />
-
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
     <div class="alert alert-danger">@Model.ErrorMessage</div>
@@ -5486,7 +5589,6 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHang
 else if (Model.OrderDetails != null)
 {
     var order = Model.OrderDetails;
-
     <div class="card order-card">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center">
@@ -5496,28 +5598,35 @@ else if (Model.OrderDetails != null)
                 </div>
                 <div class="text-end">
                     <h5 class="mb-0 text-uppercase" style="color: var(--cf-orange);">@order.TrangThaiGiaoHang</h5>
+                    
+                    @if (!string.IsNullOrEmpty(order.AnhXacNhanGiaoHangUrl) && order.TrangThaiGiaoHang == "Hoàn thành")
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-success mt-2" data-bs-toggle="modal" data-bs-target="#imageModal">
+                            <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: text-bottom;">image</span>
+                            Xem ảnh giao hàng
+                        </button>
+                    }
                 </div>
             </div>
 
             <hr />
-
             <ul class="progress-tracker">
                 @{
                     bool cxn = order.TrangThaiGiaoHang == "Chờ xác nhận";
                     bool clh = order.TrangThaiGiaoHang == "Chờ lấy hàng";
                     bool dg = order.TrangThaiGiaoHang == "Đang giao";
                     bool ht = order.TrangThaiGiaoHang == "Hoàn thành";
-                    bool dh = order.TrangThaiGiaoHang == "Đã Hủy";
+                    bool dh = order.TrangThaiGiaoHang == "Đã Hủy"; // Sửa "Đã Hủy" cho khớp API
                 }
                 <li class="progress-step @(cxn || clh || dg || ht ? "completed" : "") @(cxn ? "active" : "")">
                     <span class="icon"><span class="material-symbols-outlined">receipt_long</span></span>
                     <span class="text">Đã Đặt</span>
                 </li>
-                <li class="progress-step @(clh || dg || ht ? "completed" : "") @(clh ? "active" : "")">
+                 <li class="progress-step @(clh || dg || ht ? "completed" : "") @(clh ? "active" : "")">
                     <span class="icon"><span class="material-symbols-outlined">inventory_2</span></span>
                     <span class="text">Chờ Lấy Hàng</span>
                 </li>
-                <li class="progress-step @(dg || ht ? "completed" : "") @(dg ? "active" : "")">
+                 <li class="progress-step @(dg || ht ? "completed" : "") @(dg ? "active" : "")">
                     <span class="icon"><span class="material-symbols-outlined">local_shipping</span></span>
                     <span class="text">Đang Giao</span>
                 </li>
@@ -5526,11 +5635,12 @@ else if (Model.OrderDetails != null)
                     <span class="text">Hoàn Thành</span>
                 </li>
             </ul>
+
         </div>
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-5">
+         <div class="col-lg-5">
             <div class="card order-card h-100">
                 <div class="card-body p-4">
                     <h5 class="mb-3">Địa Chỉ Nhận Hàng</h5>
@@ -5547,10 +5657,10 @@ else if (Model.OrderDetails != null)
                     <ul class="timeline">
                         @foreach (var tracking in order.TrackingEvents)
                         {
-                            <li class="timeline-item @(tracking.IsCurrent ? "active" : "")">
+                          <li class="timeline-item @(tracking.IsCurrent ? "active" : "")">
                                 <div class="timeline-icon">
                                     <span class="material-symbols-outlined">@(tracking.Status == "Đơn hàng đã đặt" ? "receipt_long" : (tracking.Status == "Giao hàng thành công" ? "task_alt" : "local_shipping"))</span>
-                                </div>
+                               </div>
                                 <div class="timeline-content">
                                     <span class="status">@tracking.Status</span>
                                     <p class="description mb-0">@tracking.Description</p>
@@ -5563,18 +5673,18 @@ else if (Model.OrderDetails != null)
             </div>
         </div>
     </div>
-
+    
     <div class="row g-4">
-        <div class="col-lg-8">
+         <div class="col-lg-8">
             <div class="card order-card">
-                <div class="order-card-header">
+                 <div class="order-card-header">
                     <span class="shop-name">
                         <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">storefront</span>
                         Cafebook
                     </span>
                 </div>
                 <div class="order-items-container">
-                    @foreach (var item in order.Items)
+                     @foreach (var item in order.Items)
                     {
                         var imgUrl = item.HinhAnhUrl ?? "/images/default-food-icon.png";
                         <div class="order-item">
@@ -5585,26 +5695,26 @@ else if (Model.OrderDetails != null)
                                 <h6>@item.TenSanPham</h6>
                                 <div class="qty">x @item.SoLuong</div>
 
-                                @if (order.TrangThaiGiaoHang == "Hoàn thành")
+                                 @if (order.TrangThaiGiaoHang == "Hoàn thành")
                                 {
                                     bool daDanhGiaSP = await Model.KiemTraDaDanhGia(order.IdHoaDon, item.IdSanPham, null);
-                                    if (daDanhGiaSP)
+                                     if (daDanhGiaSP)
                                     {
                                         <span class="text-success mt-2 d-block" style="font-size: 0.9rem;">
-                                            <span class="material-symbols-outlined" style="vertical-align: bottom; font-size: 1.1rem;">check_circle</span>
+                                           <span class="material-symbols-outlined" style="vertical-align: bottom; font-size: 1.1rem;">check_circle</span>
                                             Đã đánh giá
                                         </span>
-                                    }
+                                       }
                                     else
                                     {
                                         <a asp-page="./DanhGiaView"
                                            asp-route-idHoaDon="@order.IdHoaDon"
                                            asp-route-idSanPham="@item.IdSanPham"
                                            class="btn btn-sm btn-outline-primary mt-2">
-                                            Viết đánh giá
+                                             Viết đánh giá
                                         </a>
                                     }
-                                }
+                                 }
                             </div>
                             <div class="order-item-price">
                                 @item.DonGia.ToString("N0") đ
@@ -5613,8 +5723,8 @@ else if (Model.OrderDetails != null)
                     }
                 </div>
             </div>
-        </div>
-        <div class="col-lg-4">
+         </div>
+          <div class="col-lg-4">
             <div class="card order-card">
                 <div class="card-body p-4">
                     <h5 class="mb-3">Tổng cộng</h5>
@@ -5626,7 +5736,7 @@ else if (Model.OrderDetails != null)
                         <li>
                             <span>Giảm giá</span>
                             <span class="text-danger">-@order.GiamGia.ToString("N0") đ</span>
-                        </li>
+                         </li>
                         <li class="total">
                             <span>Thành tiền</span>
                             <span>@order.ThanhTien.ToString("N0") đ</span>
@@ -5641,6 +5751,23 @@ else if (Model.OrderDetails != null)
             </div>
         </div>
     </div>
+
+    @if (!string.IsNullOrEmpty(order.AnhXacNhanGiaoHangUrl))
+    {
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="imageModalLabel">Ảnh xác nhận giao hàng</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center bg-light p-4">
+                        <img src="@order.AnhXacNhanGiaoHangUrl" id="deliveryProofImage" alt="Ảnh giao hàng" class="img-fluid" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 else
 {
@@ -5984,7 +6111,10 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHang
                 </div>
 
                 <div class="order-card-actions">
-                    <button class="btn btn-outline-secondary btn-sm" disabled>Liên Hệ Shop (Sắp có)</button>
+                    <a asp-page="/HoTroView" class="btn btn-outline-secondary btn-sm">
+                        <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle;">support_agent</span>
+                        Liên Hệ Shop
+                    </a>
 
                     @if (order.TrangThaiGiaoHang == "Chờ xác nhận" && order.TrangThaiThanhToan != "Đã hủy")
                     {
@@ -5995,18 +6125,13 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\Account\LichSuDonHang
                     {
                         <button class="btn btn-outline-secondary btn-sm" disabled>Mua Lại (Sắp có)</button>
 
-                        <!--
-                            SỬA LOGIC:
-                            Xóa bỏ 'var firstItemForButton' và 'if (firstItem...)'
-                            Nút ĐÁNH GIÁ chỉ cần truyền idHoaDon.
-                            Trang DanhGiaView (đã sửa) sẽ tự động tải TẤT CẢ sản phẩm trong hóa đơn đó.
-                        -->
                         <a asp-page="./DanhGiaView"
                            asp-route-idHoaDon="@order.IdHoaDon"
                            class="btn btn-primary btn-sm mx-1">
                             ĐÁNH GIÁ
                         </a>
                     }
+
                     <a asp-page="/Account/LichSuDonHangDetailView" asp-route-id="@order.IdHoaDon" class="btn btn-outline-primary btn-sm ms-auto">Xem Chi Tiết</a>
                 </div>
             </div>
@@ -8823,7 +8948,8 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
 
         /* === CÀI ĐẶT CHUNG === */
         .main-content-card {
-            padding: 0; /* Xóa padding gốc */
+            padding: 0;
+            /* Xóa padding gốc */
         }
 
         .support-dashboard-grid {
@@ -8837,26 +8963,47 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
         }
 
-        /* === CỘT 1: DANH SÁCH PHIẾU === */
+        /* === CỘT 1: DANH SÁCH PHIẾU (ĐÃ SỬA) === */
         .ticket-list-wrapper {
             background-color: var(--cf-white);
             border-right: 1px solid var(--cf-border);
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* <-- SỬA LỖI 1: Thêm dòng này */
+            overflow: hidden;
         }
 
         .ticket-list-header {
             padding: 1rem;
             border-bottom: 1px solid var(--cf-border);
-            font-weight: 700;
-            color: var(--cf-brown-dark);
-            flex-shrink: 0; /* Không cho header co lại */
+            flex-shrink: 0;
         }
 
+            /* (MỚI) Thêm tiêu đề cho Cột 1 */
+            .ticket-list-header h5 {
+                font-weight: 700;
+                color: var(--cf-brown-dark);
+                margin-bottom: 0.75rem;
+                font-size: 1.25rem;
+            }
+
+        /* (MỚI) Ô tìm kiếm Cột 1 */
+        #ticketSearchInput {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--cf-border);
+            border-radius: 20px; /* Bo tròn giống Messenger */
+            font-size: 0.9rem;
+        }
+
+            #ticketSearchInput:focus {
+                box-shadow: none;
+                border-color: var(--cf-terracotta-dark);
+            }
+
+
         .ticket-list {
-            overflow-y: auto; /* Lịch sử chat sẽ cuộn */
-            flex-grow: 1; /* Lấp đầy không gian còn lại */
+            overflow-y: auto;
+            flex-grow: 1;
         }
 
         .ticket-item {
@@ -8864,6 +9011,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
             border-bottom: 1px solid var(--cf-border);
             cursor: pointer;
             transition: background-color 0.2s ease;
+            position: relative; /* (MỚI) Cần cho chấm đỏ */
         }
 
             .ticket-item:hover {
@@ -8871,41 +9019,94 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
             }
 
             .ticket-item.active {
-                background-color: var(--cf-cream);
+                background-color: #FFFDE7; /* Màu vàng nhạt khi active */
                 border-right: 3px solid var(--cf-terracotta-dark);
             }
 
-            .ticket-item strong {
-                display: block;
-                font-size: 0.9rem;
-                color: var(--cf-text);
+            /* (MỚI) Tô đậm phiếu chưa xử lý */
+            .ticket-item.status-pending strong {
+                font-weight: 700; /* Tô đậm */
+                color: var(--cf-brown-dark);
             }
 
-            .ticket-item .ticket-preview {
-                font-size: 0.85rem;
-                color: var(--cf-text-light);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
+        /* (MỚI) Chấm đỏ báo hiệu */
+        .status-indicator {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: var(--cf-terracotta-dark); /* Màu cam */
+            border-radius: 50%;
+            border: 2px solid var(--cf-white);
+        }
 
-            .ticket-item .ticket-time {
-                font-size: 0.75rem;
-                color: var(--cf-terracotta-dark);
-            }
+        .ticket-item strong {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--cf-text);
+        }
 
-        /* === CỘT 2: CHAT === */
+        .ticket-item .ticket-preview {
+            font-size: 0.85rem;
+            color: var(--cf-text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ticket-item .ticket-time {
+            font-size: 0.75rem;
+            color: var(--cf-terracotta-dark);
+        }
+
+        /* === CỘT 2: CHAT (ĐÃ SỬA) === */
         .chat-column {
             display: flex;
             flex-direction: column;
             background-color: var(--cf-white);
             border-right: 1px solid var(--cf-border);
-            overflow: hidden; /* <-- SỬA LỖI 2: Thêm dòng này */
+            overflow: hidden;
         }
 
+        /* (MỚI) Header cho Cột 2, chứa tên và nút tìm kiếm */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.5rem; /* Giảm padding 1 chút */
+            border-bottom: 1px solid var(--cf-border);
+            flex-shrink: 0;
+            background-color: var(--cf-white);
+        }
+
+        .chat-header-info strong {
+            display: block;
+            font-size: 1.1rem;
+            color: var(--cf-brown-dark);
+        }
+
+        .chat-header-info small {
+            color: var(--cf-text-light);
+        }
+
+        .chat-header-actions span {
+            cursor: pointer;
+            color: var(--cf-terracotta-dark);
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+
+            .chat-header-actions span:hover {
+                background-color: var(--cf-beige);
+            }
+
+
         .chat-history {
-            flex-grow: 1; /* Lấp đầy không gian */
-            overflow-y: auto; /* Chỉ cuộn lịch sử chat */
+            flex-grow: 1;
+            overflow-y: auto;
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
@@ -9004,7 +9205,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
             border-top: 1px solid var(--cf-border);
             background-color: var(--cf-white);
             gap: 1rem;
-            flex-shrink: 0; /* Không cho form co lại */
+            flex-shrink: 0;
         }
 
         .chat-input-wrapper {
@@ -9032,12 +9233,12 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
             color: white;
         }
 
-        /* === CỘT 3: TÓM TẮT === */
+        /* === CỘT 3: TÓM TẮT (Giữ nguyên) === */
         .summary-column {
             background-color: var(--cf-white);
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* <-- SỬA LỖI 3: Thêm dòng này */
+            overflow: hidden;
         }
 
         .summary-card {
@@ -9054,13 +9255,13 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
                 font-weight: 700;
                 border-radius: 0;
                 border-bottom: none;
-                flex-shrink: 0; /* Không cho header co lại */
+                flex-shrink: 0;
             }
 
             .summary-card .card-body {
                 padding: 1.5rem;
-                overflow-y: auto; /* Chỉ cuộn phần body */
-                flex-grow: 1; /* Lấp đầy không gian còn lại */
+                overflow-y: auto;
+                flex-grow: 1;
             }
 
                 .summary-card .card-body p {
@@ -9091,36 +9292,116 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
         /* Trạng thái trống/chờ */
         .empty-state {
             display: flex;
-            flex-direction: column; /* Sửa: Cho icon và text xếp chồng */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
             color: var(--cf-text-light);
             text-align: center;
         }
+        /* (MỚI) Thanh tìm kiếm Cột 2 */
+        .chat-search-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.5rem;
+            background-color: var(--cf-beige);
+            border-bottom: 1px solid var(--cf-border);
+            flex-shrink: 0;
+        }
+
+            .chat-search-bar input {
+                flex-grow: 1;
+                border: none;
+                border-bottom: 2px solid var(--cf-brown-light);
+                font-size: 0.9rem;
+                padding: 0.25rem;
+                background: transparent;
+            }
+
+                .chat-search-bar input:focus {
+                    box-shadow: none;
+                    border-color: var(--cf-terracotta-dark);
+                }
+
+            .chat-search-bar .btn-icon {
+                border: none;
+                background: none;
+                color: var(--cf-text-light);
+                padding: 0.25rem;
+            }
+
+                .chat-search-bar .btn-icon:hover {
+                    color: var(--cf-terracotta-dark);
+                }
+
+            .chat-search-bar #chatSearchResultCount {
+                font-size: 0.85rem;
+                color: var(--cf-text-light);
+                min-width: 40px; /* Giữ cho layout ổn định */
+            }
+
+        /* (MỚI) CSS để highlight kết quả tìm kiếm */
+        .highlight-search {
+            background-color: #FFF59D; /* Màu vàng nhạt */
+            color: #333;
+            border-radius: 3px;
+        }
+
+        .highlight-search-active {
+            background-color: #FFB74D; /* Màu vàng cam */
+            color: #333;
+            font-weight: bold;
+        }
     </style>
 }
 
-@* (Phần HTML và JavaScript còn lại giữ nguyên, không cần thay đổi) *@
-
+@* === PHẦN HTML (ĐÃ SỬA) === *@
 <div class="support-dashboard-grid">
 
+    @* CỘT 1 (ĐÃ SỬA) *@
     <div class="ticket-list-wrapper">
         <div class="ticket-list-header">
-            Danh sách Phiếu Hỗ Trợ
+            <h5>Hộp thư hỗ trợ</h5>
+            <input type="text" id="ticketSearchInput" class="form-control" placeholder="Tìm kiếm hội thoại...">
         </div>
         <div class="ticket-list" id="ticket-list-container">
             <div class="empty-state p-3">Đang tải danh sách...</div>
         </div>
     </div>
 
+    @* CỘT 2 (ĐÃ SỬA) *@
     <div class="chat-column" id="chat-column">
+
+        <div class="chat-header" id="chat-header" style="display: none;">
+            <div class="chat-header-info">
+                <strong id="chatHeaderName"></strong>
+                <small id="chatHeaderStatus"></small>
+            </div>
+            <div class="chat-header-actions">
+                <span class="material-symbols-outlined" id="chatSearchIcon" title="Tìm kiếm trong hội thoại">search</span>
+            </div>
+        </div>
+        <div class="chat-search-bar" id="chat-search-bar" style="display: none;">
+            <input type="text" id="chatSearchInput" class="form-control" placeholder="Tìm kiếm trong chat..." />
+            <span id="chatSearchResultCount">0/0</span>
+            <button class="btn-icon" id="chatSearchPrev" title="Kết quả trước">
+                <span class="material-symbols-outlined">expand_less</span>
+            </button>
+            <button class="btn-icon" id="chatSearchNext" title="Kết quả tiếp theo">
+                <span class="material-symbols-outlined">expand_more</span>
+            </button>
+            <button class="btn-icon" id="chatSearchClose" title="Đóng">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
         <div class="chat-history" id="chat-history">
             <div class="empty-state">
                 <span class="material-symbols-outlined fs-1">arrow_back</span>
                 <p>Vui lòng chọn một phiếu hỗ trợ từ danh sách bên trái.</p>
             </div>
         </div>
+
         <form method="post" id="chatForm" class="chat-input-form" asp-antiforgery="true">
             <input type="hidden" id="JwtToken" value="@Model.JwtToken" />
 
@@ -9136,6 +9417,7 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
         </form>
     </div>
 
+    @* CỘT 3 (Giữ nguyên) *@
     <div class="summary-column" id="summary-column">
         <div class="summary-card card">
             <div class="card-header">
@@ -9160,43 +9442,52 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
                     const $ticketListContainer = $('#ticket-list-container');
                     const $chatHistory = $('#chat-history');
                     const $summaryCardContent = $('#summary-card-content');
-
-                    const $chatForm = $('#chatForm');
+        const $chatForm = $('#chatForm');
                     const $chatInput = $('#chatMessageInput');
-
-                const $sendButton = $('#sendButton');
+                    const $sendButton = $('#sendButton');
                     const $resolveButton = $('#resolveButton'); // Nút "Đã xử lý"
 
-                    const jwtToken = $('#JwtToken').val() || null;
+                    const $ticketSearchInput = $('#ticketSearchInput');
+                    const $chatHeader = $('#chat-header');
+                    const $chatHeaderName = $('#chatHeaderName');
+                    const $chatHeaderStatus = $('#chatHeaderStatus');
+                    const $chatSearchIcon = $('#chatSearchIcon');
+
+                    // (MỚI) DOM cho thanh tìm kiếm Ctrl+F
+                    const $chatSearchBar = $('#chat-search-bar');
+                    const $chatSearchInput = $('#chatSearchInput');
+                    const $chatSearchResultCount = $('#chatSearchResultCount');
+                    const $chatSearchPrev = $('#chatSearchPrev');
+                    const $chatSearchNext = $('#chatSearchNext');
+                    const $chatSearchClose = $('#chatSearchClose');
+
+
+        const jwtToken = $('#JwtToken').val() || null;
                     const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
 
                     let currentTicketId = null; // ID của phiếu đang được chọn
-                    let currentGroupName =
-        null; // "Phòng" chat đang xem
+        let currentGroupName = null; // "Phòng" chat đang xem
                     let currentTicketData = null; // DTO chi tiết của phiếu
 
-                    // === HÀM TRUY CẬP API (HTTP VẪN DÙNG ĐỂ TẢI DANH SÁCH/CHI TIẾT) ===
+                    // (MỚI) Biến trạng thái cho tìm kiếm Ctrl+F
+                    let searchMatches = [];
+                    let currentSearchIndex = -1;
+
                     const headers = {
-                        'Content-Type': 'application/json',
-
-        'RequestVerificationToken': antiForgeryToken
+        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken
                     };
+        if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken;
+        }
 
-                    // === SỬA LỖI TẠI ĐÂY ===
-                    // Bỏ comment dòng này để gửi Token xác thực
-        if (jwtToken) { headers['Authorization'] = 'Bearer ' + jwtToken; }
-                    // === KẾT THÚC SỬA LỖI ===
-
-                    // 1. Tải danh sách phiếu (Cột 1)
-                    async function loadTicketList() {
+                    // === HÀM TRUY CẬP API ===
+        async function loadTicketList() {
                         try {
                             const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/tickets`, {
-
-        method: 'GET',
+                                method: 'GET',
                                 headers: headers
-                            });
-        if (!response.ok) throw new Error('Failed to load tickets');
-
+        });
+                            if (!response.ok) throw new Error('Failed to load tickets');
                             const tickets = await response.json();
                             renderTicketList(tickets);
         } catch (error) {
@@ -9205,10 +9496,13 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
                         }
                     }
 
-                    // 2. Tải chi tiết phiếu (Cột 2 & 3)
                     async function loadTicketDetail(id) {
-                        if (!id || id === currentTicketId) return;
-        // Reset
+        if (!id || id === currentTicketId) return;
+
+                        // (MỚI) Reset tìm kiếm khi tải phiếu mới
+                        clearSearch();
+                        $chatSearchBar.hide();
+
                         currentTicketId = id;
         currentGroupName = null;
                         currentTicketData = null;
@@ -9223,153 +9517,223 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
                             $chatHistory.html('<div class="empty-state">Đang tải chi tiết...</div>');
         $summaryCardContent.html('<div class="empty-state">Đang tải...</div>');
 
-                            // 2.1. Vẫn dùng Fetch để lấy lịch sử cũ và thông tin
-                            const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/ticket/${id}`, {
+        const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/ticket/${id}`, {
                                 method: 'GET',
                                 headers: headers
-
-                  });
-                            if (!response.ok) throw new Error('Failed to load ticket detail');
-        const ticketData = await response.json();
-                            currentTicketData = ticketData; // Lưu data
+                            });
+        if (!response.ok) throw new Error('Failed to load ticket detail');
+                            const ticketData = await response.json();
+        currentTicketData = ticketData;
 
                             renderChatHistory(ticketData.lichSuChat);
         renderSummary(ticketData);
 
-                            // 2.2. TÍNH TOÁN GROUPNAME VÀ THAM GIA PHÒNG (SIGNALR)
-                            const { idKhachHang, guestSessionId } = ticketData;
+                            $chatHeader.show();
+                            $chatHeaderName.text(ticketData.tenKhachHang);
+                            $chatHeaderStatus.text(ticketData.trangThai);
+
+        const { idKhachHang, guestSessionId } = ticketData;
         const groupName = idKhachHang > 0 ? `khach_${idKhachHang}` : `guest_${guestSessionId}`;
-        if (groupName) {
+                            if (groupName) {
                                 currentGroupName = groupName;
         await hubConnection.invoke("JoinGroup", currentGroupName);
                                 console.log(`Joined group: ${currentGroupName}`);
-
-                                // Kích hoạt form sau khi đã tham gia phòng
                                 $chatInput.prop('disabled', false);
         $sendButton.prop('disabled', false);
                                 $resolveButton.prop('disabled', false);
                             } else {
                                 throw new Error("Không thể xác định groupName cho phiếu này.");
         }
-
                         } catch (error) {
                             console.error('Lỗi tải chi tiết phiếu:', error);
         $chatHistory.html('<div class="empty-state">Lỗi tải chi tiết.</div>');
                         }
                     }
 
-                    // === HÀM RENDER HTML (Giữ nguyên) ===
+                    // === HÀM RENDER HTML (ĐÃ CẬP NHẬT) ===
                     function renderTicketList(tickets) {
-                        if (tickets.length === 0) {
-
-                   $ticketListContainer.html('<div class="empty-state p-3">Không có phiếu nào.</div>');
-                            return;
-        }
-                        $ticketListContainer.empty();
-        tickets.forEach(ticket => {
+        if (tickets.length === 0) {
+                            $ticketListContainer.html('<div class="empty-state p-3">Không có phiếu nào.</div>');
+        return;
+                        }
+        $ticketListContainer.empty();
+                        tickets.forEach(ticket => {
                             const time = new Date(ticket.thoiGianTao).toLocaleString('vi-VN');
-                            const statusClass = ticket.trangThai === 'Chờ xử lý' ? 'text-danger' : 'text-success';
-                            const ticketHtml = `
-
-            <div class="ticket-item" data-id="${ticket.idThongBao}">
+                            const isPending = ticket.trangThai === 'Chờ xử lý';
+                            const statusClass = isPending ? 'status-pending' : '';
+                            const indicatorHtml = isPending ? '<span class="status-indicator"></span>' : '';
+                            const statusColorClass = isPending ? 'text-danger' : 'text-success';
+        const ticketHtml = `
+                                <div class="ticket-item ${statusClass}" data-id="${ticket.idThongBao}">
                                     <div class="d-flex justify-content-between">
                                         <strong>${ticket.tenKhachHang}</strong>
-
-        <span class="ticket-time ${statusClass}">${ticket.trangThai}</span>
+        <span class="ticket-time ${statusColorClass}">${ticket.trangThai}</span>
                                     </div>
                                     <div class="ticket-preview">${ticket.noiDungYeuCau || '...'}</div>
-                                    <small>${time}</small>
-
-                     </div>
+        <small>${time}</small>
+                                    ${indicatorHtml}
+                                </div>
                             `;
                             $ticketListContainer.append(ticketHtml);
-                        });
+        });
         }
                     function renderSummary(data) {
                         const summaryHtml = `
                             <p><strong>Khách hàng:</strong> <span>${data.tenKhachHang}</span></p>
-                            <p><strong>Phiếu số:</strong> <span>#${data.idThongBao}</span></p>
-                            <p><strong>Trạng thái:</strong> <span
-        class="badge bg-warning text-dark fs-6">${data.trangThai}</span></p>
+        <p><strong>Phiếu số:</strong> <span>#${data.idThongBao}</span></p>
+                            <p><strong>Trạng thái:</strong> <span class="badge bg-warning text-dark fs-6">${data.trangThai}</span></p>
                             <p><strong>Thời gian tạo:</strong> <span>${new Date(data.thoiGianTao).toLocaleString('vi-VN')}</span></p>
-                            <hr />
+        <hr />
                             <p><strong>Yêu cầu gốc của khách:</strong> <div class="request-content">${data.noiDungYeuCau ||
         '(Không có)'}</div></p>
                             <p><strong>Ghi chú (AI):</strong> <div class="request-content" style="border: 1px dashed var(--cf-terracotta-dark); color: var(--cf-text)">${data.ghiChuTuAI ||
         '(Không có)'}</div></p>
                         `;
-                        $summaryCardContent.html(summaryHtml);
-        }
+        $summaryCardContent.html(summaryHtml);
+                    }
                     function renderChatHistory(messages) {
                         $chatHistory.empty();
-        // === SỬA LỖI CRASH (KIỂM TRA NULL) ===
-                        if (!messages || messages.length === 0) {
+        if (!messages || messages.length === 0) {
                             $chatHistory.html('<div class="empty-state">Chưa có lịch sử chat.</div>');
         return;
                         }
-                        // ===================================
-
                         messages.forEach(msg => {
                             addMessageToUI(msg);
+                        });
+        scrollToBottom();
 
-            });
-                        scrollToBottom();
+                        // (MỚI) Lưu trữ HTML gốc để tìm kiếm
+                        $chatHistory.find('.chat-bubble').each(function () {
+                            $(this).data('original-html', $(this).html());
+                        });
                     }
                     function addMessageToUI(message) {
-                        const isUser = message.loaiTinNhan === 'KhachHang';
+        const isUser = message.loaiTinNhan === 'KhachHang';
         const isStaff = message.loaiTinNhan === 'NhanVien';
-
-                        const rowClass = isUser ? 'user-row' : (isStaff ? 'staff-row' : 'bot-row');
+        const rowClass = isUser ? 'user-row' : (isStaff ? 'staff-row' : 'bot-row');
         const avatarClass = isUser ? 'avatar-user' : (isStaff ? 'avatar-staff' : 'avatar-bot');
-                        const avatarIcon = isUser ?
-        'person' : (isStaff ? 'support' : 'support_agent');
-                        const bubbleClass = isUser ? 'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
+        const avatarIcon = isUser ? 'person' : (isStaff ? 'support' : 'support_agent');
+        const bubbleClass = isUser ? 'chat-bubble-user' : (isStaff ? 'chat-bubble-staff' : 'chat-bubble-bot');
         const timeAlign = isUser ? 'text-end' : 'text-start';
-
-                        const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
+        const formattedContent = (message.noiDung || '').replace(/\n/g, '<br />');
         const time = new Date(message.thoiGian).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-                        const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
+        const $row = $('<div></div>').addClass('chat-message-row ' + rowClass);
         const $avatar = $('<div></div>').addClass('chat-avatar ' + avatarClass)
                             .html(`<span class="material-symbols-outlined">${avatarIcon}</span>`);
         const $content = $('<div></div>').addClass('message-content');
                         const $bubble = $('<div></div>').addClass('chat-bubble ' + bubbleClass).html(formattedContent);
                         const $time = $('<div></div>').addClass('chat-bubble-time ' + timeAlign).text(time);
-
                         $content.append($bubble).append($time);
                         $row.append($avatar).append($content);
         $chatHistory.append($row);
+
+                        // (MỚI) Cập nhật HTML gốc nếu tin nhắn đến sau (Realtime)
+                        $bubble.data('original-html', $bubble.html());
                     }
                     function scrollToBottom() {
                         $chatHistory.scrollTop($chatHistory[0].scrollHeight);
         }
 
-                    // === LOGIC SIGNALR MỚI ===
+                    // === (MỚI) CÁC HÀM TÌM KIẾM CTRL+F ===
 
-                    // 1. Tạo kết nối
-                    const hubConnection = new signalR.HubConnectionBuilder()
+                    // Hàm helper để escape Regex
+                    function escapeRegExp(string) {
+                        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& nghĩa là toàn bộ chuỗi khớp
+                    }
+
+                    // 1. Xóa các highlight
+                    function clearSearch() {
+                        // Khôi phục HTML gốc từ data
+                        $chatHistory.find('.chat-bubble').each(function () {
+                            const originalHtml = $(this).data('original-html');
+                            if (originalHtml !== undefined) {
+                                $(this).html(originalHtml);
+                            }
+                        });
+                        searchMatches = [];
+                        currentSearchIndex = -1;
+                        $chatSearchResultCount.text('0/0');
+                    }
+
+                    // 2. Thực hiện tìm kiếm
+                    function performSearch() {
+                        clearSearch();
+                        const searchTerm = $chatSearchInput.val();
+                        if (!searchTerm || searchTerm.length < 1) {
+                            return;
+                        }
+
+                        const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
+
+                        // Lặp qua các bubble để tìm và highlight
+                        $chatHistory.find('.chat-bubble').each(function () {
+                            const $bubble = $(this);
+                            const originalHtml = $bubble.data('original-html');
+                            const textContent = $bubble.text(); // Chỉ tìm kiếm trên text, không tìm trên HTML
+
+                            if (textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
+                                // Chỉ thay thế trên HTML gốc đã lưu
+                                const newHtml = originalHtml.replace(regex, (match) => {
+                                    return `<span class="highlight-search">${match}</span>`;
+                                });
+                                $bubble.html(newHtml);
+                            }
+                        });
+
+                        // Lấy TẤT CẢ các span đã được highlight
+                        searchMatches = $chatHistory.find('.highlight-search');
+                        currentSearchIndex = -1;
+
+                        if (searchMatches.length > 0) {
+                            currentSearchIndex = 0; // Chuyển đến kết quả đầu tiên
+                            updateSearchState();
+                        } else {
+                            $chatSearchResultCount.text('0/0');
+                        }
+                    }
+
+                    // 3. Cập nhật trạng thái (active, cuộn)
+                    function updateSearchState() {
+                        const total = searchMatches.length;
+                        if (total === 0) {
+                            $chatSearchResultCount.text('0/0');
+                            return;
+                        }
+
+                        // Cập nhật text
+                        $chatSearchResultCount.text(`${currentSearchIndex + 1}/${total}`);
+
+                        // Xóa active cũ, thêm active mới
+                        searchMatches.removeClass('highlight-search-active');
+                        const $activeMatch = $(searchMatches[currentSearchIndex]);
+                        $activeMatch.addClass('highlight-search-active');
+
+                        // Cuộn tới
+                        $activeMatch[0].scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+
+                    // === LOGIC SIGNALR ===
+        const hubConnection = new signalR.HubConnectionBuilder()
                         .withUrl(apiBaseUrl + "/chatHub")
                         .build();
-        // 2. Lắng nghe tin nhắn TỪ SERVER
-                    hubConnection.on("ReceiveMessage", function (message) {
-                        // Chỉ vẽ lên UI nếu tin nhắn thuộc về phiếu đang xem
-                        if (currentTicketData &&
-                            ( (currentTicketData.idKhachHang && message.idKhachHang == currentTicketData.idKhachHang) ||
 
-                        (currentTicketData.guestSessionId && message.guestSessionId == currentTicketData.guestSessionId) )
-                           )
-                        {
+        hubConnection.on("ReceiveMessage", function (message) {
+        if (currentTicketId && message.idThongBaoHoTro == currentTicketId) {
                             addMessageToUI(message);
-                            scrollToBottom();
-
-                    }
-                    });
-        // Lắng nghe tín hiệu reload chung
-                    hubConnection.on("ReloadTicketList", function () {
+        scrollToBottom();
+                            if (message.loaiTinNhan === 'NhanVien') {
+                                $chatHeaderStatus.text('Đã trả lời');
+                            }
+                        }
+        });
+        hubConnection.on("ReloadTicketList", function () {
                         loadTicketList();
                     });
-        // 3. Bắt đầu kết nối
-                    async function startConnection() {
+        async function startConnection() {
                         try {
                             await hubConnection.start();
         console.log("SignalR Connected (Staff).");
@@ -9379,72 +9743,55 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
                         }
                     }
 
-                    // === XỬ LÝ SỰ KIỆN (ĐÃ CẬP NHẬT) ===
-
-                    // 1. Bấm vào phiếu trong danh sách
-                    $ticketListContainer.on('click', '.ticket-item', function () {
+                    // === XỬ LÝ SỰ KIỆN ===
+        $ticketListContainer.on('click', '.ticket-item', function () {
                         const id = $(this).data('id');
-
-                   loadTicketDetail(id);
+                        loadTicketDetail(id);
                     });
-        // 2. Gửi tin nhắn (SignalR)
-                    $chatForm.on('submit', async function (e) {
+
+        $chatForm.on('submit', async function (e) {
                         e.preventDefault();
-                        if (!currentTicketId || !currentGroupName || !currentTicketData) {
-                            alert("Vui lòng chọn phiếu hỗ trợ hợp lệ trước.");
-
-               return;
-                        }
-
+        if (!currentTicketId || !currentGroupName || !currentTicketData) return;
                         const messageText = $chatInput.val();
-                        if (!messageText.trim()) { return; }
-
+        if (!messageText.trim()) { return; }
                         $chatInput.val('').prop('disabled', true);
                         $sendButton.prop('disabled', true);
-
-
-                    try {
-                            // Gửi tin nhắn LÊN HUB
-                            await hubConnection.invoke("SendMessageFromStaff",
+                        try {
+                            $chatHeaderStatus.text('Đã trả lời');
+        await hubConnection.invoke("SendMessageFromStaff",
                                 currentGroupName,
-
-               messageText,
-                                currentTicketId,
+                                messageText,
+        currentTicketId,
                                 currentTicketData.idKhachHang,
                                 currentTicketData.guestSessionId
-                            );
-
-                       } catch (err) {
+        );
+        } catch (err) {
                             console.error(err.toString());
         alert('Không thể gửi phản hồi.');
                         } finally {
                             $chatInput.prop('disabled', false).focus();
         $sendButton.prop('disabled', false);
-                            // Không gọi addMessageToUI, Hub sẽ lo
                         }
                     });
-        // 3. Bấm nút "Đã xử lý" (Vẫn dùng Fetch, vì đây là hành động API riêng)
-                    $resolveButton.on('click', async function () {
-                        // (Giữ nguyên logic fetch của $resolveButton)
-                        if (!currentTicketId) return;
-                        if (!confirm("Bạn có chắc muốn đóng phiếu hỗ trợ này?")) return;
 
-
-                      $resolveButton.prop('disabled', true).text("Đang xử lý...");
+        $resolveButton.on('click', async function () {
+        if (!currentTicketId || !confirm("Bạn có chắc muốn đóng phiếu hỗ trợ này?")) return;
+                        $resolveButton.prop('disabled', true).text("Đang xử lý...");
                         try {
-                            const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/resolve/${currentTicketId}`, {
+        const response = await fetch(`${apiBaseUrl}/api/web/quanly/hotro/resolve/${currentTicketId}`, {
                                 method: 'POST',
-
-                headers: headers
+                                headers: headers
                             });
-                            if (response.ok) {
+        if (response.ok) {
                                 alert("Đã đóng phiếu thành công!");
-
-           loadTicketList(); // Tải lại danh sách
-                                $chatHistory.html('<div class="empty-state">Phiếu đã đóng. Vui lòng chọn phiếu khác.</div>');
+                                loadTicketList();
+                                $chatHeader.hide();
+                                clearSearch(); // (MỚI) Xóa tìm kiếm
+                                $chatSearchBar.hide(); // (MỚI) Ẩn thanh tìm kiếm
+        $chatHistory.html('<div class="empty-state">Phiếu đã đóng. Vui lòng chọn phiếu khác.</div>');
                                 $summaryCardContent.html('<div class="empty-state">Phiếu đã đóng.</div>');
-        $chatInput.prop('disabled', true);
-                                $sendButton.prop('disabled', true);
+                                $chatInput.prop('disabled', true);
+        $sendButton.prop('disabled', true);
                                 $resolveButton.prop('disabled', true);
                                 currentTicketId = null;
                                 currentGroupName = null;
@@ -9458,12 +9805,67 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\HoTroKhachHa
                             $resolveButton.prop('disabled', false).text("Đã xử lý");
         }
                     });
-        // === KHỞI CHẠY ===
-                    startConnection();
-        // Bắt đầu kết nối SignalR
-                    loadTicketList();
-        // Tải danh sách phiếu
-                });
+
+        $ticketSearchInput.on('keyup', function () {
+                        const searchTerm = $(this).val().toLowerCase();
+                        $ticketListContainer.find('.ticket-item').each(function () {
+                            const customerName = $(this).find('strong').text().toLowerCase();
+                            const preview = $(this).find('.ticket-preview').text().toLowerCase();
+                            if (customerName.includes(searchTerm) || preview.includes(searchTerm)) {
+                                $(this).show();
+                            } else {
+                                $(this).hide();
+                            }
+                        });
+                    });
+
+                    // === (MỚI) SỰ KIỆN CHO THANH TÌM KIẾM CTRL+F ===
+
+                    // 5. Bấm icon search trên header
+                    $chatSearchIcon.on('click', function () {
+                        $chatSearchBar.slideToggle(200);
+                        if ($chatSearchBar.is(':visible')) {
+                            $chatSearchInput.focus();
+                        } else {
+                            clearSearch(); // Xóa khi đóng
+                        }
+                    });
+
+                    // 6. Bấm nút X (đóng)
+                    $chatSearchClose.on('click', function () {
+                        $chatSearchBar.slideUp(200);
+                        clearSearch();
+                    });
+
+                    // 7. Gõ vào ô tìm kiếm
+                    $chatSearchInput.on('input', function () {
+                        performSearch();
+                    });
+
+                    // 8. Bấm nút Next
+                    $chatSearchNext.on('click', function () {
+                        if (searchMatches.length === 0) return;
+                        currentSearchIndex++;
+                        if (currentSearchIndex >= searchMatches.length) {
+                            currentSearchIndex = 0; // Quay về đầu
+                        }
+                        updateSearchState();
+                    });
+
+                    // 9. Bấm nút Prev
+                    $chatSearchPrev.on('click', function () {
+                        if (searchMatches.length === 0) return;
+                        currentSearchIndex--;
+                        if (currentSearchIndex < 0) {
+                            currentSearchIndex = searchMatches.length - 1; // Về cuối
+                        }
+                        updateSearchState();
+                    });
+
+                    // === KHỞI CHẠY ===
+        startConnection();
+        loadTicketList();
+        });
     </script>
 }
 ================================================================================
@@ -9509,6 +9911,782 @@ namespace WebCafebookApi.Pages.employee
             JwtToken = HttpContext.Session.GetString("JwtToken");
 
             // Không cần gọi API ở đây nữa
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\QuanLyGiaoHangView.cshtml
+================================================================================
+﻿@page "/Employee/QuanLyGiaoHang"
+@model WebCafebookApi.Pages.employee.QuanLyGiaoHangViewModel
+@{
+    ViewData["Title"] = "Quản lý Giao Hàng";
+    Layout = "_Layout_Employee";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="text-primary"><span class="material-symbols-outlined align-middle fs-2">local_shipping</span> Quản lý Giao Hàng</h2>
+    @if (Model.Status == "Chờ xác nhận" && Model.GiaoHangData.DonGiaoHang.Any())
+    {
+        <form method="post" asp-page-handler="ConfirmAll">
+            <button class="btn btn-success"><span class="material-symbols-outlined align-middle">done_all</span> Xác nhận tất cả</button>
+        </form>
+    }
+</div>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<ul class="nav nav-tabs mb-4">
+    @foreach (var tab in Model.StatusTabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(Model.Status == tab ? "active fw-bold" : "")"
+               asp-page="./QuanLyGiaoHangView" asp-route-Status="@tab">@tab</a>
+        </li>
+    }
+</ul>
+
+<form method="get" class="mb-3 d-flex gap-2">
+    <input type="hidden" name="Status" value="@Model.Status" />
+    <input type="text" name="Search" value="@Model.Search" class="form-control" placeholder="Tìm theo Mã HĐ, Tên hoặc SĐT..." />
+    <button class="btn btn-primary">Tìm kiếm</button>
+</form>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#ID</th>
+                        <th>Thời gian</th>
+                        <th>Khách hàng</th>
+                        <th>Địa chỉ</th>
+                        <th>Tổng tiền</th>
+                        <th>TT Giao Hàng</th>
+                        <th>Shipper</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.GiaoHangData.DonGiaoHang.Any())
+                    {
+                        <tr><td colspan="8" class="text-center py-5 text-muted">Không có đơn hàng nào.</td></tr>
+                    }
+                    @foreach (var item in Model.GiaoHangData.DonGiaoHang)
+                    {
+                        <tr>
+                            <td class="fw-bold">@item.IdHoaDon</td>
+                            <td>@item.ThoiGianTao.ToString("HH:mm dd/MM")</td>
+                            <td>
+                                <div>@item.TenKhachHang</div>
+                                <small class="text-muted">@item.SoDienThoaiGiaoHang</small>
+                            </td>
+                            <td class="text-truncate" style="max-width: 200px;" title="@item.DiaChiGiaoHang">@item.DiaChiGiaoHang</td>
+                            <td class="text-danger fw-bold">@item.ThanhTien.ToString("N0") đ</td>
+                            <td><span class="badge bg-info text-dark">@item.TrangThaiGiaoHang</span></td>
+                            <td>@(item.TenNguoiGiaoHang ?? "-")</td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="UpdateStatus" class="d-inline-flex gap-2 align-items-center">
+                                    <input type="hidden" name="idHoaDon" value="@item.IdHoaDon" />
+
+                                    @if (item.TrangThaiGiaoHang == "Chờ xác nhận")
+                                    {
+                                        <button name="newStatus" value="Đang chuẩn bị" class="btn btn-sm btn-primary">Xác nhận</button>
+                                    }
+                                    else if (item.TrangThaiGiaoHang == "Chờ lấy hàng")
+                                    {
+                                        <select name="shipperId" class="form-select form-select-sm w-auto" required>
+                                            <option value="">Chọn Shipper</option>
+                                            @foreach (var s in Model.GiaoHangData.NguoiGiaoHangSanSang)
+                                            {
+                                                <option value="@s.IdNguoiGiaoHang" selected="@(s.IdNguoiGiaoHang == item.IdNguoiGiaoHang)">@s.TenNguoiGiaoHang</option>
+                                            }
+                                        </select>
+                                        <button name="newStatus" value="Đang giao" class="btn btn-sm btn-info text-white">Giao đi</button>
+                                    }
+                                    else if (item.TrangThaiGiaoHang == "Đang giao")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success" onclick="openCompleteModal(@item.IdHoaDon, '@item.TenKhachHang')">
+                                            <span class="material-symbols-outlined align-middle fs-6">check_circle</span> Hoàn thành
+                                        </button>
+                                    }
+
+                                    @if (item.TrangThaiGiaoHang != "Hoàn thành" && item.TrangThaiGiaoHang != "Đã hủy")
+                                    {
+                                        <button name="newStatus" value="Hủy" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hủy đơn này?')">Hủy</button>
+                                    }
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CompleteOrder" enctype="multipart/form-data">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Xác nhận giao hàng thành công</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" asp-for="OrderIdToComplete" id="modalOrderId" />
+                    <p>Khách hàng: <strong id="modalCustomerName"></strong></p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ảnh xác nhận (Tùy chọn):</label>
+                        <input type="file" asp-for="UploadImage" class="form-control" accept="image/*" />
+                        <div class="form-text">Chụp ảnh gói hàng hoặc biên lai đã ký nhận. Lưu vào thư mục: <code>images/anhgiaohang</code></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Hoàn thành ngay</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCompleteModal(id, name) {
+            document.getElementById('modalOrderId').value = id;
+            document.getElementById('modalCustomerName').innerText = name;
+            var myModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            myModal.show();
+        }
+    </script>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\QuanLyGiaoHangView.cshtml.cs
+================================================================================
+﻿using CafebookModel.Model.ModelWeb.QuanLy;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+
+namespace WebCafebookApi.Pages.employee
+{
+    [Authorize(Roles = "Quản trị viên, Quản lý, Thu ngân, Phục vụ")]
+    public class QuanLyGiaoHangViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public QuanLyGiaoHangViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public GiaoHangViewDto GiaoHangData { get; set; } = new GiaoHangViewDto();
+
+        [BindProperty(SupportsGet = true)]
+        public string? Search { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string Status { get; set; } = "Chờ xác nhận";
+
+        // Để upload ảnh
+        [BindProperty]
+        public IFormFile? UploadImage { get; set; }
+
+        [BindProperty]
+        public int OrderIdToComplete { get; set; }
+
+        [TempData]
+        public string? Message { get; set; }
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        public string[] StatusTabs { get; set; } = {
+            "Chờ xác nhận", "Đang chuẩn bị", "Chờ lấy hàng",
+            "Đang giao", "Hoàn thành", "Đã Hủy", "Tất cả"
+        };
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            try
+            {
+                var result = await client.GetFromJsonAsync<GiaoHangViewDto>($"api/web/quanly/giaohang/load?search={Search}&status={Status}");
+                if (result != null) GiaoHangData = result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Không thể tải dữ liệu: " + ex.Message;
+            }
+            return Page();
+        }
+
+        // Hành động cập nhật trạng thái đơn giản
+        public async Task<IActionResult> OnPostUpdateStatusAsync(int idHoaDon, string newStatus, int? shipperId)
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent(newStatus), "TrangThaiGiaoHang");
+            if (shipperId.HasValue) content.Add(new StringContent(shipperId.ToString()!), "IdNguoiGiaoHang");
+
+            var res = await client.PostAsync($"api/web/quanly/giaohang/update/{idHoaDon}", content);
+            if (res.IsSuccessStatusCode) Message = "Cập nhật thành công!";
+            else ErrorMessage = "Lỗi cập nhật.";
+
+            return RedirectToPage(new { Search, Status });
+        }
+
+        // Hành động Hoàn thành (kèm ảnh)
+        public async Task<IActionResult> OnPostCompleteOrderAsync()
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent("Hoàn thành"), "TrangThaiGiaoHang");
+
+            if (UploadImage != null)
+            {
+                var fileContent = new StreamContent(UploadImage.OpenReadStream());
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(UploadImage.ContentType);
+                content.Add(fileContent, "HinhAnhXacNhan", UploadImage.FileName);
+            }
+
+            var res = await client.PostAsync($"api/web/quanly/giaohang/update/{OrderIdToComplete}", content);
+            if (res.IsSuccessStatusCode) Message = "Đã hoàn thành đơn hàng!";
+            else ErrorMessage = "Lỗi khi hoàn thành đơn.";
+
+            return RedirectToPage(new { Search, Status });
+        }
+
+        public async Task<IActionResult> OnPostConfirmAllAsync()
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            await client.PostAsync("api/web/quanly/giaohang/confirm-all-pending", null);
+            Message = "Đã xác nhận tất cả đơn.";
+            return RedirectToPage(new { Status = "Đang chuẩn bị" });
+        }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\ShipperGiaoHangView.cshtml
+================================================================================
+﻿@page "/Employee/ShipperGiaoHangView"
+@model WebCafebookApi.Pages.employee.ShipperGiaoHangViewModel
+@{
+    ViewData["Title"] = "Ứng dụng Shipper";
+    Layout = "_Layout_Employee";
+}
+
+@section Styles {
+    <style>
+        /* CSS tối ưu cho Mobile */
+        .shipper-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 1rem;
+            transition: transform 0.2s;
+        }
+
+            .shipper-card:active {
+                transform: scale(0.98);
+            }
+
+        .card-header-ship {
+            background-color: #fff;
+            border-bottom: 1px dashed #eee;
+            padding: 1rem;
+            border-radius: 12px 12px 0 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body-ship {
+            padding: 1rem;
+            background-color: #fff;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .info-icon {
+            width: 24px;
+            color: var(--cf-orange);
+            margin-right: 8px;
+        }
+
+        .btn-action-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .btn-lg-mobile {
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-weight: 600;
+        }
+
+            .nav-pills .nav-link.active {
+                background-color: var(--cf-orange);
+            }
+    </style>
+}
+
+<div class="container py-3 px-2" style="max-width: 600px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">Xin chào, Shipper!</h4>
+            <small class="text-muted">Chúc bạn một ngày làm việc an toàn.</small>
+        </div>
+        <a asp-page="/Employee/WebQuanLyView" class="btn btn-outline-secondary btn-sm rounded-circle" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">
+            <span class="material-symbols-outlined">home</span>
+        </a>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success shadow-sm">@TempData["Message"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
+    }
+
+    <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pills-my-tab" data-bs-toggle="pill" data-bs-target="#pills-my" type="button">
+                Đang giao <span class="badge bg-white text-danger rounded-pill ms-1">@Model.MyOrders.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-new-tab" data-bs-toggle="pill" data-bs-target="#pills-new" type="button">
+                Đơn mới <span class="badge bg-secondary rounded-pill ms-1">@Model.AvailableOrders.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-history-tab" data-bs-toggle="pill" data-bs-target="#pills-history" type="button">
+                Lịch sử
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade" id="pills-history">
+
+            <div class="card bg-primary text-white shadow-sm mb-4 rounded-3 border-0">
+                <div class="card-body text-center">
+                    <h6 class="opacity-75 mb-1">TỔNG TIỀN MẶT (COD) CẦN NỘP</h6>
+                    <h1 class="fw-bold display-4 mb-0">@Model.HistoryData.TongTienMatCam.ToString("N0")</h1>
+                    <span class="fs-5">VNĐ</span>
+                    <div class="mt-3 d-flex justify-content-center gap-4 border-top border-white border-opacity-25 pt-3">
+                        <div>
+                            <strong class="d-block fs-5">@Model.HistoryData.TongDonHoanThanh</strong>
+                            <small class="opacity-75">Đã giao</small>
+                        </div>
+                        <div>
+                            <strong class="d-block fs-5">@Model.HistoryData.TongDonHuy</strong>
+                            <small class="opacity-75">Đã hủy</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-muted ms-2 mb-3">DANH SÁCH HÔM NAY</h6>
+
+            @if (!Model.HistoryData.LichSuDonHang.Any())
+            {
+                <div class="text-center py-4 text-muted">Chưa có lịch sử giao hàng hôm nay.</div>
+            }
+            else
+            {
+                @foreach (var item in Model.HistoryData.LichSuDonHang)
+                {
+                    <div class="card shipper-card border-start border-5 @(item.TrangThaiGiaoHang == "Hoàn thành" ? "border-success" : "border-danger")">
+                        <div class="card-body-ship p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-bold text-dark">#@item.IdHoaDon</span>
+                                <span class="badge @(item.TrangThaiGiaoHang == "Hoàn thành" ? "bg-success" : "bg-danger")">
+                                    @item.TrangThaiGiaoHang
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-muted mb-1">@item.ThoiGianTao.ToString("HH:mm") - @item.TenKhachHang</div>
+                                    <div class="fw-bold text-primary">
+                                        @if (item.GhiChu == "COD")
+                                        {
+                                            <span class="material-symbols-outlined align-middle fs-6">payments</span>
+                                        }
+                                        else
+                                        {
+
+                                            <span class="material-symbols-outlined align-middle fs-6">credit_card</span>
+                                        }
+                                        @item.GhiChu
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="d-block fw-bold text-dark">@item.ThanhTien.ToString("N0")đ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="tab-content" id="pills-tabContent">
+
+        <div class="tab-pane fade show active" id="pills-my">
+            @if (!Model.MyOrders.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <span class="material-symbols-outlined fs-1 text-secondary opacity-50">local_shipping</span>
+                    <p class="mt-2">Bạn chưa nhận đơn nào.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.MyOrders)
+                {
+                    <div class="card shipper-card border-warning border-2">
+                        <div class="card-header-ship">
+                            <span class="text-primary">#@item.IdHoaDon</span>
+                            <span class="badge bg-warning text-dark">Đang giao</span>
+                        </div>
+                        <div class="card-body-ship">
+                            <div class="info-row">
+                                <span class="material-symbols-outlined info-icon">person</span>
+                                <span class="fw-bold">@item.TenKhachHang</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="material-symbols-outlined info-icon">call</span>
+                                <a href="tel:@item.SoDienThoaiGiaoHang" class="text-decoration-none">@item.SoDienThoaiGiaoHang</a>
+                            </div>
+                            <div class="info-row">
+                                <span class="material-symbols-outlined info-icon">location_on</span>
+                                <span class="text-break">@item.DiaChiGiaoHang</span>
+                            </div>
+                            <div class="info-row mt-2 pt-2 border-top">
+                                <span class="material-symbols-outlined info-icon">payments</span>
+                                <span class="text-danger fw-bold fs-5">Thu: @item.ThanhTien.ToString("N0")đ</span>
+                            </div>
+                        </div>
+                        <div class="btn-action-group">
+                            <button class="btn btn-outline-danger btn-lg-mobile" onclick="openFailModal(@item.IdHoaDon)">
+                                <span class="material-symbols-outlined">close</span> Thất bại
+                            </button>
+                            <button class="btn btn-success btn-lg-mobile" onclick="openSuccessModal(@item.IdHoaDon, '@item.TenKhachHang')">
+                                <span class="material-symbols-outlined">photo_camera</span> Đã giao
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="tab-pane fade" id="pills-new">
+            @if (!Model.AvailableOrders.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <span class="material-symbols-outlined fs-1 text-secondary opacity-50">inventory_2</span>
+                    <p class="mt-2">Chưa có đơn hàng chờ lấy.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.AvailableOrders)
+                {
+                    <div class="card shipper-card">
+                        <div class="card-header-ship">
+                            <span>#@item.IdHoaDon</span>
+                            <span class="badge bg-info text-dark">Chờ lấy hàng</span>
+                        </div>
+                        <div class="card-body-ship">
+                            <div class="info-row">
+                                <span class="material-symbols-outlined info-icon">schedule</span>
+                                <span>@item.ThoiGianTao.ToString("HH:mm dd/MM")</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="material-symbols-outlined info-icon">location_on</span>
+                                <span>@item.DiaChiGiaoHang</span>
+                            </div>
+                            <div class="info-row text-muted small">
+                                <span class="material-symbols-outlined info-icon" style="font-size:18px">store</span>
+                                <span>Lấy tại quầy pha chế/bếp</span>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-light rounded-bottom">
+                            <form method="post" asp-page-handler="Pickup">
+                                <input type="hidden" name="idHoaDon" value="@item.IdHoaDon" />
+                                <button class="btn btn-primary w-100 btn-lg-mobile">
+                                    <span class="material-symbols-outlined">pan_tool_alt</span> NHẬN ĐƠN NÀY
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Success" enctype="multipart/form-data">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-success">Xác nhận giao thành công</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="idHoaDon" id="successOrderId" />
+                    <p class="mb-3">Khách: <strong id="successCustomerName"></strong></p>
+
+                    <div class="text-center mb-3 p-3 bg-light rounded border border-dashed">
+                        <label for="cameraInput" class="d-block cursor-pointer">
+                            <span class="material-symbols-outlined fs-1 text-primary display-1">add_a_photo</span>
+                            <div class="mt-2 text-primary fw-bold">Chụp ảnh xác nhận</div>
+                        </label>
+                        <input type="file" asp-for="ProofImage" id="cameraInput" class="d-none" accept="image/*" capture="environment" onchange="previewImage(this)" required />
+                        <img id="imgPreview" class="img-fluid mt-3 rounded d-none" style="max-height: 200px;" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="submit" class="btn btn-success w-100 py-3 fw-bold">HOÀN TẤT ĐƠN HÀNG</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="failModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Fail">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger">Báo cáo giao thất bại</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="idHoaDon" id="failOrderId" />
+                    <label class="form-label fw-bold">Lý do hủy/trả hàng:</label>
+                    <select asp-for="CancelReason" class="form-select mb-3" required>
+                        <option value="">-- Chọn lý do --</option>
+                        <option value="Khách không nghe máy">Khách không nghe máy</option>
+                        <option value="Sai địa chỉ/SĐT">Sai địa chỉ / SĐT</option>
+                        <option value="Khách bom hàng">Khách bom hàng (từ chối nhận)</option>
+                        <option value="Hàng bị hỏng">Hàng bị đổ/hỏng khi vận chuyển</option>
+                        <option value="Khác">Lý do khác</option>
+                    </select>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-danger w-100 py-3 fw-bold">XÁC NHẬN HỦY</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openSuccessModal(id, name) {
+            document.getElementById('successOrderId').value = id;
+            document.getElementById('successCustomerName').innerText = name;
+            // Reset ảnh preview
+            document.getElementById('imgPreview').classList.add('d-none');
+            document.getElementById('imgPreview').src = '';
+            new bootstrap.Modal(document.getElementById('successModal')).show();
+        }
+
+        function openFailModal(id) {
+            document.getElementById('failOrderId').value = id;
+            new bootstrap.Modal(document.getElementById('failModal')).show();
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var img = document.getElementById('imgPreview');
+                    img.src = e.target.result;
+                    img.classList.remove('d-none');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\ShipperGiaoHangView.cshtml.cs
+================================================================================
+﻿using CafebookModel.Model.ModelWeb.QuanLy;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+
+namespace WebCafebookApi.Pages.employee
+{
+    //[Authorize(Roles = "GiaoHang,PhucVu,QuanLy,QuanTriVien")]
+    [Authorize]
+    public class ShipperGiaoHangViewModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        public ShipperHistorySummaryDto HistoryData { get; set; } = new ShipperHistorySummaryDto();
+        // Vẫn giữ ID 5 để đánh dấu loại hình là "Nội bộ"
+        private const int INTERNAL_SHIPPER_TYPE_ID = 5;
+
+        public ShipperGiaoHangViewModel(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+        public List<GiaoHangItemDto> MyOrders { get; set; } = new List<GiaoHangItemDto>();
+        public List<GiaoHangItemDto> AvailableOrders { get; set; } = new List<GiaoHangItemDto>();
+
+        [BindProperty] public IFormFile? ProofImage { get; set; }
+        [BindProperty] public string? CancelReason { get; set; }
+        [TempData] public string? Message { get; set; }
+        [TempData] public string? Error { get; set; }
+
+        private int GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            return claim != null && int.TryParse(claim.Value, out int id) ? id : 0;
+        }
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToPage("/Account/Login");
+
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            try
+            {
+                var result = await client.GetFromJsonAsync<GiaoHangViewDto>("api/web/quanly/giaohang/load?status=Tất cả");
+
+                if (result != null)
+                {
+                    // 1. Đơn chờ lấy: 
+                    // - Chưa có nhân viên nào nhận (IdNhanVien == null)
+                    // - HOẶC đã gán cho chính mình (IdNhanVien == userId)
+                    AvailableOrders = result.DonGiaoHang
+                        .Where(x => x.TrangThaiGiaoHang == "Chờ lấy hàng" &&
+                                   (x.IdNhanVien == null || x.IdNhanVien == userId))
+                        .OrderByDescending(x => x.ThoiGianTao)
+                        .ToList();
+
+                    // 2. Đơn CỦA TÔI:
+                    // - Phải là đơn mà CHÍNH TÔI đang giữ (IdNhanVien == userId)
+                    MyOrders = result.DonGiaoHang
+                        .Where(x => x.IdNhanVien == userId && x.TrangThaiGiaoHang == "Đang giao")
+                        .OrderBy(x => x.ThoiGianTao)
+                        .ToList();
+                }
+                // 2. THÊM MỚI: Tải lịch sử & Tổng tiền
+                var historyResult = await client.GetFromJsonAsync<ShipperHistorySummaryDto>("api/web/quanly/giaohang/shipper-history");
+                if (historyResult != null)
+                {
+                    HistoryData = historyResult;
+                }
+            }
+            catch (Exception ex) { Error = "Lỗi: " + ex.Message; }
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostPickupAsync(int idHoaDon)
+        {
+            var userId = GetCurrentUserId();
+            var client = _httpClientFactory.CreateClient("ApiClient");
+
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent("Đang giao"), nameof(GiaoHangUpdateRequestDto.TrangThaiGiaoHang));
+
+            // Lưu loại hình là "Nội bộ" (ID=5) để thống kê
+            content.Add(new StringContent(INTERNAL_SHIPPER_TYPE_ID.ToString()), nameof(GiaoHangUpdateRequestDto.IdNguoiGiaoHang));
+
+            // QUAN TRỌNG: Lưu chính xác ID của Shipper (bạn) vào hóa đơn
+            content.Add(new StringContent(userId.ToString()), nameof(GiaoHangUpdateRequestDto.IdNhanVien));
+
+            try
+            {
+                var res = await client.PostAsync($"api/web/quanly/giaohang/update/{idHoaDon}", content);
+                if (res.IsSuccessStatusCode) Message = "Đã nhận đơn thành công!";
+                else Error = "Lỗi API: " + res.ReasonPhrase;
+            }
+            catch (Exception ex) { Error = "Lỗi kết nối: " + ex.Message; }
+
+            return RedirectToPage();
+        }
+
+        // ... (Các hàm OnPostSuccessAsync và OnPostFailAsync giữ nguyên như cũ) ...
+        // Lưu ý: Không cần sửa OnPostSuccessAsync vì nó chỉ cập nhật trạng thái và ảnh, 
+        // IdNhanVien đã được gán lúc Pickup rồi.
+
+        public async Task<IActionResult> OnPostSuccessAsync(int idHoaDon)
+        {
+            if (ProofImage == null) { Error = "Thiếu ảnh."; return RedirectToPage(); }
+
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent("Hoàn thành"), nameof(GiaoHangUpdateRequestDto.TrangThaiGiaoHang));
+
+            var fileContent = new StreamContent(ProofImage.OpenReadStream());
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(ProofImage.ContentType);
+            content.Add(fileContent, nameof(GiaoHangUpdateRequestDto.HinhAnhXacNhan), ProofImage.FileName);
+
+            var res = await client.PostAsync($"api/web/quanly/giaohang/update/{idHoaDon}", content);
+            if (res.IsSuccessStatusCode) Message = "Đã hoàn thành đơn!";
+            else Error = "Lỗi cập nhật.";
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostFailAsync(int idHoaDon)
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent("Hủy"), nameof(GiaoHangUpdateRequestDto.TrangThaiGiaoHang));
+            var res = await client.PostAsync($"api/web/quanly/giaohang/update/{idHoaDon}", content);
+            if (res.IsSuccessStatusCode) Message = "Đã hủy đơn.";
+            else Error = "Lỗi cập nhật.";
+            return RedirectToPage();
         }
     }
 }
@@ -10435,6 +11613,22 @@ E:\Tai Lieu Hoc Tap\CS 445 AM\Project\WebCafebookApi\Pages\employee\_Layout_Empl
                        asp-page="/Employee/HoTroKhachHangView">
                         <span class="material-symbols-outlined">support_agent</span>
                         Hỗ trợ Khách hàng
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Quản lý Giao hàng" ? "active" : "")"
+                       asp-page="/Employee/QuanLyGiaoHangView">
+                        <span class="material-symbols-outlined">support_agent</span>
+                        Quản lý Giao hàng
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewData["Title"]?.ToString() == "Ứng dụng Shipper" ? "active" : "")"
+                       asp-page="/Employee/ShipperGiaoHangView">
+                        <span class="material-symbols-outlined">two_wheeler</span>
+                        Ứng dụng Shipper
                     </a>
                 </li>
             </ul>

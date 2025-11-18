@@ -2125,6 +2125,23 @@ public class KhuyenMaiFiltersDto
 }
 ================================================================================
 
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelApp\NguoiGiaoHangDto.cs
+================================================================================
+﻿namespace CafebookModel.Model.ModelApp
+{
+    /// <summary>
+    /// DTO đầy đủ để quản lý thêm/sửa xóa Shipper
+    /// </summary>
+    public class NguoiGiaoHangCrudDto
+    {
+        public int IdNguoiGiaoHang { get; set; }
+        public string TenNguoiGiaoHang { get; set; } = string.Empty;
+        public string SoDienThoai { get; set; } = string.Empty;
+        public string TrangThai { get; set; } = "Sẵn sàng"; // "Sẵn sàng", "Tạm ngưng"
+    }
+}
+================================================================================
+
 E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelApp\NhanSuDto.cs
 ================================================================================
 ﻿// File: CafebookModel/Model/ModelApp/NhanSuDto.cs (Cập nhật)
@@ -4166,7 +4183,7 @@ namespace CafebookModel.Model.ModelWeb
         public DateTime ThoiGian { get; set; }
 
         public string LoaiTinNhan { get; set; } = "KhachHang";
-
+        public int? IdThongBaoHoTro { get; set; }
         // === SỬA LỖI: Thêm [JsonIgnore] ===
         // Những thuộc tính này chỉ dùng cho Razor, không dùng cho API
         [JsonIgnore]
@@ -4365,6 +4382,7 @@ namespace CafebookModel.Model.ModelWeb
         public decimal GiamGia { get; set; } // (GiamGia + Diem)
         public decimal ThanhTien { get; set; }
         public string PhuongThucThanhToan { get; set; } = string.Empty;
+        public string? AnhXacNhanGiaoHangUrl { get; set; }
     }
 }
 ================================================================================
@@ -4786,11 +4804,7 @@ namespace CafebookModel.Model.ModelApi
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-        /// <summary>
-        /// THÊM DÒNG NÀY:
-        /// </summary>
         public string? Token { get; set; } // Thêm thuộc tính để chứa JWT
-        // Dùng một trong hai
         public KhachHangDto? KhachHangData { get; set; }
         public NhanVienDto? NhanVienData { get; set; } // Tận dụng NhanVienDto từ WPF
     }
@@ -4813,6 +4827,70 @@ namespace CafebookModel.Model.ModelWeb
         public string? CaHienTai { get; set; }
         public int TongBanDangPhucVu { get; set; }
         public int TongDonDangXuLy { get; set; }
+    }
+}
+================================================================================
+
+E:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookModel\Model\ModelWeb\QuanLy\GiaoHangDto.cs
+================================================================================
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+namespace CafebookModel.Model.ModelWeb.QuanLy
+{
+    public class GiaoHangViewDto
+    {
+        public List<GiaoHangItemDto> DonGiaoHang { get; set; } = new List<GiaoHangItemDto>();
+        public List<NguoiGiaoHangDto> NguoiGiaoHangSanSang { get; set; } = new List<NguoiGiaoHangDto>();
+    }
+
+    public class GiaoHangItemDto
+    {
+        public int IdHoaDon { get; set; }
+        public DateTime ThoiGianTao { get; set; }
+        public string? TenKhachHang { get; set; }
+        public string? SoDienThoaiGiaoHang { get; set; }
+        public string? DiaChiGiaoHang { get; set; }
+        public decimal ThanhTien { get; set; }
+        public string TrangThaiThanhToan { get; set; } = string.Empty;
+        public string? TrangThaiGiaoHang { get; set; }
+        public int? IdNguoiGiaoHang { get; set; }
+        public string? TenNguoiGiaoHang { get; set; }
+        public string? GhiChu { get; set; }
+
+        // --- THÊM MỚI: Để biết đơn này của nhân viên nào ---
+        public int? IdNhanVien { get; set; }
+    }
+
+    public class NguoiGiaoHangDto
+    {
+        public int IdNguoiGiaoHang { get; set; }
+        public string TenNguoiGiaoHang { get; set; } = string.Empty;
+    }
+
+    public class GiaoHangUpdateRequestDto
+    {
+        public string? TrangThaiGiaoHang { get; set; }
+        public int? IdNguoiGiaoHang { get; set; }
+
+        // --- THÊM MỚI: Để lưu ID Shipper ---
+        public int? IdNhanVien { get; set; }
+
+        [JsonIgnore]
+        public IFormFile? HinhAnhXacNhan { get; set; }
+    }
+
+    /// <summary>
+    /// DTO thống kê lịch sử chạy đơn trong ngày của Shipper
+    /// </summary>
+    public class ShipperHistorySummaryDto
+    {
+        public decimal TongTienMatCam { get; set; } // Chỉ tính đơn COD
+        public int TongDonHoanThanh { get; set; }
+        public int TongDonHuy { get; set; }
+        public List<GiaoHangItemDto> LichSuDonHang { get; set; } = new List<GiaoHangItemDto>();
     }
 }
 ================================================================================

@@ -256,4 +256,24 @@ e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\AiService.cs
 e:\Tai Lieu Hoc Tap\CS 445 AM\Project\CafebookApi\Services\ChatHub.cs
 
 - hiện tại khách hàng đã nhận được tin nhắn theo thời gian thực, nhưng nhân viên thì nó chưa cập nhật tin nhắn theo thời gian thực.
-- khi khách hàng chat với nhân viên thì dừng AI và hiện nút chat với nhân viên khách hàng- nếu có yêu cầu khách hàng mới hiện lên trên cùng Danh sách Phiếu Hỗ Trợ và thêm 1 chấm đỏ
+- khi khách hàng chat với nhân viên thì dừng AI và hiện nút chat với nhân viên khách hàng- nếu có yêu cầu khách hàng mới hiện lên trên cùng Danh sách Phiếu Hỗ Trợ và thêm 1 chấm đỏ.
+Nâng cấp 3: Nâng cao Trí tuệ của Tool (Nghiệp vụ sâu)
+Vấn đề hiện tại: Các tool của bạn đang làm nghiệp vụ khá cơ bản.
+
+Ví dụ: KiemTraSanPhamAsync chỉ kiểm tra cờ TrangThaiKinhDoanh của SanPham. Nhưng nếu món đó hết nguyên liệu thì sao?
+
+Nâng cấp: Tận dụng Entities.cs mà bạn đã cung cấp. KiemTraSanPhamAsync phải thông minh hơn.
+
+Cách làm:
+
+Khi khách hỏi "Còn Trà Đào Cam Sả không?".
+
+KiemTraSanPhamAsync không chỉ context.SanPhams.
+
+Nó phải vào context.DinhLuongs để lấy danh sách nguyên liệu của món này (ví dụ: 10g Trà, 20ml Siro Đào).
+
+Sau đó kiểm tra context.NguyenLieus xem TonKho có đủ cho các nguyên liệu đó không.
+
+Chỉ khi đó mới trả lời là "Còn" hay "Hết".
+
+Lợi ích: Cung cấp thông tin chính xác theo thời gian thực, tăng trải nghiệm khách hàng lên tối đa.
